@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <permission android:name="com.bintianqi.owndroid.MyPermission"/>
-    <uses-permission android:name="com.bintianqi.owndroid.MyPermission"/>
+    <permission android:name="dev.mr2.dpc.MyPermission"/>
+    <uses-permission android:name="dev.mr2.dpc.MyPermission"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES"/>
@@ -20,7 +20,7 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:theme="@style/Theme.OwnDroid"
+        android:theme="@style/Theme.MDPC"
         android:enableOnBackInvokedCallback="true"
         android:testOnly="false"
         android:manageSpaceActivity=".ManageSpaceActivity"
@@ -67,7 +67,7 @@
             android:launchMode="singleInstance"/>
         <activity
             android:name=".ShortcutsReceiverActivity"
-            android:permission="com.bintianqi.owndroid.MyPermission"
+            android:permission="dev.mr2.dpc.MyPermission"
             android:exported="true"
             android:theme="@android:style/Theme.NoDisplay" />
         <activity
@@ -77,7 +77,7 @@
             android:launchMode="singleInstance"
             android:theme="@style/Theme.Transparent">
             <intent-filter>
-                <action android:name="com.bintianqi.owndroid.action.REQUEST_DHIZUKU_PERMISSION" />
+                <action android:name="dev.mr2.dpc.action.REQUEST_DHIZUKU_PERMISSION" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
@@ -112,7 +112,7 @@
             android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
         <provider
             android:name=".MyDhizukuProvider"
-            android:authorities="com.bintianqi.owndroid.dhizuku_server.provider"
+            android:authorities="dev.mr2.dpc.dhizuku_server.provider"
             android:directBootAware="true"
             android:enabled="true"
             android:exported="true">

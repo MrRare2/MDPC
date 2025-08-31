@@ -16,14 +16,14 @@ android {
             keyAlias = (project.findProperty("keyAlias") as String?) ?: "testkey"
         }
     }
-    namespace = "com.bintianqi.owndroid"
+    namespace = "dev.mr2.dpc"
     compileSdk = 36
 
     lint.checkReleaseBuilds = false
     lint.disable += "All"
 
     defaultConfig {
-        applicationId = "com.bintianqi.owndroid"
+        applicationId = "dev.mr2.dpc"
         minSdk = 21
         targetSdk = 36
         versionCode = 40
@@ -45,6 +45,7 @@ android {
             signingConfig = signingConfigs.getByName("defaultSignature")
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21

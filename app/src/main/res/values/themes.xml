@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.OwnDroid" parent="android:Theme.Material.Light.NoActionBar">
+    <style name="Theme.MDPC" parent="android:Theme.Material.Light.NoActionBar">
     </style>
-    <style name="Theme.Transparent" parent="Theme.OwnDroid">
+    <style name="Theme.Transparent" parent="Theme.MDPC">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:colorBackgroundCacheHint">@null</item>
         <item name="android:windowIsTranslucent">true</item>

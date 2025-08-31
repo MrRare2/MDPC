@@ -563,6 +563,7 @@
     <string name="notifications">Notifications</string> <!--TODO-->
     <string name="about">О приложении</string>
     <string name="project_homepage">Домашняя страница проекта</string> 
+    <string name="project_fork_homepage">Домашняя страница форка</string>
     <string name="appearance">Оформление</string> 
 
     <!--TODO: app lock-->

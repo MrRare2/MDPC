@@ -701,5 +701,5 @@
     <string name="recommended">推荐</string>
     <string name="activate_method">激活方法</string>
     <string name="adb_command">ADB命令</string>
-    <string name="owndroid_warning">此应用使用Device owner或Profile owner特权。这些特权十分危险，请谨慎使用。如果操作不当，可能会造成严重损失。开发者将不会对此负责。</string>
+    <string name="dpm_warning">此应用使用Device owner或Profile owner特权。这些特权十分危险，请谨慎使用。如果操作不当，可能会造成严重损失。开发者将不会对此负责。</string>
 </resources>

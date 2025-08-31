@@ -594,6 +594,7 @@
     <string name="notifications">Notifications</string>
     <string name="about">About</string>
     <string name="project_homepage">Project homepage</string>
+    <string name="project_fork_homepage">Fork homepage</string>
     <string name="appearance">Appearance</string>
 
     <string name="shortcuts">Shortcuts</string>
@@ -735,5 +736,9 @@
     <string name="recommended">Recommended</string>
     <string name="activate_method">Activate method</string>
     <string name="adb_command">ADB command</string>
-    <string name="owndroid_warning">This app uses Device owner or Profile owner privileges. These privileges are extremely dangerous, please use them with caution. If used improperly, they may result in severe losses. The developers will not be responsible for this.</string>
+    <string name="dpm_warning">This app uses Device owner or Profile owner privileges. These privileges are extremely dangerous, please use them with caution. If used improperly, they may result in severe losses. The developers will not be responsible for this.</string>
+    <string name="http" translatable="false">HTTP API</string>
+    <string name="http_requires_api_key">This action requires API key to be set up.</string>
+    <string name="http_host">Host</string>
+    <string name="http_port">Port</string>
 </resources>
