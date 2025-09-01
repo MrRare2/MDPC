@@ -247,7 +247,7 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         val context = applicationContext
         val locale = context.resources?.configuration?.locale
-        zhCN = locale == Locale.SIMPLIFIED_CHINESE || locale == Locale.CHINESE || locale == Locale.CHINA
+        CJK = locale?.language in setOf("zh", "ja", "ko")
         val vm by viewModels<MyViewModel>()
         setContent {
             var appLockDialog by rememberSaveable { mutableStateOf(false) }
@@ -540,7 +540,7 @@ fun HomePageItem(name: Int, imgVector: Int, onClick: () -> Unit) {
         Text(
             text = stringResource(name),
             style = typography.headlineSmall,
-            modifier = Modifier.padding(bottom = if(zhCN) { 2 } else { 0 }.dp)
+            modifier = Modifier.padding(bottom = if(CJK) { 2 } else { 0 }.dp)
         )
     }
 }

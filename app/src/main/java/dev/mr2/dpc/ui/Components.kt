@@ -60,7 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import dev.mr2.dpc.HorizontalPadding
 import dev.mr2.dpc.R
-import dev.mr2.dpc.zhCN
+import dev.mr2.dpc.CJK
 
 @Composable
 fun FunctionItem(
@@ -85,7 +85,7 @@ fun FunctionItem(
             Text(
                 text = stringResource(title),
                 style = typography.titleLarge,
-                modifier = Modifier.padding(bottom = if(zhCN) 2.dp else 0.dp)
+                modifier = Modifier.padding(bottom = if(CJK) 2.dp else 0.dp)
             )
             if(desc != null) { Text(text = desc, color = colorScheme.onBackground.copy(alpha = 0.8F)) }
         }
@@ -120,7 +120,7 @@ fun RadioButtonItem(
         .clickable(onClick = operation)
     ) {
         RadioButton(selected = selected, onClick = operation)
-        Text(text = text, modifier = Modifier.padding(bottom = if(zhCN) { 2 } else { 0 }.dp))
+        Text(text = text, modifier = Modifier.padding(bottom = if(CJK) { 2 } else { 0 }.dp))
     }
 }
 
@@ -142,7 +142,7 @@ fun FullWidthRadioButtonItem(
         modifier = Modifier.fillMaxWidth().clickable(onClick = operation)
     ) {
         RadioButton(selected = selected, onClick = operation, modifier = Modifier.padding(horizontal = 4.dp))
-        Text(text = text, modifier = Modifier.padding(bottom = if(zhCN) { 2 } else { 0 }.dp))
+        Text(text = text, modifier = Modifier.padding(bottom = if(CJK) { 2 } else { 0 }.dp))
     }
 }
 
@@ -161,7 +161,7 @@ fun CheckBoxItem(
             checked = checked,
             onCheckedChange = operation
         )
-        Text(text = stringResource(text), modifier = Modifier.padding(bottom = if(zhCN) { 2 } else { 0 }.dp))
+        Text(text = stringResource(text), modifier = Modifier.padding(bottom = if(CJK) { 2 } else { 0 }.dp))
     }
 }
 
@@ -176,7 +176,7 @@ fun FullWidthCheckBoxItem(
         modifier = Modifier.fillMaxWidth().clickable { operation(!checked) }
     ) {
         Checkbox(checked = checked, onCheckedChange = operation, modifier = Modifier.padding(horizontal = 4.dp))
-        Text(text = stringResource(text), modifier = Modifier.padding(bottom = if(zhCN) { 2 } else { 0 }.dp))
+        Text(text = stringResource(text), modifier = Modifier.padding(bottom = if(CJK) { 2 } else { 0 }.dp))
     }
 }
 
@@ -221,7 +221,7 @@ fun SwitchItem(
                 contentDescription = null,
                 modifier = Modifier.padding(end = 20.dp).offset(x = (-2).dp)
             )
-            Column(modifier = Modifier.padding(end = 60.dp, bottom = if(zhCN) 2.dp else 0.dp)) {
+            Column(modifier = Modifier.padding(end = 60.dp, bottom = if(CJK) 2.dp else 0.dp)) {
                 Text(text = stringResource(title), style = typography.titleLarge)
                 if(desc != null) Text(text = desc, color = colorScheme.onBackground.copy(alpha = 0.8F))
             }

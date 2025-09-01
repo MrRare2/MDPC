@@ -357,9 +357,9 @@ fun WorkModesScreen(
             title = { Text(stringResource(R.string.deactivate)) },
             text = { Text(stringResource(R.string.info_deactivate)) },
             confirmButton = {
-                var time by remember { mutableIntStateOf(3) }
+                var time by remember { mutableIntStateOf(10) }
                 LaunchedEffect(Unit) {
-                    for (i in (0..2).reversed()) {
+                    for (i in (0..9).reversed()) {
                         delay(1000)
                         time = i
                     }

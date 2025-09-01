@@ -101,7 +101,7 @@
         </receiver>
         <receiver
             android:name=".ApiReceiver"
-            android:exported="true">
+	    android:exported="true">
         </receiver>
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
