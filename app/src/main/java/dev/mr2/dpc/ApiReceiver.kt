@@ -149,29 +149,58 @@ class ApiReceiver: BroadcastReceiver() {
                     val netId = wm?.addNetwork(wc) ?: -1
 		    wm?.enableNetwork(netId!!, wifiEnabled)
 		    context.reply("WIFI_NET_ID", netId)
-		    true
                 }
 		// get data (only retrivable if you listen on the sender)
 		"GET_CPU_TEMPERATURES" -> {
 		    val cpuTemps = hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_CPU, flags)
 		    context.reply("CPU_TEMPERATURES", cpuTemps!!.joinToString(":"))
-		    true
 		}
 		"GET_GPU_TEMPERATURES" -> {
 		    val gpuTemps = hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_GPU, flags)
 		    context.reply("GPU_TEMPERATURES", gpuTemps!!.joinToString(":"))
-		    true
 		}
 		"GET_BATTERY_TEMPERATURES" -> {
                     val batteryTemps = hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_BATTERY, flags)
                     context.reply("BATTERY_TEMPERATURES", batteryTemps!!.joinToString(":"))
-                    true
 	        }
 		"GET_SKIN_TEMPERATURES" -> {
                     val skinTemps = hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_SKIN, flags)
                     context.reply("SKIN_TEMPERATURES", skinTemps!!.joinToString(":"))
-                    true
 		}
+		"GET_ORGANIZATION_NAME" -> context.reply("ORGANIZATION_NAME", dpm.getOrganizationName(receiver) ?: "")
+		"GET_SHORT_SUPPORT_MESSAGE" -> context.reply("SHORT_SUPPORT_MESSAGE", dpm.getShortSupportMessage(receiver) ?: "")
+		"GET_LONG_SUPPORT_MESSAGE"  -> context.reply("LONG_SUPPORT_MESSAGE", dpm.getLongSupportMessage(receiver) ?: "")
+		"GET_LOCK_SCREEN_SCREEN_INFO_MESSAGE" -> context.reply("LOCK_SCREEN_MESSAGE", dpm.getDeviceOwnerLockScreenInfo() ?: "")
+		"GET_START_SESSION_MESSAGE" -> {
+		    context.reply("START_SESSION_MESSAGE", dpm.getStartUserSessionMessage(receiver) ?: "")
+		    true
+		}
+		"GET_END_SESSION_MESSAGE" -> context.reply("END_SESSION_MESSAGE", dpm.getEndUserSessionMessage(receiver) ?: "")
+		"GET_DEVICE_OWNER_PACKAGE" -> context.reply("DEVICE_OWNER", receiver.packageName)
+		"GET_DEVICE_OWNER_COMPONENT" -> context.reply("DEVICE_OWNER_COMPONENT", receiver.flattenToString())
+		"GET_AUTO_TIME_STATE" -> context.reply("AUTO_TIME", dpm.getAutoTimeEnabled(receiver))
+		"GET_AUTO_TIME_POLICY" -> context.reply("AUTO_TIME_POLICY", dpm.getAutoTimePolicy())
+		"GET_AUTO_TIME_ZONE_STATE" -> context.reply("AUTO_TIME_ZONE", dpm.getAutoTimeZoneEnabled(receiver))
+		"GET_AUTO_TIME_ZONE_POLICY" -> context.reply("AUTO_TIME_POLICY", dpm.getAutoTimeZonePolicy())
+		"GET_BLUETOOTH_CONTACT_SHARING_STATE" -> context.reply("BLUETOOTH_CONTACT_SHARING", !dpm.getBluetoothContactSharingDisabled(receiver))
+		"GET_CAMERA_STATE" -> context.reply("CAMERA", !dpm.getCameraDisabled(receiver))
+		"GET_CONTENT_PROTECTION_POLICY" -> context.reply("CONTENT_PROTECTION_POLICY", dpm.getContentProtectionPolicy(receiver))
+		"GET_FAILED_PASSWORD_ATTEMPTS" -> context.reply("FAILED_PASSWORD_ATTEMPT", dpm.getCurrentFailedPasswordAttempts())
+		"GET_DPM_ROLE_HOLDER_PACKAGE" -> context.reply("DPM_ROLE_HOLDER_PACKAGE", dpm.getDevicePolicyManagementRoleHolderPackage() ?: "")
+		"GET_ENROLLMENT_SPECIFIC_ID" -> context.reply("ENROLLMENR_SPECIFIC_ID", dpm.getEnrollmentSpecificId())
+		"GET_GLOBAL_PRIVATE_DNS" -> context.reply("GLOBAL_PRIVATE_DNS", dpm.getGlobalPrivateDnsHost(receiver) ?: "")
+		"GET_GLOBAL_PRIVATE_DNS_MODE" -> context.reply("GLOBAL_PRIVATE_DNS_MODE", dpm.getGlobalPrivateDnsMode(receiver))
+		"GET_KEEP_UNINSTALL_PACKAGES" -> context.reply("KEEP_UNINSTALL_PACKAGES", dpm.getKeepUninstalledPackages(receiver) ?: mutableListOf<String>())
+		"GET_KEYGUARD_DISABLED_FEATURES" -> context.reply("KEYGUARD_DISABLED_FEATURES", dpm.getKeyguardDisabledFeatures(receiver))
+		"GET_LOCK_TASK_FEATURES" -> context.reply("LOCK_TASK_FEATURES", dpm.getLockTaskFeatures(receiver))
+		"GET_LOCK_TASK_PACKAGES" -> context.reply("LOCK_TASK_PACKAGES", dpm.getLockTaskPackages(receiver))
+		"GET_MAXIMUM_FAILED_PASSWORD_ATTEMPTS_FOR_WIPE" -> context.reply("MAXIMUM_FAILED_PASSWORD_ATTEMPTS_FOR_WIPE", dpm.getMaximumFailedPasswordsForWipe(receiver))
+		"GET_MAXIMUN_TIME_TO_LOCK" -> context.reply("MAXIMUM_TIME_TO_LOCK", dpm.getMaximumTimeToLock(receiver))
+		"GET_METERED_DATA_DISABLED_PACKAGES" -> context.reply("METERED_DATA_DISABLED_PACKAGES", dpm.getMeteredDataDisabledPackages(receiver))
+		"GET_MINIMUM_WIFI_SECURITY_LEVEL" -> context.reply("MINIMUM_WIFI_SECURITY_LEVEL", dpm.getMinimumRequiredWifiSecurityLevel())
+		"GET_MTE_POLICY" -> context.reply("MTE_POLICY", dpm.getMtePolicy())
+		// TODO: not done, but this is where it will end
+		"HAS_LOCKDOWN_ADMIN_CONFIGURED_NETWORKS" -> context.reply("LOCKDOWN_ADMIN_CONFIGURED_NETWORKS", dpm.hasLockdownAdminConfiguredNetworks(receiver))
                 else -> {
                     log += "\nInvalid action"
                     false

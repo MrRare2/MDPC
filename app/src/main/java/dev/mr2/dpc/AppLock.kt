@@ -39,6 +39,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppLockDialog(onSucceed: () -> Unit, onDismiss: () -> Unit) = Dialog(onDismiss, DialogProperties(true, false)) {
@@ -46,12 +48,16 @@ fun AppLockDialog(onSucceed: () -> Unit, onDismiss: () -> Unit) = Dialog(onDismi
     val fm = LocalFocusManager.current
     var input by remember { mutableStateOf("") }
     var isError by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     fun unlock() {
-        if(input.hash() == SP.lockPasswordHash) {
-            fm.clearFocus()
-            onSucceed()
-        } else {
-            isError = true
+	scope.launch {
+	    val ok = verifyPassword(input, SP.lockPasswordHash)
+	    if (ok) {
+		fm.clearFocus()
+		onSucceed()
+	    } else {
+		isError = true
+	    }
         }
     }
     LaunchedEffect(Unit) {

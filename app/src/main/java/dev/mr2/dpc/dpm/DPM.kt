@@ -420,7 +420,7 @@ fun setDefaultAffiliationID() {
             if(privilege.device || (!privilege.primary && privilege.profile)) {
                 val affiliationIDs = Privilege.DPM.getAffiliationIds(Privilege.DAR)
                 if(affiliationIDs.isEmpty()) {
-                    Privilege.DPM.setAffiliationIds(Privilege.DAR, setOf("OwnDroid_default_affiliation_id"))
+                    Privilege.DPM.setAffiliationIds(Privilege.DAR, setOf("MDPC_default_affiliation_id"))
                     SP.isDefaultAffiliationIdSet = true
                     Log.d("DPM", "Default affiliation id set")
                 }

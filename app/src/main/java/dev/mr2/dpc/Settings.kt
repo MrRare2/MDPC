@@ -56,6 +56,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.core.content.edit
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.net.toUri
@@ -70,6 +71,7 @@ import java.security.SecureRandom
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.system.exitProcess
@@ -238,6 +240,7 @@ fun AppLockSettingsScreen(onNavigateUp: () -> Unit) = MyScaffold(R.string.app_lo
     val fr = FocusRequester()
     val alreadySet = !SP.lockPasswordHash.isNullOrEmpty()
     val isInputLegal = password.length !in 1..3 && (alreadySet || (password.isNotEmpty() && password.isNotBlank()))
+    val scope = rememberCoroutineScope()
     Column(Modifier.widthIn(max = 300.dp).align(Alignment.CenterHorizontally)) {
         OutlinedTextField(
             password, { password = it }, Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -262,11 +265,13 @@ fun AppLockSettingsScreen(onNavigateUp: () -> Unit) = MyScaffold(R.string.app_lo
         }
         Button(
             onClick = {
-                fm.clearFocus()
-                if(password.isNotEmpty()) SP.lockPasswordHash = password.hash()
-                SP.biometricsUnlock = allowBiometrics
-                SP.lockWhenLeaving = lockWhenLeaving
-                onNavigateUp()
+		scope.launch {
+                    fm.clearFocus()
+                    if(password.isNotEmpty()) SP.lockPasswordHash = hashPassword(password)
+                    SP.biometricsUnlock = allowBiometrics
+                    SP.lockWhenLeaving = lockWhenLeaving
+                    onNavigateUp()
+	        }
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = isInputLegal && confirmPassword == password

@@ -100,5 +100,6 @@ dependencies {
     implementation(libs.hiddenApiBypass)
     implementation(libs.libsu)
     implementation(libs.serialization)
+    implementation(libs.jbcrypt)
     implementation(kotlin("reflect"))
 }

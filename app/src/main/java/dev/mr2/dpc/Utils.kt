@@ -23,11 +23,11 @@ import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
 import java.io.Serializable
-import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.security.MessageDigest
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
@@ -130,12 +130,6 @@ fun <T> NavHostController.navigate(route: T, args: Bundle) {
 
 val HorizontalPadding = 16.dp
 
-@OptIn(ExperimentalStdlibApi::class)
-fun String.hash(): String {
-    val md = MessageDigest.getInstance("SHA-256")
-    return md.digest(this.encodeToByteArray()).toHexString()
-}
-
 val MyAdminComponent = ComponentName.unflattenFromString("dev.mr2.dpc/.Receiver")!!
 
 
@@ -154,50 +148,62 @@ fun Context.popToast(str: String) {
     Toast.makeText(this, str, Toast.LENGTH_SHORT).show()
 }
 
-fun Context.reply(name: String, data: Any) {
-    var intent = when (data) {
+fun Context.reply(name: String, data: Any): Boolean {
+    val intent = when (data) {
         is Intent -> {
             data.setAction("dev.mr2.dpc.api.API_REPLY")
             data
         }
         else -> {
             val newIntent = Intent("dev.mr2.dpc.api.API_REPLY")
-	    val name = "dev.mr2.dpc.api.reply.$name"
-            when (data) {
-                is String -> newIntent.putExtra(name, data)
-                is Int -> newIntent.putExtra(name, data)
-                is Long -> newIntent.putExtra(name, data)
-                is Float -> newIntent.putExtra(name, data)
-                is Double -> newIntent.putExtra(name, data)
-                is Boolean -> newIntent.putExtra(name, data)
-                is Byte -> newIntent.putExtra(name, data)
-                is Char -> newIntent.putExtra(name, data)
-                is Short -> newIntent.putExtra(name, data)
-                is Bundle -> newIntent.putExtra(name, data)
-                is CharSequence -> newIntent.putExtra(name, data)
-                is Parcelable -> newIntent.putExtra(name, data)
-                is Serializable -> newIntent.putExtra(name, data)
-                is ByteArray -> newIntent.putExtra(name, data)
-                is IntArray -> newIntent.putExtra(name, data)
-                is LongArray -> newIntent.putExtra(name, data)
-                is FloatArray -> newIntent.putExtra(name, data)
-                is DoubleArray -> newIntent.putExtra(name, data)
-                is BooleanArray -> newIntent.putExtra(name, data)
-                is CharArray -> newIntent.putExtra(name, data)
-                is ShortArray -> newIntent.putExtra(name, data)
-                is Array<*> -> {
-                    when {
-                        data.isArrayOf<String>() -> newIntent.putExtra(name, data as Array<String>)
-                        data.isArrayOf<CharSequence>() -> newIntent.putExtra(name, data as Array<CharSequence>)
-                        data.isArrayOf<Parcelable>() -> newIntent.putExtra(name, data as Array<Parcelable>)
-                        else -> throw IllegalArgumentException("Unsupported array type for Intent.putExtra")
+            val extraKey = "dev.mr2.dpc.api.reply.$name"
+
+            try {
+                when (data) {
+                    is String -> newIntent.putExtra(extraKey, data)
+                    is Int -> newIntent.putExtra(extraKey, data)
+                    is Long -> newIntent.putExtra(extraKey, data)
+                    is Float -> newIntent.putExtra(extraKey, data)
+                    is Double -> newIntent.putExtra(extraKey, data)
+                    is Boolean -> newIntent.putExtra(extraKey, data)
+                    is Char -> newIntent.putExtra(extraKey, data)
+                    is Byte -> newIntent.putExtra(extraKey, data)
+                    is Short -> newIntent.putExtra(extraKey, data)
+                    is CharSequence -> newIntent.putExtra(extraKey, data)
+                    is Serializable -> newIntent.putExtra(extraKey, data)
+                    is Parcelable -> newIntent.putExtra(extraKey, data)
+                    is Array<*> -> when {
+                        data.isArrayOf<String>() -> newIntent.putExtra(extraKey, data)
+                        data.isArrayOf<CharSequence>() -> newIntent.putExtra(extraKey, data)
+                        data.isArrayOf<Parcelable>() -> newIntent.putExtra(extraKey, data)
+                        else -> {
+                            return false
+                        }
+                    }
+                    is IntArray -> newIntent.putExtra(extraKey, data)
+                    is LongArray -> newIntent.putExtra(extraKey, data)
+                    is FloatArray -> newIntent.putExtra(extraKey, data)
+                    is DoubleArray -> newIntent.putExtra(extraKey, data)
+                    is BooleanArray -> newIntent.putExtra(extraKey, data)
+                    is ByteArray -> newIntent.putExtra(extraKey, data)
+                    is ShortArray -> newIntent.putExtra(extraKey, data)
+                    is CharArray -> newIntent.putExtra(extraKey, data)
+                    is Bundle -> newIntent.putExtra(extraKey, data)
+                    else -> {
+                        return false
                     }
                 }
-                else -> throw IllegalArgumentException("Unsupported type for Intent.putExtra: ${data::class.java}")
+                newIntent
+            } catch (e: Exception) {
+                return false
             }
-            newIntent
         }
     }
-    
-    this.sendBroadcast(intent) 
+
+    return try {
+        this.sendBroadcast(intent)
+        true
+    } catch (e: Exception) {
+        false
+    }
 }

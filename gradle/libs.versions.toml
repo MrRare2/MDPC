@@ -13,6 +13,7 @@ dhizuku-server = "0.0.5"
 hiddenApiBypass = "6.1"
 libsu = "6.0.0"
 serialization = "1.9.0"
+jbcrypt = "0.4"
 
 [libraries]
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
@@ -34,6 +35,8 @@ hiddenApiBypass = { module = "org.lsposed.hiddenapibypass:hiddenapibypass", vers
 libsu = { module = "com.github.topjohnwu.libsu:core", version.ref = "libsu" }
 
 serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
+
+jbcrypt = { module = "org.mindrot:jbcrypt", version.ref = "jbcrypt" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
