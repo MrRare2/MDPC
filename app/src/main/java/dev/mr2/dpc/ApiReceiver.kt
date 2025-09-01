@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.wifi.WifiConfiguration
 import android.net.wifi.WifiManager
+import android.os.HardwarePropertiesManager
 import android.util.Log
 
 class ApiReceiver: BroadcastReceiver() {
@@ -39,8 +40,7 @@ class ApiReceiver: BroadcastReceiver() {
         val sharedKey = intent.getStringExtra("sharedKey")
         val wifiEnabled = intent.getBooleanExtra("wifiEnabled", true)
         val wifiHidden = intent.getBooleanExtra("wifiHidden", false)
-        if (!app.isNullOrEmpty()) log += "\npackage: $app"
-        if (!permission.isNullOrEmpty()) log += "\npermission: $permission"
+	val wifiNetId = intent.getIntExtra("wifiNetId", -1)
         try {
             @SuppressWarnings("NewApi")
             val ok = when(intent.action?.removePrefix("dev.mr2.dpc.api.")) {
@@ -135,6 +135,9 @@ class ApiReceiver: BroadcastReceiver() {
                 "SYSTEM_DISABLE_WIFI" -> wm?.setWifiEnabled(false)
                 "SYSTEM_WIFI_RECONNECT" -> wm?.reconnect()
                 "SYSTEM_WIFI_DISCONNECT" -> wm?.disconnect()
+		"SYSTEM_WIFI_DISABLE_NETWORK" -> wm?.disableNetwork(wifiNetId)
+		"SYSTEM_WIFI_ENABLE_NETWORK" -> wm?.enableNetwork(wifiNetId, wifiEnabled)
+		"SYSTEM_REMOVE_WIFI_NETWORK" -> wm?.removeNetwork(wifiNetId)
                 "SYSTEM_ADD_WIFI_NETWORK" -> {
                     val wc = WifiConfiguration().apply {
                         SSID = ssid!!.replace("\"", "\\\"")
@@ -148,6 +151,27 @@ class ApiReceiver: BroadcastReceiver() {
 		    context.reply("WIFI_NET_ID", netId)
 		    true
                 }
+		// get data (only retrivable if you listen on the sender)
+		"GET_CPU_TEMPERATURES" -> {
+		    val cpuTemps = hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_CPU, flags)
+		    context.reply("CPU_TEMPERATURES", cpuTemps!!.joinToString(":"))
+		    true
+		}
+		"GET_GPU_TEMPERATURES" -> {
+		    val gpuTemps = hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_GPU, flags)
+		    context.reply("GPU_TEMPERATURES", gpuTemps!!.joinToString(":"))
+		    true
+		}
+		"GET_BATTERY_TEMPERATURES" -> {
+                    val batteryTemps = hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_BATTERY, flags)
+                    context.reply("BATTERY_TEMPERATURES", batteryTemps!!.joinToString(":"))
+                    true
+	        }
+		"GET_SKIN_TEMPERATURES" -> {
+                    val skinTemps = hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_SKIN, flags)
+                    context.reply("SKIN_TEMPERATURES", skinTemps!!.joinToString(":"))
+                    true
+		}
                 else -> {
                     log += "\nInvalid action"
                     false
