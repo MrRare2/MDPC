@@ -1,5 +1,6 @@
 package dev.mr2.dpc
 
+import android.content.Context
 import android.os.Build.VERSION
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -32,11 +33,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -268,12 +271,13 @@ class MainActivity : FragmentActivity() {
 
 } */
 
-@ExperimentalMaterial3Api
+/*@ExperimentalMaterial3Api
 class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        val context = applicationContext
+        val currentContext = applicationContext
+	val context = // here?
         val locale = context.resources?.configuration?.locale
         CJK = locale?.language in setOf("zh", "ja", "ko")
         val vm by viewModels<MyViewModel>()
@@ -282,6 +286,65 @@ class MainActivity : FragmentActivity() {
             var certCheckDialog by rememberSaveable { mutableStateOf(false) }
             val theme by vm.theme.collectAsStateWithLifecycle()
 
+            LaunchedEffect(Unit) {
+                if (!context.isVerifiedSignature()) {
+                    certCheckDialog = true
+                }
+            }
+
+            MDPCTheme(theme) {
+                Home(vm) { appLockDialog = true }
+                if (appLockDialog && !certCheckDialog) {
+                    AppLockDialog(
+                        onSucceed = { appLockDialog = false },
+                        onDismiss = { moveTaskToBack(true) }
+                    )
+                }
+                if (certCheckDialog) {
+                    CertVerifyFailedDialog()
+                }
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+    }
+}*/
+
+@ExperimentalMaterial3Api
+class MainActivity : FragmentActivity() {
+
+    override fun attachBaseContext(newBase: Context) {
+        val lang = SP.language
+        val region = SP.languageRegion
+        val wrapped = if (lang.isNullOrBlank() || lang == "default") {
+            LocaleHelper.reset(newBase)
+        } else {
+            LocaleHelper.wrap(newBase, lang, region ?: "")
+        }
+        super.attachBaseContext(wrapped)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+	enableEdgeToEdge()
+
+        val context: Context = this
+
+        val locale = if (VERSION.SDK_INT >= 24) {
+            context.resources.configuration.locales.get(0)
+        } else {
+            @Suppress("DEPRECATION")
+            context.resources.configuration.locale
+        }
+        CJK = locale.language in setOf("zh", "ja", "ko")
+
+        val vm by viewModels<MyViewModel>()
+	setContent {
+	    var appLockDialog by rememberSaveable { mutableStateOf(false) }
+	    var certCheckDialog by rememberSaveable { mutableStateOf(false) }
+	    val theme by vm.theme.collectAsStateWithLifecycle()
             LaunchedEffect(Unit) {
                 if (!context.isVerifiedSignature()) {
                     certCheckDialog = true
@@ -483,6 +546,7 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
         composable<AppLockSettings> { AppLockSettingsScreen(::navigateUp) }
         composable<ApiSettings> { ApiSettings(::navigateUp) }
         composable<Notifications> { NotificationsScreen(::navigateUp) }
+	composable<LanguageScreen> { LanguageScreen(::navigateUp) }
         composable<About> { AboutScreen(::navigateUp) }
     }
     DisposableEffect(lifecycleOwner) {

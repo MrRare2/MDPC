@@ -249,6 +249,7 @@ class ApiReceiver: BroadcastReceiver() {
 		"ASK_STATUS_BAR_STATE" -> context.reply("STATUS_BAR_STATE", dpm.isStatusBarDisabled())
 		"IS_UNINSTALL_BLOCKED" -> context.reply("PACKAGE_${app!!}_UNINSTALL_BLOCK_STATE", dpm.isUninstallBlocked(receiver, app!!))
 		"IS_UNIQUE_DEVICE_ATTESTATION_SUPPORTED" -> context.reply("UNIQUE_DEVIC3_ATTESTATION_STATE", dpm.isUniqueDeviceAttestationSupported())
+		"IS_USING_UNIFIED_PASSWORD" -> context.reply("UNIFIED_PASSWORD_STATE", dpm.isUsingUnifiedPassword(receiver))
                 else -> {
                     log += "\nInvalid action"
                     false

@@ -3,6 +3,8 @@ package dev.mr2.dpc
 import android.content.Context
 import android.content.Intent
 import android.os.Build.VERSION
+import android.view.View
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -60,8 +62,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.core.content.edit
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.net.toUri
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mr2.dpc.ui.FunctionItem
+import dev.mr2.dpc.ui.FullWidthRadioButtonItem
 import dev.mr2.dpc.ui.MyScaffold
 import dev.mr2.dpc.ui.NavIcon
 import dev.mr2.dpc.ui.Notes
@@ -139,6 +145,7 @@ fun SettingsScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
                 FunctionItem(title = R.string.api, icon = R.drawable.code_fill0) { onNavigate(ApiSettings) }
             if (privilege.device && !privilege.dhizuku)
                 FunctionItem(R.string.notifications, icon = R.drawable.notifications_fill0) { onNavigate(Notifications) }
+	    FunctionItem(R.string.languages, icon = R.drawable.language_fill0) { onNavigate(LanguageScreen) }
             FunctionItem(title = R.string.about, icon = R.drawable.info_fill0) { onNavigate(About) }
         }
     }
@@ -353,6 +360,58 @@ fun NotificationsScreen(onNavigateUp: () -> Unit) = MyScaffold(R.string.notifica
     )
     map.forEach { (k, v) ->
         SwitchItem(v, getState = { sp.getBoolean("n_$k", true) }, onCheckedChange = { sp.edit(true) { putBoolean("n_$k", it) } })
+    }
+}
+
+@Serializable object LanguageScreen
+
+@Composable
+fun LanguageScreen(onNavigateUp: () -> Unit) {
+    val context = LocalContext.current
+    val activity = context as? ComponentActivity
+    val languages = BuiltInLocales.toLanguages(context)
+    var selectedLanguage by remember { mutableStateOf(SP.language) }
+    var selectedRegion by remember { mutableStateOf(SP.languageRegion) }
+
+    MyScaffold(R.string.languages, onNavigateUp, 0.dp) {
+        if (VERSION.SDK_INT >= 33) {
+            FullWidthRadioButtonItem(
+                stringResource(R.string.per_app_language),
+                selectedLanguage.isNullOrEmpty() || selectedLanguage == "default"
+            ) {
+                selectedLanguage = "default"
+		selectedRegion = "default"
+            }
+        }
+
+	languages.forEach { lang ->
+	    val display = buildString {
+                append(lang.name)
+                append(" [${lang.lang}]")
+            }
+            FullWidthRadioButtonItem(
+                display,
+                selectedLanguage == lang.lang && selectedRegion == lang.region,
+            ) {
+                selectedLanguage = lang.lang
+                selectedRegion = lang.region
+            }
+        }
+
+	Button(
+            onClick = {
+                SP.language = selectedLanguage
+                SP.languageRegion = selectedRegion
+		if (SP.language != "default") context.setLocale(SP.language ?: "", SP.languageRegion ?: "") else context.resetLocale()
+		activity?.recreate()
+		activity?.window?.decorView?.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp, horizontal = HorizontalPadding)
+        ) {
+            Text(stringResource(R.string.apply))
+        }
     }
 }
 

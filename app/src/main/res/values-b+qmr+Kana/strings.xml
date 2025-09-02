@@ -1,64 +1,64 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Global: 一般的なラベル -->
-    <string name="app_name" translatable="false">稀DPC</string>
+    <string name="app_name" translatable="false">マレ　デバイス　ポリシー　コントローラ</string>
     <string name="place_holder" translatable="false"/>
-    <string name="disabled">無効</string>
-    <string name="enabled">有効</string>
-    <string name="disable">無効にする</string>
-    <string name="enable">有効にする</string>
-    <string name="success">成功</string>
-    <string name="failure">失敗</string>
-    <string name="succeeded">成功しました</string>
-    <string name="failed">失敗しました</string>
-    <string name="add">追加</string>
-    <string name="remove">削除</string>
+    <string name="disabled">ムコウ</string>
+    <string name="enabled">ユウコウ</string>
+    <string name="disable">ムコウ　ニ　デラツ</string>
+    <string name="enable">ユウコウ　ニ　デラツ</string>
+    <string name="success">セイコウ</string>
+    <string name="failure">シッパイ</string>
+    <string name="succeeded">セイコウ　シマシタ</string>
+    <string name="failed">シッパイ　シマシタ</string>
+    <string name="add">クワエル</string>
+    <string name="remove">ソグヨ</string>
     <string name="install">インストール</string>
     <string name="uninstall">アンインストール</string>
     <string name="cancel">キャンセル</string>
-    <string name="confirm">確認</string>
-    <string name="activated">有効化済み</string>
-    <string name="deactivated">無効化済み</string>
-    <string name="activate">有効化</string>
-    <string name="deactivate">無効化</string>
+    <string name="confirm">タシミト</string>
+    <string name="activated">ユウコウ　カズミ</string>
+    <string name="deactivated">ムコウ　カズミ</string>
+    <string name="activate">ユウコウ　カ</string>
+    <string name="deactivate">ムコウ　カ</string>
     <string name="blacklist">ブラックリスト</string>
     <string name="whitelist">ホワイトリスト</string>
-    <string name="granted">許可済み</string>
-    <string name="denied">拒否済み</string>
-    <string name="grant">許可</string>
-    <string name="deny">拒否</string>
-    <string name="revoke">取り消す</string>
-    <string name="current_state">現在の状態: %1$s</string>
-    <string name="auto">自動</string>
+    <string name="granted">モトベキ　ズミ</string>
+    <string name="denied">コバイヤ　ズミ</string>
+    <string name="grant">モトベキ</string>
+    <string name="deny">コバイヤ</string>
+    <string name="revoke">トリケス</string>
+    <string name="current_state">ウツツアル　ノ　ジョウタイ: %1$s</string>
+    <string name="auto">ジドウ</string>
     <string name="password">パスワード</string>
-    <string name="reason">理由</string>
+    <string name="reason">リユウ</string>
     <string name="custom">カスタム</string>
-    <string name="unknown">不明</string>
+    <string name="unknown">フメイ</string>
     <string name="reset">リセット</string>
-    <string name="time_unit_ms">時間（ms）</string>
-    <string name="length">長さ</string>
-    <string name="none">なし</string>
-    <string name="no_logs">ログなし</string>
+    <string name="time_unit_ms">トキマ（ms）</string>
+    <string name="length">オサ</string>
+    <string name="none">ナシ</string>
+    <string name="no_logs">ログ　ナシ</string>
     <string name="default_stringres">デフォルト</string>
-    <string name="apply">適用</string>
-    <string name="decide_by_user">ユーザーに委ねる</string>
-    <string name="unsupported">サポートされていません</string>
+    <string name="apply">テキヨウ</string>
+    <string name="decide_by_user">ユーザー　ニ　ユダネル</string>
+    <string name="unsupported">サポート　サレテイマセン</string>
     <string name="options">オプション</string>
-    <string name="package_name">パッケージ名</string>
-    <string name="not_exist">存在しません</string>
+    <string name="package_name">パッケージ　ナマエ</string>
+    <string name="not_exist">ゾンザイ　シマセン</string>
     <string name="copy">コピー</string>
-    <string name="file_not_exist">ファイルが存在しません</string>
+    <string name="file_not_exist">ファイル　ガ　ゾンザイ　シマセン</string>
     <string name="io_exception">入出力例外</string>
     <string name="start">開始</string>
     <string name="stop">停止</string>
-    <string name="allow_all">すべて許可</string>
+    <string name="allow_all">スベテ　モトベキ</string>
     <string name="use_policy">ポリシーを使用</string>
     <string name="account">アカウント</string>
     <string name="warning">警告</string>
     <string name="delete">削除</string>
-    <string name="yes">はい</string>
-    <string name="no">いいえ</string>
-    <string name="previous">前へ</string>
-    <string name="next">次へ</string>
+    <string name="yes">ハイ</string>
+    <string name="no">ネ</string>
+    <string name="previous">マエ　ヘ</string>
+    <string name="next">ツギ　ヘ</string>
     <string name="on">オン</string>
     <string name="off">オフ</string>
     <string name="alias">別名</string>
@@ -132,10 +132,10 @@
 
     <!-- System: システム関連 -->
     <string name="system">システム</string>
-    <string name="disable_cam">カメラを無効にする</string>
-    <string name="enable_camera">カメラを有効にする</string>
-    <string name="disable_screen_capture">画面キャプチャを無効にする</string>
-    <string name="disable_status_bar">ステータスバーを無効にする</string>
+    <string name="disable_cam">カメラ　ムコウ</string>
+    <string name="enable_camera">カメラ　ユウコウ</string>
+    <string name="disable_screen_capture">スクリーン　キャプチャ　ムコウ</string>
+    <string name="disable_status_bar">ステータスバー　ムコウ</string>
     <string name="auto_time">自動時刻</string>
     <string name="require_auto_time">自動時刻を必須にする</string>
     <string name="auto_timezone">自動タイムゾーン</string>
@@ -323,9 +323,9 @@
     <string name="one_uid_per_line">UID を1行ごとに記入</string>
     <string name="override_apn">APN を上書き</string>
     <string name="apn_setting">APN 設定</string>
-    <string name="apn_name">APN 名</string>
-    <string name="entry_name">エントリ名</string>
-    <string name="name">名前</string>
+    <string name="apn_name">APN ナマエ</string>
+    <string name="entry_name">エントリ　ナマエ</string>
+    <string name="name">ナマエ</string>
     <string name="profile_id">プロファイル ID</string>
     <string name="auth_type">認証タイプ</string>
     <string name="description">説明</string>
@@ -344,7 +344,7 @@
 
     <!-- WorkProfile -->
     <string name="work_profile">ワークプロファイル</string>
-    <string name="work_profile_activated">ワークプロファイルが有効化されました</string>
+    <string name="work_profile_activated">ワークプロファイル　ガ　ユウコウ　サレマシタ</string>
     <string name="create_work_profile">ワークプロファイルを作成</string>
     <string name="offline_provisioning">オフラインモード</string>
     <string name="migrate_account">アカウントを移行</string>
@@ -399,7 +399,7 @@
     <string name="search">検索</string>
 
     <!-- UserRestriction -->
-    <string name="user_restriction">ユーザー制限</string>
+    <string name="user_restriction">ユーザー　セイゲン</string>
     <string name="profile_owner_is_restricted">プロファイル所有者は機能が制限されます</string>
     <string name="switch_to_disable_feature">機能を無効にするスイッチをオンにしてください。 </string>
     <string name="some_features_invalid_in_work_profile">ワークプロファイル内の機能は制限されています。 </string>
@@ -450,16 +450,16 @@
     <string name="camera_toggle">カメラ切替</string>
     <string name="microphone_toggle">マイク切替</string>
 
-    <string name="add_user">ユーザーを追加</string>
-    <string name="remove_user">ユーザーを削除</string>
+    <string name="add_user">ユーザー　クワエル</string>
+    <string name="remove_user">ユーザー　ソグヨ</string>
     <string name="switch_user">ユーザーを切替</string>
     <string name="create_private_space">プライベートスペースを作成</string>
     <string name="set_user_icon">ユーザーアイコンを設定</string>
-    <string name="cross_profile_copy">クロスプロファイルコピー</string>
+    <string name="cross_profile_copy">クロスプロファイル　コピー</string>
     <string name="share_into_managed_profile">管理プロファイルに共有</string>
     <string name="unified_pwd">統合パスワード</string>
 
-    <string name="autofill">自動入力</string>
+    <string name="autofill">ジドウ　イリョク</string>
     <string name="config_credentials">認証情報を設定</string>
     <string name="content_capture">コンテンツキャプチャ</string>
     <string name="content_suggestions">コンテンツ提案</string>
@@ -722,15 +722,13 @@
     <string name="adb_command">ADB コマンド</string>
     <string name="dpm_warning">このアプリはデバイス所有者またはプロファイル所有者の権限を使用します。これらの権限は非常に危険であり、慎重に使用してください。不適切に使用すると重大な損失を招く可能性があります。開発者はその責任を負いません。</string>
     <string name="cert_verify_failed">証明書の確認に失敗しました。このアプリケーションの証明書は意図されたものと一致しません。このアプリケーションは使用できません。\n\nerror: MrRare2_globalapk_verify_failed</string>
-    <string name="languages">言語</string>
-    <string name="per_app_language">システム言語に従う</string>
-
-    <!-- 言語 -->
-    <string name="lang_en">英語</string>
-    <string name="lang_ja">日本語</string>
-    <string name="lang_ru">ロシア語</string>
-    <string name="lang_zh_CN">簡体字中国語</string>
-    <string name="lang_tr">トルコ語</string>
-    <string name="lang_fil">フィリピン語</string>
-    <string name="lang_qmr">稀語 (人工言語)</string>
+    <string name="languages">コトゴ</string>
+    <string name="per_app_language">システム　コトゴ　ニ　シデツ</string>
+    <string name="lang_en">エイゴ</string>
+    <string name="lang_ja">ニホンゴ</string>
+    <string name="lang_ru">ルソゴ</string>
+    <string name="lang_zh_CN">カンタイジ　チュウゴク　コ゚</string>
+    <string name="lang_tr">トルコ　コ゚</string>
+    <string name="lang_fil">ピリビノ　ゴ</string>
+    <string name="lang_qmr">マレゴ</string>
 </resources>

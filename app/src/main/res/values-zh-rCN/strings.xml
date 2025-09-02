@@ -703,4 +703,13 @@
     <string name="adb_command">ADB命令</string>
     <string name="dpm_warning">此应用使用Device owner或Profile owner特权。这些特权十分危险，请谨慎使用。如果操作不当，可能会造成严重损失。开发者将不会对此负责。</string>
     <string name="cert_verify_failed">证书验证失败。此应用程序的证书与预期不符。此应用程序无法使用。\n\nerror: MrRare2_globalapk_verify_failed</string>
+    <string name="languages">语言</string>
+    <string name="per_app_language">遵循应用语言</string>
+    <string name="lang_en">英语</string>
+    <string name="lang_ja">日语</string>
+    <string name="lang_ru">俄语</string>
+    <string name="lang_zh_CN">简体中文</string>
+    <string name="lang_tr">土耳其语</string>
+    <string name="lang_fil">菲律宾语</string>
+    <string name="lang_qmr">马雷语 (人工语言)</string>
 </resources>

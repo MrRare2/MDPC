@@ -25,6 +25,8 @@ class SharedPrefs(context: Context) {
     var applicationsListView by BooleanSharedPref("applications.list_view", true)
     var shortcuts by BooleanSharedPref("shortcuts")
     var dhizukuServer by BooleanSharedPref("dhizuku_server")
+    var language by StringSharedPref("language.lang")
+    var languageRegion by StringSharedPref("language.region")
 }
 
 private class BooleanSharedPref(val key: String, val defValue: Boolean = false): ReadWriteProperty<SharedPrefs, Boolean> {

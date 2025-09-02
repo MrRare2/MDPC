@@ -14,6 +14,7 @@ hiddenApiBypass = "6.1"
 libsu = "6.0.0"
 serialization = "1.9.0"
 jbcrypt = "0.4"
+androidx-appcompat = "1.7.0"
 
 [libraries]
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
@@ -37,6 +38,8 @@ libsu = { module = "com.github.topjohnwu.libsu:core", version.ref = "libsu" }
 serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
 
 jbcrypt = { module = "org.mindrot:jbcrypt", version.ref = "jbcrypt" }
+
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidx-appcompat" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

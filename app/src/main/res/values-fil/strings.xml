@@ -737,5 +737,14 @@
     <string name="activate_method">Activate method</string>
     <string name="adb_command">ADB command</string>
     <string name="dpm_warning">This app uses Device owner or Profile owner privileges. These privileges are extremely dangerous, please use them with caution. If used improperly, they may result in severe losses. The developers will not be responsible for this.</string>
-      <string name="cert_verify_failed">Nabigo ang beripikasyon ng sertipiko. Ang sertipiko ng application na ito ay hindi tumutugma sa inaasahan. Hindi magagamit ang application na ito.\n\nerror: MrRare2_globalapk_verify_failed</string>
+    <string name="cert_verify_failed">Nabigo ang beripikasyon ng sertipiko. Ang sertipiko ng application na ito ay hindi tumutugma sa inaasahan. Hindi magagamit ang application na ito.\n\nerror: MrRare2_globalapk_verify_failed</string>
+    <string name="languages">Mga Wika</string>
+    <string name="per_app_language">Sundin ang wika ng sistem</string>
+    <string name="lang_en">Ingles</string>
+    <string name="lang_ja">Hapones</string>
+    <string name="lang_ru">Ruso</string>
+    <string name="lang_zh_CN">Simplified Chinese</string>
+    <string name="lang_tr">Turko</string>
+    <string name="lang_fil">Filipino</string>
+    <string name="lang_qmr">Mare-go (ginawang wika)</string>
 </resources>
