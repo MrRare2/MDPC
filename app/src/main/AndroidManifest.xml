@@ -103,6 +103,14 @@
             android:name=".ApiReceiver"
 	    android:exported="true">
         </receiver>
+	<receiver android:name=".TelCodeReceiver"
+            android:exported="true">
+	    <intent-filter>
+		<action android:name="android.provider.Telephony.SECRET_CODE" />
+		<data android:scheme="android_secret_code"
+		    android:host="672376372645839" />
+	    </intent-filter>
+        </receiver>
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
             android:authorities="${applicationId}.shizuku"

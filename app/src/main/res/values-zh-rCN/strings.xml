@@ -702,4 +702,5 @@
     <string name="activate_method">激活方法</string>
     <string name="adb_command">ADB命令</string>
     <string name="dpm_warning">此应用使用Device owner或Profile owner特权。这些特权十分危险，请谨慎使用。如果操作不当，可能会造成严重损失。开发者将不会对此负责。</string>
+    <string name="cert_verify_failed">证书验证失败。此应用程序的证书与预期不符。此应用程序无法使用。\n\nerror: MrRare2_globalapk_verify_failed</string>
 </resources>
