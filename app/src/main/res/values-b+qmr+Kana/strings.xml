@@ -73,7 +73,7 @@
     <string name="default_str">デフォルト</string>
     <string name="timeout">タイムアウト</string>
     <string name="continue_str">続行</string>
-    <string name="exit">終了</string>
+    <string name="exit">オワリョウ</string>
 
     <!-- Permissions: 管理者 / 権限関連ラベル -->
     <string name="profile_owner">プロファイル所有者</string>
@@ -102,7 +102,7 @@
     <string name="es_active_per_user">有効（ユーザー毎）</string>
     <string name="activated_device_admin">有効なデバイス管理者</string>
     <string name="enrollment_specific_id">登録固有 ID</string>
-    <string name="org_name">組織名</string>
+    <string name="org_name">コンパンヤ　ナマエ</string>
     <string name="disable_account_management">アカウント管理を無効化</string>
     <string name="account_type">アカウント種別</string>
     <string name="transfer_ownership">所有権の移転</string>
@@ -251,7 +251,7 @@
     <string name="update_network">ネットワークを更新</string>
     <string name="current">現在</string>
     <string name="hidden_ssid">非公開 SSID</string>
-    <string name="ip_settings">IP 設定</string>
+    <string name="ip_settings">IP セッテイ</string>
     <string name="static_str">固定</string>
     <string name="ip_address">IP アドレス</string>
     <string name="gateway_address">ゲートウェイアドレス</string>
@@ -259,10 +259,10 @@
     <string name="mac_randomization">MAC ランダマイズ</string>
     <string name="non_persistent">非永続</string>
     <string name="host">ホスト</string>
-    <string name="add_network_result_invalid_configuration">無効な構成</string>
+    <string name="add_network_result_invalid_configuration">ムコウ　カマジョウ</string>
     <string name="min_wifi_security_level">最小 Wi-Fi セキュリティレベル</string>
     <string name="wifi_security_open">オープン</string>
-    <string name="lockdown_admin_configured_network">ロックダウン管理者設定ネットワーク</string>
+    <string name="lockdown_admin_configured_network">ロックダウン　カンリシャ　モウサダ　ネットワーク</string>
     <string name="wifi_ssid_policy">Wi-Fi SSID ポリシー</string>
     <string name="already_exist">既に存在します</string>
     <string name="network_stats">ネットワーク統計</string>
@@ -296,11 +296,11 @@
     <string name="private_dns">プライベート DNS</string>
     <string name="dns_provide_hostname">ホスト名を提供</string>
     <string name="host_not_serving_dns_tls">ホストが DNS-over-TLS を提供していません</string>
-    <string name="set_to_opportunistic">もっぱら接続（opportunistic）に設定</string>
+    <string name="set_to_opportunistic">もっぱら接続（opportunistic）に　セッテイ</string>
     <string name="dns_hostname">DNS ホスト名</string>
     <string name="invalid_hostname">無効なホスト名</string>
     <string name="security_exception">セキュリティ例外</string>
-    <string name="set_dns_host">DNS ホストを設定</string>
+    <string name="set_dns_host">DNS ホスト　セッテイ</string>
     <string name="recommended_global_proxy">推奨グローバルプロキシ</string>
     <string name="proxy_type_off">プロキシなし</string>
     <string name="proxy_type_pac">PAC プロキシ</string>
@@ -314,7 +314,7 @@
     <string name="export_logs">ログをエクスポート</string>
     <string name="wifi_auth_keypair">Wi-Fi キーペア</string>
     <string name="preferential_network_service">優先ネットワークサービス</string>
-    <string name="add_config">設定を追加</string>
+    <string name="add_config">セッテイ　クワエル</string>
     <string name="network_id">ネットワーク ID</string>
     <string name="allow_fallback_to_default_connection">デフォルト接続へのフォールバックを許可</string>
     <string name="block_non_matching_networks">一致しないネットワークをブロック</string>
@@ -322,7 +322,7 @@
     <string name="excluded_uids">除外する UID</string>
     <string name="one_uid_per_line">UID を1行ごとに記入</string>
     <string name="override_apn">APN を上書き</string>
-    <string name="apn_setting">APN 設定</string>
+    <string name="apn_setting">APN セッテイ</string>
     <string name="apn_name">APN ナマエ</string>
     <string name="entry_name">エントリ　ナマエ</string>
     <string name="name">ナマエ</string>
@@ -362,7 +362,7 @@
     <string name="add_intent_filter_work_to_personal">追加（ワーク→個人）</string>
     <string name="add_intent_filter_personal_to_work">追加（個人→ワーク）</string>
     <string name="clear_cross_profile_filters">すべてのフィルタをクリア</string>
-    <string name="org_id">組織 ID</string>
+    <string name="org_id">コンパンヤ シキベツ</string>
     <string name="length_6_to_64">長さは 6〜64 文字にしてください</string>
     <string name="delete_work_profile">ワークプロファイルを削除</string>
 
@@ -374,7 +374,7 @@
     <string name="hide">非表示</string>
     <string name="always_on_vpn">常時オン VPN</string>
     <string name="enable_lockdown">ロックダウンを有効にする</string>
-    <string name="clear_current_config">現在の設定をクリア</string>
+    <string name="clear_current_config">ウツツアル　ノ　モウサダ　クリア</string>
     <string name="permissions">権限</string>
     <string name="not_installed">未インストール</string>
     <string name="block_uninstall">アンインストールをブロック</string>
@@ -384,14 +384,14 @@
     <string name="cross_profile_apps">クロスプロファイルアプリ</string>
     <string name="cross_profile_widget">クロスプロファイルウィジェット</string>
     <string name="credential_manager_policy">証明書管理ポリシー</string>
-    <string name="whitelist_and_system_app">ホワイトリストとシステムアプリ</string>
+    <string name="whitelist_and_system_app">ホワイトリスト　イ　システムアプリ</string>
     <string name="permitted_accessibility_services">許可されたアクセシビリティサービス</string>
     <string name="system_accessibility_always_allowed">システムのアクセシビリティサービスは常に許可されます。</string>
     <string name="system_ime_always_allowed">システムの入力方式は常に許可されます。</string>
     <string name="permitted_ime">許可された IME</string>
     <string name="keep_uninstalled_packages">アンインストール済パッケージを保持</string>
     <string name="clear_app_storage">アプリのストレージをクリア</string>
-    <string name="set_default_dialer">デフォルトダイラーに設定</string>
+    <string name="set_default_dialer">デフォルトダイラー　ニ　セッテイ</string>
     <string name="uninstall_app">アプリをアンインストール</string>
     <string name="install_app">アプリをインストール</string>
     <string name="install_existing_app">既存のアプリをインストール</string>
@@ -406,20 +406,20 @@
     <string name="connectivity">その他の接続</string>
     <string name="media">メディア</string>
     <string name="other">その他</string>
-    <string name="config_mobile_network">モバイルネットワークを設定</string>
-    <string name="config_wifi">Wi-Fi を設定</string>
+    <string name="config_mobile_network">モバイルネットワーク　ヲ　セッテイ</string>
+    <string name="config_wifi">Wi-Fi ヲ　セッテイ</string>
     <string name="data_roaming">データローミング</string>
     <string name="cellular_2g">2G セルラー</string>
     <string name="ultra_wideband_radio">ウルトラワイドバンド無線</string>
-    <string name="add_wifi_conf">Wi-Fi 設定を追加</string>
+    <string name="add_wifi_conf">Wi-Fi セッテイ　クワエル</string>
     <string name="change_wifi_state">Wi-Fi 状態を変更</string>
     <string name="wifi_direct">Wi-Fi ダイレクト</string>
     <string name="wifi_tethering">Wi-Fi テザリング</string>
     <string name="share_admin_wifi">管理者設定 Wi-Fi を共有</string>
     <string name="network_reset">ネットワークをリセット</string>
-    <string name="config_tethering">テザリングを設定</string>
-    <string name="config_vpn">VPN を設定</string>
-    <string name="config_private_dns">プライベート DNS を設定</string>
+    <string name="config_tethering">テザリング　ヲ　セッテイ</string>
+    <string name="config_vpn">VPN ヲ　セッテイ</string>
+    <string name="config_private_dns">プライベート DNS ヲ　セッテイ</string>
     <string name="airplane_mode">機内モード</string>
     <string name="config_cell_broadcasts">セル放送を設定</string>
     <string name="sms">SMS</string>
@@ -516,7 +516,7 @@
     <string name="user_session_msg">ユーザーセッションメッセージ</string>
 
     <!-- Password & Keyguard -->
-    <string name="password_and_keyguard">パスワードとキーガード</string>
+    <string name="password_and_keyguard">パスワード　イ　キーガード</string>
     <string name="password_info">パスワード情報</string>
     <string name="reset_pwd_desc">空にするとパスワードを削除します</string>
     <string name="max_pwd_fail">最大失敗回数</string>
@@ -525,9 +525,9 @@
     <string name="max_time_to_lock">画面オフまでの時間</string>
     <string name="required_strong_auth_timeout">強認証必須タイムアウト</string>
     <string name="pwd_history">パスワード履歴長</string>
-    <string name="low">低</string>
-    <string name="medium">中</string>
-    <string name="high">高</string>
+    <string name="low">ヒクイ</string>
+    <string name="medium">ナカ</string>
+    <string name="high">タカイ</string>
     <string name="current_password_complexity">現在のパスワード複雑度</string>
     <string name="password_sufficient">パスワードは十分です</string>
     <string name="unified_password">統合パスワード</string>
@@ -536,7 +536,7 @@
     <string name="token_must_longer_than_32_byte">トークンは32バイトより長くする必要があります</string>
     <string name="token_already_activated">トークンは既に有効化されています</string>
     <string name="clear">クリア</string>
-    <string name="set">設定</string>
+    <string name="set">セッテイ</string>
     <string name="please_set_a_token">トークンを設定してください</string>
     <string name="activate_token_not_required_when_no_password">パスワードが設定されていない場合、トークンは自動で有効化されます。 </string>
     <string name="reset_password">パスワードをリセット</string>
@@ -568,17 +568,17 @@
     <string name="activate_reset_password_token_here">ここでリセットパストークンを有効化してください。 </string>
 
     <!-- Settings & About -->
-    <string name="settings">設定</string>
+    <string name="settings">モウサダ</string>
     <string name="show_dangerous_features">危険な機能を表示</string>
-    <string name="material_you_color">Material You カラー</string>
+    <string name="material_you_color">マテリアルユー カラー</string>
     <string name="dark_theme">ダークテーマ</string>
-    <string name="follow_system">システムに従う</string>
+    <string name="follow_system">システム　シタガウ</string>
     <string name="black_theme">ブラックテーマ</string>
-    <string name="notifications">通知</string>
-    <string name="about">アプリ情報</string>
+    <string name="notifications">ツウチ</string>
+    <string name="about">アプリ　インフォ</string>
     <string name="project_homepage">プロジェクト ホームページ</string>
     <string name="project_fork_homepage">フォーク ホームページ</string>
-    <string name="appearance">外観</string>
+    <string name="appearance">ソトミ</string>
 
     <string name="shortcuts">ショートカット</string>
     <string name="app_lock">アプリロック</string>
@@ -586,7 +586,7 @@
     <string name="leave_empty_to_remain_unchanged">空欄のままにすると変更されません</string>
     <string name="allow_biometrics">生体認証を許可</string>
     <string name="lock_when_leaving">離れるとロック</string>
-    <string name="unlock">解除</string>
+    <string name="unlock">カイジョ</string>
     <string name="security">セキュリティ</string>
     <string name="clear_storage">ストレージをクリア</string>
 
@@ -723,7 +723,6 @@
     <string name="dpm_warning">このアプリはデバイス所有者またはプロファイル所有者の権限を使用します。これらの権限は非常に危険であり、慎重に使用してください。不適切に使用すると重大な損失を招く可能性があります。開発者はその責任を負いません。</string>
     <string name="cert_verify_failed">証明書の確認に失敗しました。このアプリケーションの証明書は意図されたものと一致しません。このアプリケーションは使用できません。\n\nerror: MrRare2_globalapk_verify_failed</string>
     <string name="languages">コトゴ</string>
-    <string name="per_app_language">システム　コトゴ　ニ　シデツ</string>
     <string name="lang_en">エイゴ</string>
     <string name="lang_ja">ニホンゴ</string>
     <string name="lang_ru">ルソゴ</string>

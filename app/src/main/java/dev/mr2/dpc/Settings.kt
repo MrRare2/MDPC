@@ -374,14 +374,12 @@ fun LanguageScreen(onNavigateUp: () -> Unit) {
     var selectedRegion by remember { mutableStateOf(SP.languageRegion) }
 
     MyScaffold(R.string.languages, onNavigateUp, 0.dp) {
-        if (VERSION.SDK_INT >= 33) {
-            FullWidthRadioButtonItem(
-                stringResource(R.string.per_app_language),
-                selectedLanguage.isNullOrEmpty() || selectedLanguage == "default"
-            ) {
-                selectedLanguage = "default"
-		selectedRegion = "default"
-            }
+	FullWidthRadioButtonItem(
+            stringResource(R.string.follow_system),
+	    selectedLanguage.isNullOrEmpty() || selectedLanguage == "default"
+        ) {
+            selectedLanguage = "default"
+	    selectedRegion = "default"
         }
 
 	languages.forEach { lang ->

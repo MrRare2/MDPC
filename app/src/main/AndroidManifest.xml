@@ -26,14 +26,11 @@
         android:manageSpaceActivity=".ManageSpaceActivity"
         android:name=".MyApplication"
 	tools:targetApi="35">
-	<meta-data
-            android:name="com.android.stamp.source"
-            android:value="mrrare.pythonanywhere.com" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize|stateHidden"
-            android:theme="@style/Theme.OwnDroid"
+            android:theme="@style/Theme.MDPC"
             android:launchMode="singleInstance">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

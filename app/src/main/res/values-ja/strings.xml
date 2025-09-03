@@ -723,7 +723,6 @@
     <string name="dpm_warning">このアプリはデバイス所有者またはプロファイル所有者の権限を使用します。これらの権限は非常に危険であり、慎重に使用してください。不適切に使用すると重大な損失を招く可能性があります。開発者はその責任を負いません。</string>
     <string name="cert_verify_failed">証明書の確認に失敗しました。このアプリケーションの証明書は意図されたものと一致しません。このアプリケーションは使用できません。\n\nerror: MrRare2_globalapk_verify_failed</string>
     <string name="languages">言語</string>
-    <string name="per_app_language">システム言語に従う</string>
 
     <!-- 言語 -->
     <string name="lang_en">英語</string>
