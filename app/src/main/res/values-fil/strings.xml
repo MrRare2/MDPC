@@ -418,8 +418,8 @@
     <!--UserRestriction-->
     <string name="user_restriction">Limitahan ang user</string>
     <string name="profile_owner_is_restricted">Ang profile owner ay may limitadong mga gawain</string>
-    <string name="switch_to_disable_feature">I-turn on ang switch para i+disable ang function.</string>
-    <string name="some_features_invalid_in_work_profile">Ang functions sw work profile ay limitado.</string>
+    <string name="switch_to_disable_feature">I-turn on ang switch para i-disable ang function.</string>
+    <string name="some_features_invalid_in_work_profile">Ang functions sa work profile ay limitado.</string>
     <string name="connectivity">Iba pang koneksyon</string>
     <string name="media">Media</string>
     <string name="other">Iba pa</string>
