@@ -316,13 +316,9 @@ class MainActivity : FragmentActivity() {
 class MainActivity : FragmentActivity() {
 
     override fun attachBaseContext(newBase: Context) {
-        val lang = SP.language
-        val region = SP.languageRegion
-        val wrapped = if (lang.isNullOrBlank() || lang == "default") {
-            LocaleHelper.reset(newBase)
-        } else {
-            LocaleHelper.wrap(newBase, lang, region ?: "")
-        }
+        val lang = SP.language ?: "default"
+        val region = SP.languageRegion ?: "default"
+        val wrapped = if (lang != "default") newBase.setLocale(lang ?: "en", region ?: "") else newBase
         super.attachBaseContext(wrapped)
     }
 

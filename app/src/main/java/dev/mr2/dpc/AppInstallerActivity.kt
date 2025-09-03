@@ -82,6 +82,13 @@ import kotlinx.coroutines.withContext
 import java.net.URLDecoder
 
 class AppInstallerActivity:FragmentActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        val lang = SP.language
+        val region = SP.languageRegion
+        val wrapped = if (!lang.isNullOrBlank() || lang != "default") LocaleHelper.wrap(newBase, lang  ?: "en", region ?: "") else newBase
+        super.attachBaseContext(wrapped)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -106,6 +113,10 @@ class AppInstallerActivity:FragmentActivity() {
                 )
             }
         }
+    }
+
+    override fun onResume() {
+	super.onResume()
     }
 }
 

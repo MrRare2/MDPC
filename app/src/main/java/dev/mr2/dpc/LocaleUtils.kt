@@ -31,15 +31,17 @@ fun Context.setLocale(language: String, region: String = ""): Context {
 }
 
 fun Context.resetLocale(): Context {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        val localeManager = this.getSystemService(Context.LOCALE_SERVICE) as? android.app.LocaleManager
-        localeManager?.applicationLocales = LocaleList.getEmptyLocaleList()
-        return this
-    } else {
-        AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
-        val systemLocale = Locale.getDefault()
-        return setLocale(systemLocale.language, systemLocale.country)
+    AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
+    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.TIRAMISU) {
+        val locale = Locale.getDefault()
+        val resources = this.resources
+	val config = Configuration(resources.configuration)
+	config.locale = locale
+	config.setLayoutDirection(locale)
+	resources.updateConfiguration(config, resources.displayMetrics)
+	return this
     }
+    return this
 }
 
 object LocaleHelper {
@@ -58,18 +60,6 @@ object LocaleHelper {
             return base
         }
     }
-
-    fun reset(base: Context): Context {
-        val def = Locale.getDefault()
-        val config = Configuration(base.resources.configuration)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            config.setLocale(def)
-            config.setLocales(android.os.LocaleList(def))
-            return base.createConfigurationContext(config)
-        } else {
-            config.locale = def
-            base.resources.updateConfiguration(config, base.resources.displayMetrics)
-            return base
-        }
-    }
 }
+
+

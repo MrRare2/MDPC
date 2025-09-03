@@ -664,7 +664,7 @@
     <string name="info_nearby_app_streaming_policy">应用流式传输：当app在虚拟显示器上启动，传输这个app的视频流到附近的设备。</string>
     <string name="info_nearby_notification_streaming_policy">通知流式传输：预安装的应用把通知数据传输到附近的设备。</string>
     <string name="info_lock_task_packages">只有在列表中的应用才能开启锁定任务模式。</string>
-    <string name="info_start_lock_task_mode">如果你在锁定任务功能中允许了通知，成功启动锁定任务模式后，OwnDroid会发送一条通知，你可以点击那条通知以退出锁定任务模式。</string>
+    <string name="info_start_lock_task_mode">如果你在锁定任务功能中允许了通知，成功启动锁定任务模式后，MDPC会发送一条通知，你可以点击那条通知以退出锁定任务模式。</string>
     <string name="info_security_log">设备上不能有非附属用户</string>
     <string name="info_pre_reboot_security_log">并非所有设备都支持重启前安全日志</string>
     <string name="info_disable_account_management">当某个帐户类型的帐户管理被禁用时，将无法添加或删除该类型的帐户。</string>
@@ -685,7 +685,7 @@
     <string name="info_install_existing_app">安装一个已经在其他用户中安装或在卸载后保留的app。</string>
     <string name="info_enable_system_app">重新启用一个在用户初始化时默认被禁用的系统app</string>
     <string name="info_headless_system_user_mode">无头系统用户模式意味着系统用户运行系统服务和一些系统UI，但它不与任何真实的人相关联，必须创建额外的用户才能与真实的人相关联。</string>
-    <string name="info_logout">如果当前用户不是由OwnDroid切换的，无法使用此功能。</string>
+    <string name="info_logout">如果当前用户不是由MDPC切换的，无法使用此功能。</string>
     <string name="info_affiliation_id">当Device owner创建并管理用户时，新的用户不是附属用户。Device owner设置和受管理用户完全相同的附属用户ID后，受管理用户成为附属于Device owner的用户</string>
     <string name="info_password_complexity">无：无密码\n低：图案，PIN（有重复或有序序列）\n中：PIN（没有重复或有序序列，最低长度4），字母（最低长度4），字母与数字（最低长度4）\n高：PIN（没有重复或有序序列，最低长度8），字母（最低长度6），字母与数字（最低长度6）</string>
     <string name="info_reset_password">设置一个新的密码，密码的长度需要4位或以上，不输入密码将会清除现有的密码。长度在6位或以下的纯数字密码将会设置为PIN码。</string>
@@ -694,8 +694,8 @@
     <string name="info_max_failed_password_system_user">如果设置为大于零的值，将会在输入一定次数的错误的锁屏密码后将设备恢复出厂设置</string>
     <string name="info_max_failed_password_other_user">如果设置为大于零的值，将会在输入一定次数的错误的锁屏密码后清除当前用户的所有数据</string>
     <string name="info_password_history_length">设置后，用户将无法输入与历史记录中任何密码相同的新密码。当前密码将保留，直到用户设置新密码为止，因此更改不会立即生效。值为0表示不做限制。</string>
-    <string name="info_required_strong_auth_timeout">如果用户在这段时间内没有使用强认证（密码、PIN或图案）解锁设备，则要求使用强认证解锁设备。值为0表示OwnDroid不参与控制超时。一般来说，最少1小时，最多72小时。</string>
-    <string name="info_deactivate">OwnDroid将会丢失特权</string>
+    <string name="info_required_strong_auth_timeout">如果用户在这段时间内没有使用强认证（密码、PIN或图案）解锁设备，则要求使用强认证解锁设备。值为0表示MDPC不参与控制超时。一般来说，最少1小时，最多72小时。</string>
+    <string name="info_deactivate">MDPC将会丢失特权</string>
 
     <string name="choose_work_mode">选择一个工作模式</string>
     <string name="recommended">推荐</string>

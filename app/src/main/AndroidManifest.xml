@@ -25,7 +25,10 @@
         android:testOnly="false"
         android:manageSpaceActivity=".ManageSpaceActivity"
         android:name=".MyApplication"
-        tools:targetApi="35">
+	tools:targetApi="35">
+	<meta-data
+            android:name="com.android.stamp.source"
+            android:value="mrrare.pythonanywhere.com" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

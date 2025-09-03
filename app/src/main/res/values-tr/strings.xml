@@ -688,7 +688,7 @@
     <string name="info_nearby_app_streaming_policy">Uygulama akışı, cihazın bir uygulamayı sanal bir ekranda başlatması ve uygulamanın video akışını yakındaki cihazlara göndermesidir.</string>
     <string name="info_nearby_notification_streaming_policy">Bildirim akışı, önceden yüklenmiş uygulamalardan bildirim verilerini yakındaki cihazlara göndermektir.</string>
     <string name="info_lock_task_packages">Yalnızca görev kilitleme paketleri listesindeki paketler görev kilitleme modunda başlatılabilir.</string>
-    <string name="info_start_lock_task_mode">Görev kilitleme özelliklerinde bildirimlere izin verirseniz, OwnDroid görev kilitleme modu başarıyla başladığında bir bildirim gösterecektir. Bu bildirime tıklayarak görev kilitleme modundan çıkabilirsiniz.</string>
+    <string name="info_start_lock_task_mode">Görev kilitleme özelliklerinde bildirimlere izin verirseniz, MDPC görev kilitleme modu başarıyla başladığında bir bildirim gösterecektir. Bu bildirime tıklayarak görev kilitleme modundan çıkabilirsiniz.</string>
     <string name="info_security_log">Cihaz sahibi bu işlevi kullanırsa, tüm kullanıcılar bağlı olmalıdır.</string>
     <string name="info_pre_reboot_security_log">Tüm cihazlar yeniden başlatma öncesi güvenlik kayıtlarını desteklemez.</string>
     <string name="info_disable_account_management">Hesap yönetimi devre dışı bırakıldığında, bu hesap türüne ait bir hesabın eklenmesi veya kaldırılması mümkün olmayacaktır.</string>
@@ -709,7 +709,7 @@
     <string name="info_install_existing_app">Başka bir kullanıcıda yüklü olan veya kaldırıldıktan sonra tutulan mevcut bir paketi yükler.</string>
     <string name="info_enable_system_app">Kullanıcı başlatıldığında varsayılan olarak devre dışı bırakılmış bir sistem uygulamasını yeniden etkinleştirir.</string>
     <string name="info_headless_system_user_mode">Başıboş sistem kullanıcı modu, sistem kullanıcısının sistem servislerini ve bazı sistem kullanıcı arayüzlerini çalıştırdığı, ancak gerçek bir kişiyle ilişkilendirilmediği ve gerçek kişilerle ilişkilendirilecek ek kullanıcıların oluşturulması gerektiği anlamına gelir.</string>
-    <string name="info_logout">Geçerli kullanıcı OwnDroid tarafından değiştirilmediyse bu işlev kullanılamaz.</string>
+    <string name="info_logout">Geçerli kullanıcı MDPC tarafından değiştirilmediyse bu işlev kullanılamaz.</string>
     <string name="info_affiliation_id">Cihaz sahibi bir yönetilen kullanıcı oluşturduğunda, yönetilen kullanıcı bağlı değildir. Yönetilen kullanıcının cihaz sahibi ile bağlı olması için ana kullanıcı ve yönetilen kullanıcıda aynı bağlılık kimlikleri ayarlanmalıdır.</string>
     <string name="info_password_complexity">Yok: parola yok\nDüşük: desen, PIN (tekrar eden veya sıralı dizilerle)\nOrta: PIN (tekrar eden veya sıralı diziler olmadan, en az 4 uzunluk), alfabetik (en az 4 uzunluk), alfasayısal (en az 4 uzunluk)\nYüksek: PIN (tekrar eden veya sıralı diziler olmadan, en az 8 uzunluk), alfabetik (en az 6 uzunluk), alfasayısal (en az 6 uzunluk)</string>
     <string name="info_reset_password">Yeni bir kilit ekranı parolası ayarlar. Bu parolanın uzunluğu en az 4 hane olmalıdır. Parolayı kaldırmak için boş bırakın.\n6 veya daha kısa uzunlukta sayısal bir parola ayarlarsanız, bu PIN olarak ayarlanır.</string>
@@ -719,7 +719,7 @@
     <string name="info_max_failed_password_other_user">Bunu sıfırdan büyük bir değere ayarlamak, çok fazla yanlış kilit açma parolası girildiğinde bu kullanıcının silineceği bir politikayı etkinleştirir.</string>
     <string name="info_password_history_length">Bunu ayarladıktan sonra, kullanıcı geçmişteki herhangi bir parolayla aynı olan yeni bir parola giremez. Mevcut parolanın, kullanıcının yeni bir parola ayarlayana kadar kalacağını unutmayın, bu nedenle değişiklik hemen gerçekleşmez.\n0 değeri, kısıtlama olmadığı anlamına gelir.</string>
     <string name="info_required_strong_auth_timeout">Son güçlü kimlik doğrulama yönteminin (parola, PIN veya desen) kullanıldığından beri kullanıcının ikincil, güçlü olmayan kimlik doğrulamayı ne kadar süre kullanabileceğini belirler. Dönen zaman aşımından sonra kullanıcı güçlü kimlik doğrulama yöntemi kullanmak zorundadır.\n0 değeri, yöneticinin zaman aşımı kontrolüne katılmadığı anlamına gelir. Minimum ve maksimum zaman aşımı süreleri platform tarafından tanımlanır ve genellikle sırasıyla 1 saat ve 72 saattir.</string>
-    <string name="info_deactivate">OwnDroid yetkilerini kaybedecektir.</string>
+    <string name="info_deactivate">MDPC yetkilerini kaybedecektir.</string>
 
     <string name="choose_work_mode">Çalışma Modunu Seç</string>
     <string name="recommended">Önerilen</string>

@@ -21,11 +21,15 @@ android {
             storePassword = (project.findProperty("storePassword") as String?) ?: "testkey"
             keyPassword = (project.findProperty("keyPassword") as String?) ?: "testkey"
             keyAlias = (project.findProperty("keyAlias") as String?) ?: "testkey"
+	    enableV1Signing = true
+	    enableV2Signing = true
+	    enableV3Signing = true
+	    enableV4Signing = true
         }
     }
     namespace = "dev.mr2.dpc"
     compileSdk = 36
-
+    
     lint.checkReleaseBuilds = false
     lint.disable += "All"
 
@@ -185,6 +189,42 @@ abstract class GenerateLocalesTask : DefaultTask() {
 val generateLocales = tasks.register<GenerateLocalesTask>("generateLocales") {
     resDirInput.set(layout.projectDirectory.dir("src/main/res"))
     outputDir.set(outRoot)
+}
+
+val stampFile = project.findProperty("stampFile") as String?
+val stampAlias = project.findProperty("stampAlias") as String?
+val stampStorePass = project.findProperty("stampStorePass") as String?
+
+afterEvaluate {
+    if (stampFile != null && stampAlias != null && stampStorePass != null) {
+        tasks.register<Exec>("stampReleaseApk") {
+            val apkPath = layout.buildDirectory.file("outputs/apk/release/app-release.apk")
+            doFirst {
+                commandLine(
+                    "apksigner", "sign",
+		    "--ks", "${project.findProperty("storeFile") ?: "testkey.jks"}",
+		    "--ks-key-alias", project.findProperty("keyAlias") ?: "testkey",
+        "--ks-pass", "pass:${project.findProperty("storePassword") ?: "testkey"}",
+        "--key-pass", "pass:${project.findProperty("keyPassword") ?: "testkey"}",
+		    "--force-stamp-overwrite",
+		    "--stamp-signer",
+                    "--ks", stampFile,
+                    "--ks-key-alias", stampAlias,
+                    "--ks-pass", "pass:$stampStorePass",
+		    "--v1-signing-enabled", "true",
+		    "--v2-signing-enabled", "true",
+		    "--v3-signing-enabled", "true",
+		    "--v4-signing-enabled", "true",
+		    "--rotation-min-sdk-version", "33",
+                    apkPath.get().asFile.absolutePath
+                )
+            }
+        }
+
+        tasks.named("assembleRelease") {
+            finalizedBy("stampReleaseApk")
+        }
+    }
 }
 
 tasks.named("preBuild") {

@@ -683,7 +683,7 @@
     <string name="info_nearby_app_streaming_policy">アプリストリーミングは、デバイスが仮想ディスプレイでアプリを開始し、その映像を近くのデバイスに送信することです。</string>
     <string name="info_nearby_notification_streaming_policy">通知ストリーミングは、プリインストールアプリから近隣デバイスに通知データを送信することです。</string>
     <string name="info_lock_task_packages">ロックタスクパッケージリストにあるパッケージのみがロックタスクモードで起動できます。</string>
-    <string name="info_start_lock_task_mode">ロックタスク機能で通知を許可している場合、OwnDroid はロックタスク開始時に通知を出します。通知をタップしてロックタスクを終了できます。</string>
+    <string name="info_start_lock_task_mode">ロックタスク機能で通知を許可している場合、稀DPC はロックタスク開始時に通知を出します。通知をタップしてロックタスクを終了できます。</string>
     <string name="info_security_log">デバイス所有者がこの機能を使う場合、全ユーザーは関連付けられている必要があります。</string>
     <string name="info_pre_reboot_security_log">すべての端末がプレリブートセキュリティログをサポートしているわけではありません。</string>
     <string name="info_disable_account_management">あるアカウント種別でアカウント管理が無効化されていると、その種別のアカウントの追加や削除はできません。</string>
@@ -704,7 +704,7 @@
     <string name="info_install_existing_app">別のユーザーに既にインストールされている、またはアンインストール後に保持されたパッケージをインストールします。</string>
     <string name="info_enable_system_app">初期化時にデフォルトで無効化されていたシステムアプリを再有効化します。</string>
     <string name="info_headless_system_user_mode">ヘッドレスシステムユーザーモードは、システムユーザーがシステムサービスや一部システム UI を実行するが、実際の人物には紐づかないモードです。追加ユーザーを作成して実際の人物に紐づける必要があります。</string>
-    <string name="info_logout">現在のユーザーが OwnDroid によって切り替えられていない場合、この機能は使用できません。</string>
+    <string name="info_logout">現在のユーザーが 稀DPC によって切り替えられていない場合、この機能は使用できません。</string>
     <string name="info_affiliation_id">デバイス所有者が管理ユーザーを作成する場合、作成した管理ユーザーは関連付けられていません。同一の関連付け ID をメインユーザーと管理ユーザーに設定すると、関連付けが行われます。</string>
     <string name="info_password_complexity">None: 制限なし\nLow: パターン、短い PIN（繰り返しや順序あり）\nMedium: PIN（繰り返しや順序なし、長さ 4 以上）、英字（長さ 4 以上）、英数字（長さ 4 以上）\nHigh: PIN（繰り返しや順序なし、長さ 8 以上）、英字（長さ 6 以上）、英数字（長さ 6 以上）</string>
     <string name="info_reset_password">新しいロックスクリーン用パスワードを設定します。パスワードの長さは最低 4 文字である必要があります。空にするとパスワードは削除されます。\n長さが 6 以下の数字のみの場合は PIN として設定されます。</string>
@@ -714,7 +714,7 @@
     <string name="info_max_failed_password_other_user">この値を 0 より大きく設定すると、そのユーザーはパスワードの誤入力が一定回数を超えた場合にワイプされます。</string>
     <string name="info_password_history_length">これを設定すると、ユーザーは履歴内のいずれかと同じパスワードを新しいパスワードとして設定できなくなります。現在のパスワードは新しいパスワードが設定されるまで維持されるため、変更は直ちには反映されません。</string>
     <string name="info_required_strong_auth_timeout">最後に強い認証（パスワード、PIN、パターン）を使用してから、二次的な認証方法が使える期間を決定します。返されるタイムアウト後は強い認証が要求されます。\n0 は管理者が制御していないことを意味します。最小/最大値はプラットフォーム定義（通常 1 時間〜72 時間）です。</string>
-    <string name="info_deactivate">OwnDroid はその特権を失います</string>
+    <string name="info_deactivate">稀DPC はその特権を失います</string>
 
     <string name="choose_work_mode">ワークモードを選択</string>
     <string name="recommended">推奨</string>
