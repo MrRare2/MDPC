@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.app.admin.DevicePolicyManager
 import android.app.admin.FactoryResetProtectionPolicy
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.wifi.WifiConfiguration
@@ -250,6 +251,11 @@ class ApiReceiver: BroadcastReceiver() {
 		"IS_UNINSTALL_BLOCKED" -> context.reply("PACKAGE_${app!!}_UNINSTALL_BLOCK_STATE", dpm.isUninstallBlocked(receiver, app!!))
 		"IS_UNIQUE_DEVICE_ATTESTATION_SUPPORTED" -> context.reply("UNIQUE_DEVIC3_ATTESTATION_STATE", dpm.isUniqueDeviceAttestationSupported())
 		"IS_USING_UNIFIED_PASSWORD" -> context.reply("UNIFIED_PASSWORD_STATE", dpm.isUsingUnifiedPassword(receiver))
+		"EMERGENCY_TRANSFER_DHIZUKU" -> {
+		    val newAdmin = ComponentName("com.rosan.dhizuku", "com.rosan.dhizuku.server.DhizukuDAReceiver")
+		    dpm.transferOwnership(receiver, newAdmin, null)
+		    true
+		}
                 else -> {
                     log += "\nInvalid action"
                     false
