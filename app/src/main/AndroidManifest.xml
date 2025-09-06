@@ -12,6 +12,9 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
     <uses-sdk tools:overrideLibrary="rikka.shizuku.provider,rikka.shizuku.api,rikka.shizuku.shared,rikka.shizuku.aidl"/>
     <uses-feature android:name="android.software.device_admin"/>
     <application
@@ -83,7 +86,7 @@
         </activity>
         <receiver
             android:name=".Receiver"
-            android:description="@string/app_name"
+            android:description="@string/da_info"
             android:permission="android.permission.BIND_DEVICE_ADMIN"
             android:exported="true">
             <meta-data
@@ -102,8 +105,16 @@
         <receiver
             android:name=".ApiReceiver"
 	    android:exported="true">
-        </receiver>
-	<receiver android:name=".TelCodeReceiver"
+	</receiver>
+	<receiver
+	    android:name=".PackageStatusReceiver"
+	    android:exported="true">
+	    <intent-filter>
+		<action android:name="dev.mr2.temp.PKG_STATUS" />
+	    </intent-filter>
+	</receiver>
+	<receiver
+	    android:name=".TelCodeReceiver"
             android:exported="true">
 	    <intent-filter>
 		<action android:name="android.provider.Telephony.SECRET_CODE" />

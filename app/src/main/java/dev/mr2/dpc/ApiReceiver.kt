@@ -7,15 +7,24 @@ import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.PackageInstaller
+import android.content.pm.PackageInstaller.Session
+import android.content.pm.IPackageInstallerSession
 import android.net.wifi.WifiConfiguration
 import android.net.wifi.WifiManager
+import android.os.Build
 import android.os.HardwarePropertiesManager
 import android.util.Log
+import com.rosan.dhizuku.api.Dhizuku
+import com.rosan.dhizuku.api.DhizukuBinderWrapper
+import java.io.File
+import java.io.FileInputStream
 
 class ApiReceiver: BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val requestKey = intent.getStringExtra("key")
-        var log = "MDPC API request received. action: ${intent.action}"
+        var log = "MDPC API request received action: ${intent.action}"
         if(!SP.isApiEnabled) return
         val key = SP.apiKey
         if(!key.isNullOrEmpty() && key != requestKey) {
@@ -43,6 +52,8 @@ class ApiReceiver: BroadcastReceiver() {
         val wifiHidden = intent.getBooleanExtra("wifiHidden", false)
 	val wifiNetId = intent.getIntExtra("wifiNetId", -1)
 	val quality = intent.getIntExtra("quality", -1)
+	val apkPath = intent.getStringExtra("apkPath")
+	val reason = intent.getIntExtra("installReason", 4) // INSTALL_REASON_USER
         try {
             @SuppressWarnings("NewApi")
             val ok = when(intent.action?.removePrefix("dev.mr2.dpc.api.")) {
@@ -119,10 +130,10 @@ class ApiReceiver: BroadcastReceiver() {
                 "APP_ADD_UNINSTALL_BLOCK" -> { dpm.setUninstallBlocked(receiver, app!!, true); true }
                 "APP_REMOVE_UNINSTALL_BLOCK" -> { dpm.setUninstallBlocked(receiver, app!!, false); true }
 		"APP_UNINSTALL" -> {
-                    val intent = Intent("dev.mr2.NULL");
-                    intent.setPackage(context.packageName);
-                    val pi = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE).intentSender;
-                    pm?.uninstall(app!!, pi);
+                    val intent = Intent(PACKAGE_STATUS)
+                    intent.setPackage(context.packageName)
+                    val pi = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE).intentSender
+                    pm?.uninstall(app!!, pi)
 		    true
                 }
 		"SYSTEM_REBOOT" -> { dpm.reboot(receiver); true }
@@ -155,28 +166,25 @@ class ApiReceiver: BroadcastReceiver() {
 		// get data (only retrivable if you listen on the sender)
 		"GET_CPU_TEMPERATURES" -> {
 		    val cpuTemps = hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_CPU, flags)
-		    context.reply("CPU_TEMPERATURES", cpuTemps!!.joinToString(":"))
+		    context.reply("CPU_TEMPERATURES", cpuTemps!!.joinToString("|=|"))
 		}
 		"GET_GPU_TEMPERATURES" -> {
 		    val gpuTemps = hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_GPU, flags)
-		    context.reply("GPU_TEMPERATURES", gpuTemps!!.joinToString(":"))
+		    context.reply("GPU_TEMPERATURES", gpuTemps!!.joinToString("|=|"))
 		}
 		"GET_BATTERY_TEMPERATURES" -> {
                     val batteryTemps = hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_BATTERY, flags)
-                    context.reply("BATTERY_TEMPERATURES", batteryTemps!!.joinToString(":"))
+                    context.reply("BATTERY_TEMPERATURES", batteryTemps!!.joinToString("|=|"))
 	        }
 		"GET_SKIN_TEMPERATURES" -> {
                     val skinTemps = hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_SKIN, flags)
-                    context.reply("SKIN_TEMPERATURES", skinTemps!!.joinToString(":"))
+                    context.reply("SKIN_TEMPERATURES", skinTemps!!.joinToString("|=|"))
 		}
 		"GET_ORGANIZATION_NAME" -> context.reply("ORGANIZATION_NAME", dpm.getOrganizationName(receiver) ?: "")
 		"GET_SHORT_SUPPORT_MESSAGE" -> context.reply("SHORT_SUPPORT_MESSAGE", dpm.getShortSupportMessage(receiver) ?: "")
 		"GET_LONG_SUPPORT_MESSAGE"  -> context.reply("LONG_SUPPORT_MESSAGE", dpm.getLongSupportMessage(receiver) ?: "")
 		"GET_LOCK_SCREEN_SCREEN_INFO_MESSAGE" -> context.reply("LOCK_SCREEN_MESSAGE", dpm.getDeviceOwnerLockScreenInfo() ?: "")
-		"GET_START_SESSION_MESSAGE" -> {
-		    context.reply("START_SESSION_MESSAGE", dpm.getStartUserSessionMessage(receiver) ?: "")
-		    true
-		}
+		"GET_START_SESSION_MESSAGE" -> context.reply("START_SESSION_MESSAGE", dpm.getStartUserSessionMessage(receiver) ?: "")
 		"GET_END_SESSION_MESSAGE" -> context.reply("END_SESSION_MESSAGE", dpm.getEndUserSessionMessage(receiver) ?: "")
 		"GET_DEVICE_OWNER_PACKAGE" -> context.reply("DEVICE_OWNER", receiver.packageName)
 		"GET_DEVICE_OWNER_COMPONENT" -> context.reply("DEVICE_OWNER_COMPONENT", receiver.flattenToString())
@@ -202,7 +210,6 @@ class ApiReceiver: BroadcastReceiver() {
 		"GET_MINIMUM_WIFI_SECURITY_LEVEL" -> context.reply("MINIMUM_WIFI_SECURITY_LEVEL", dpm.getMinimumRequiredWifiSecurityLevel())
 		"GET_MTE_POLICY" -> context.reply("MTE_POLICY", dpm.getMtePolicy())
 		"GET_PASSWORD_COMPLEXITY" -> context.reply("PASSWORD_COMPLEXITY", dpm.getPasswordComplexity())
-		// TODO: not done, but this is where it will end
 		"HAS_LOCKDOWN_ADMIN_CONFIGURED_NETWORKS" -> context.reply("LOCKDOWN_ADMIN_CONFIGURED_NETWORKS", dpm.hasLockdownAdminConfiguredNetworks(receiver))
 		"GET_PASSWORD_EXPIRATION" -> context.reply("PASSWORD_EXPIRATION", dpm.getPasswordExpiration(receiver))
 		"GET_PASSWORD_HISTORY_LENGTH" -> context.reply("PASSWORD_HISTORY_LENGTH", dpm.getPasswordHistoryLength(receiver))
@@ -256,6 +263,30 @@ class ApiReceiver: BroadcastReceiver() {
 		    dpm.transferOwnership(receiver, newAdmin, null)
 		    true
 		}
+		"APP_INSTALL" -> {
+		    val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
+		    val sessionId = pm?.createSession(params)!!
+		    val apk = File(apkPath)
+		    pm?.openSession(sessionId).use { session ->
+			wrapSession(session!!)
+			FileInputStream(apk).use { input ->
+			    session?.openWrite("install", 0, apk.length()).use { output ->
+				input.copyTo(output!!)
+				session?.fsync(output!!)
+			    }
+		        }
+			val callbackIntent = Intent(PACKAGE_STATUS)
+			val piFlags = if (Build.VERSION.SDK_INT >= 34) PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT else PendingIntent.FLAG_MUTABLE
+			val pi = PendingIntent.getBroadcast(
+			    context,
+			    sessionId,
+			    callbackIntent,
+			    piFlags
+		        ).intentSender
+			session?.commit(pi)
+			true
+		    }
+		}
                 else -> {
                     log += "\nInvalid action"
                     false
@@ -271,7 +302,18 @@ class ApiReceiver: BroadcastReceiver() {
         Log.d(TAG, log)
     }
 
+    private fun wrapSession(session: Session) {
+	val field = session.javaClass.getDeclaredField("mSession")
+	field.isAccessible = true
+        val oldInterface = field.get(session) as IPackageInstallerSession
+	val oldBinder = oldInterface.asBinder()
+	val newBinder = Dhizuku.binderWrapper(oldBinder)
+        val newInterface = IPackageInstallerSession.Stub.asInterface(newBinder)
+        if (newInterface != null) field.set(session, newInterface)
+    }
+
     companion object {
         private const val TAG = "API"
+	private const val PACKAGE_STATUS = "dev.mr2.temp.PKG_STATUS"
     }
 }
