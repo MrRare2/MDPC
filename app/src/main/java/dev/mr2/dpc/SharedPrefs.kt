@@ -27,6 +27,7 @@ class SharedPrefs(context: Context) {
     var dhizukuServer by BooleanSharedPref("dhizuku_server")
     var language by StringSharedPref("language.lang")
     var languageRegion by StringSharedPref("language.region")
+    var sharedApiReply by BooleanSharedPref("api.sharedreply")
 }
 
 private class BooleanSharedPref(val key: String, val defValue: Boolean = false): ReadWriteProperty<SharedPrefs, Boolean> {

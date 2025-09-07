@@ -740,6 +740,7 @@
     <string name="cert_verify_failed">Certificate verification failed. The certificate of this application does not match the intended one. This application cannot be used.\n\nerror: MrRare2_globalapk_verify_failed</string>
     <string name="languages">Language</string>
     <string name="da_info">Apply as device owner.</string>
+    <string name="api_shared_response">Shared API reply</string>
 
     <!-- languages -->
     <string name="lang_en">English</string>

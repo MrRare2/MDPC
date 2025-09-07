@@ -314,6 +314,11 @@ fun ApiSettings(onNavigateUp: () -> Unit) {
         }, padding = false)
         if(enabled) {
             var key by remember { mutableStateOf("") }
+	    var sharedReplyEnabled by remember { mutableStateOf(SP.sharedApiReply) }
+	    SwitchItem(R.string.api_shared_response, state = sharedReplyEnabled, onCheckedChange = {
+		sharedReplyEnabled = it
+		SP.sharedApiReply = it
+	    }, padding = false)
             OutlinedTextField(
                 value = key, onValueChange = { key = it }, label = { Text(stringResource(R.string.api_key)) },
                 modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp), readOnly = true,

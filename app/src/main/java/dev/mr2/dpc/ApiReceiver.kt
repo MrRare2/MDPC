@@ -298,7 +298,7 @@ class ApiReceiver: BroadcastReceiver() {
             val message = (e::class.qualifiedName ?: "Exception") + ": " + (e.message ?: "")
             log += "\n$message"
         }
-	context.reply("LOG_$TAG", log)
+	context.reply("LOG_$TAG", log, true)
         Log.d(TAG, log)
     }
 

@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.reflect.typeOf
 import android.content.pm.PackageManager
 import java.util.*
+import dev.mr2.dpc.SP
 
 var CJK = true
 
@@ -153,7 +154,7 @@ fun Context.popToast(str: String) {
     Toast.makeText(this, str, Toast.LENGTH_SHORT).show()
 }
 
-fun Context.reply(name: String, data: Any): Boolean {
+fun Context.reply(name: String, data: Any, forceSplitReply: Boolean = false): Boolean {
     val intent = when (data) {
         is Intent -> {
             data.setAction("dev.mr2.dpc.api.API_REPLY")
@@ -161,7 +162,7 @@ fun Context.reply(name: String, data: Any): Boolean {
         }
         else -> {
             val newIntent = Intent("dev.mr2.dpc.api.API_REPLY")
-            val extraKey = "dev.mr2.dpc.api.reply.$name"
+            val extraKey = if (SP.sharedApiReply && !forceSplitReply) "dev.mr2.dpc.api.reply.SINGLE_REPLY" else "dev.mr2.dpc.api.reply.$name"
 
             try {
                 when (data) {
@@ -204,6 +205,8 @@ fun Context.reply(name: String, data: Any): Boolean {
             }
         }
     }
+
+    if (SP.sharedApiReply && !forceSplitReply) intent.putExtra("dev.mr2.extra.EXTRA_OTHER", "dev.mr2.dpc.api.reply.$name")
 
     return try {
         this.sendBroadcast(intent)
