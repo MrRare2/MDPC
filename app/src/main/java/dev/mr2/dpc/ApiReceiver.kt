@@ -311,7 +311,6 @@ class ApiReceiver: BroadcastReceiver() {
             log += "\n$message"
         }
 	context.reply("LOG_$TAG", log, true)
-	context.reply("NULL", "")
         Log.d(TAG, log)
     }
 

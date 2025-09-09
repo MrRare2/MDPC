@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-pkg="$(python3 -c 'print([x for x in open("app/build.gradle.kts").read().split("\n") if "namespace" in x][0].strip().split("=")[1][2:-1])')"
+pkg="$(grep -R 'namespace' app/build.gradle* | head -n 1 | sed -E 's/.*namespace[[:space:]]*=?[[:space:]]*["'\'']([^"\'']+)["'\''].*/\1/')"
 
 gradle assembleDebug --info && cp app/build/outputs/apk/debug/app-debug.apk /sdcard/Download/build_debug_${pkg}.apk
