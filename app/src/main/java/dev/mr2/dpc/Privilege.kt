@@ -26,9 +26,9 @@ object Privilege {
             if (hasPermission) {
                 val dhizukuDpm = binderWrapperDevicePolicyManager(context)
 		val dhizukuPm = binderWrapperPackageInstaller(context)
+		if (dhizukuPm != null) PIM = dhizukuPm
                 if (dhizukuDpm != null) {
                     DPM = dhizukuDpm
-		    PIM = dhizukuPm
                     DAR = Dhizuku.getOwnerComponent()
                     return
                 }
@@ -45,7 +45,8 @@ object Privilege {
         private set
     lateinit var DAR: ComponentName
         private set
-    var PIM: PackageInstaller? = null
+    lateinit var PIM: PackageInstaller
+        private set
     var WM: WifiManager? = null
     var HWM: HardwarePropertiesManager? = null
 

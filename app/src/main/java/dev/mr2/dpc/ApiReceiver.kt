@@ -53,7 +53,6 @@ class ApiReceiver: BroadcastReceiver() {
 	val wifiNetId = intent.getIntExtra("wifiNetId", -1)
 	val quality = intent.getIntExtra("quality", -1)
 	val apkPath = intent.getStringExtra("apkPath")
-	val reason = intent.getIntExtra("installReason", 4) // INSTALL_REASON_USER
         try {
             @SuppressWarnings("NewApi")
             val ok = when(intent.action?.removePrefix("dev.mr2.dpc.api.")) {
@@ -221,7 +220,7 @@ class ApiReceiver: BroadcastReceiver() {
 		"GET_PASSWORD_MINIMUM_NUMERIC" -> context.reply("PASSWORD_MINIMUM_NUMERIC", dpm.getPasswordMinimumNumeric(receiver))
 		"GET_PASSWORD_MINIMUM_SYMBOLS" -> context.reply("PASSWORD_MINIMUM_SYMBOLS", dpm.getPasswordMinimumSymbols(receiver))
 		"GET_PASSWORD_MINIMUM_UPPERCASE" -> context.reply("PASSWORD_MINIMUM_UPPERCASE", dpm.getPasswordMinimumUpperCase(receiver))
-		"GET_PASSWORD_QUALIYY" -> context.reply("PASSWORD_QUALITY", dpm.getPasswordQuality(receiver))
+		"GET_PASSWORD_QUALITY" -> context.reply("PASSWORD_QUALITY", dpm.getPasswordQuality(receiver))
 		"GET_PENDING_SYSTEM_UPDATE" -> context.reply("PENDING_SYSTEM_UPDATE", dpm.getPendingSystemUpdate(receiver).toString())
 		"GET_PERMISSION_GRANT_STATE" -> context.reply("PERMISSION_GRANT_STATE", dpm.getPermissionGrantState(receiver, app!!, permission!!))
 		"GET_PERMISSION_POLICY" -> context.reply("PERMISSION_POLICY", dpm.getPermissionPolicy(receiver))
@@ -250,7 +249,7 @@ class ApiReceiver: BroadcastReceiver() {
 		//"IS_MTE_ENFORCED" -> context.reply("MTE_ENFORCED", dpm.isMtePolicyEnforced())
 		"IS_NETWORK_LOGGING" -> context.reply("NETWORK_LOGGING_STATE", dpm.isNetworkLoggingEnabled(receiver))
 		"IS_OVERRIDING_APNS" -> context.reply("OVERRIDE_APN_STATE", dpm.isOverrideApnEnabled(receiver))
-		"IS_PACKAGE_SUSPENDED" -> context.reply("PACKAGE_${app!!}_SUSPENDED_STATE", dpm.isPackageSuspended(receiver, app!!))
+		"IS_APP_SUSPENDED" -> context.reply("PACKAGE_${app!!}_SUSPENDED_STATE", dpm.isPackageSuspended(receiver, app!!))
 		"IS_PREFERENTIAL_NETWORK_SERVICE" -> context.reply("PREFERENTIAL_NETWORK_SERVICE_STATE", dpm.isPreferentialNetworkServiceEnabled())
 		"IS_RESET_PASSWORD_TOKEN_ACTIVE" -> context.reply("RESET_PASSWORD_TOKEN_ACTIVE_STATE", dpm.isResetPasswordTokenActive(receiver))
 		"IS_SECURITY_LOGGING" -> context.reply("SECURITY_LOGGING_STATE", dpm.isSecurityLoggingEnabled(receiver))
@@ -268,7 +267,7 @@ class ApiReceiver: BroadcastReceiver() {
 		    val sessionId = pm?.createSession(params)!!
 		    val apk = File(apkPath)
 		    pm?.openSession(sessionId).use { session ->
-			wrapSession(session!!)
+			if (SP.dhizuku) wrapSession(session!!)
 			FileInputStream(apk).use { input ->
 			    session?.openWrite("install", 0, apk.length()).use { output ->
 				input.copyTo(output!!)
@@ -287,6 +286,19 @@ class ApiReceiver: BroadcastReceiver() {
 			true
 		    }
 		}
+		"GET_USER_RESTRICTIONS" -> {
+		    val restrictions = dpm.getUserRestrictions(receiver)
+		    val result = restrictions.keySet().filter { restrictions.getBoolean(it, false) }.joinToString("|=|")
+		    context.reply("USER_RESTRICTIONS", result)
+		}
+		"GET_FAN_SPEEDS" -> {
+		    val fanSpeeds = hwm?.getFanSpeeds()
+		    context.reply("FAN_SPEEDS", fanSpeeds!!.joinToString("|=|"))
+		}
+		"GET_CPU_USAGES" -> {
+		    val cpuUsages = hwm?.getCpuUsages()
+		    context.reply("CPU_USAGES", cpuUsages!!.joinToString("|=|") { "${it.getActive()}:${it.getTotal()}" })
+		}
                 else -> {
                     log += "\nInvalid action"
                     false
@@ -299,6 +311,7 @@ class ApiReceiver: BroadcastReceiver() {
             log += "\n$message"
         }
 	context.reply("LOG_$TAG", log, true)
+	context.reply("NULL", "")
         Log.d(TAG, log)
     }
 
