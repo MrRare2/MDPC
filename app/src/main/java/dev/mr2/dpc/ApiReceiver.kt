@@ -55,7 +55,7 @@ class ApiReceiver: BroadcastReceiver() {
 	val apkPath = intent.getStringExtra("apkPath")
         try {
             @SuppressWarnings("NewApi")
-            val ok = when(intent.action?.removePrefix("dev.mr2.dpc.api.")) {
+            var ok = when(intent.action?.removePrefix("dev.mr2.dpc.api.")) {
 		"SYSTEM_DISABLE_CAMERA" -> { dpm.setCameraDisabled(receiver, true); true }
                 "SYSTEM_ENABLE_CAMERA" -> { dpm.setCameraDisabled(receiver, false); true }
                 "SYSTEM_DISABLE_SCRCAP" -> { dpm.setScreenCaptureDisabled(receiver, true); true }
@@ -304,6 +304,8 @@ class ApiReceiver: BroadcastReceiver() {
                     false
 		}
             }
+	    if (ok is Intent) { context.sendBroadcast(ok); ok = true }
+	    else { context.sendBroadcast(context.reply("NULL", "")); ok = true }
             log += "\nsuccess: $ok"
         } catch(e: Exception) {
             e.printStackTrace()

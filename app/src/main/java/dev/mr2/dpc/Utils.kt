@@ -154,7 +154,7 @@ fun Context.popToast(str: String) {
     Toast.makeText(this, str, Toast.LENGTH_SHORT).show()
 }
 
-fun Context.reply(name: String, data: Any, forceSplitReply: Boolean = false): Boolean {
+fun Context.reply(name: String, data: Any, forceSplitReply: Boolean = false): Intent? {
     val intent = when (data) {
         is Intent -> {
             data.setAction("dev.mr2.dpc.api.API_REPLY")
@@ -183,7 +183,7 @@ fun Context.reply(name: String, data: Any, forceSplitReply: Boolean = false): Bo
                         data.isArrayOf<CharSequence>() -> newIntent.putExtra(extraKey, data)
                         data.isArrayOf<Parcelable>() -> newIntent.putExtra(extraKey, data)
                         else -> {
-                            return false
+                            return null
                         }
                     }
                     is IntArray -> newIntent.putExtra(extraKey, data)
@@ -196,24 +196,19 @@ fun Context.reply(name: String, data: Any, forceSplitReply: Boolean = false): Bo
                     is CharArray -> newIntent.putExtra(extraKey, data)
                     is Bundle -> newIntent.putExtra(extraKey, data)
                     else -> {
-                        return false
+                        return null
                     }
                 }
                 newIntent
             } catch (e: Exception) {
-                return false
+                return null
             }
         }
     }
 
     if (SP.sharedApiReply && !forceSplitReply) intent.putExtra("dev.mr2.extra.EXTRA_OTHER", "dev.mr2.dpc.api.reply.$name")
 
-    return try {
-        this.sendBroadcast(intent)
-        true
-    } catch (e: Exception) {
-        false
-    }
+    return intent
 }
 
 fun Context.isVerifiedSignature(): Boolean {
