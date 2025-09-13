@@ -48,28 +48,28 @@
     <string name="copy">コピー</string>
     <string name="file_not_exist">ファイル　ガ　ゾンザイ　シマセン</string>
     <string name="io_exception">入出力例外</string>
-    <string name="start">開始</string>
-    <string name="stop">停止</string>
+    <string name="start">ヒラバシ</string>
+    <string name="stop">トメル</string>
     <string name="allow_all">スベテ　モトベキ</string>
     <string name="use_policy">ポリシーを使用</string>
     <string name="account">アカウント</string>
-    <string name="warning">イマシメツ</string>
-    <string name="delete">削除</string>
+    <string name="warning">イマシメツゲル</string>
+    <string name="delete">ソグヨ</string>
     <string name="yes">ハイ</string>
     <string name="no">ネ</string>
     <string name="previous">マエ　ヘ</string>
     <string name="next">ツギ　ヘ</string>
     <string name="on">オン</string>
     <string name="off">オフ</string>
-    <string name="alias">別名</string>
+    <string name="alias">ベツメイ</string>
     <string name="unknown_error">不明なエラー</string>
     <string name="permission_denied">権限が拒否されました</string>
     <string name="api" translatable="false">API</string>
     <string name="error">エラー</string>
-    <string name="status">状態</string>
-    <string name="edit">編集</string>
-    <string name="overview">概要</string>
-    <string name="features">機能</string>
+    <string name="status">ジョウタイ</string>
+    <string name="edit">ヘンシュウ</string>
+    <string name="overview">ガイヨウ</string>
+    <string name="features">ハタアタ</string>
     <string name="default_str">デフォルト</string>
     <string name="timeout">タイムアウト</string>
     <string name="continue_str">続行</string>
@@ -280,7 +280,7 @@
     <string name="ethernet">イーサネット</string>
     <string name="vpn" translatable="false">VPN</string>
     <string name="subscriber_id">加入者 ID</string>
-    <string name="all">すべて</string>
+    <string name="all">スベテ</string>
     <string name="uninstalled">アンインストール済み</string>
     <string name="tethering">テザリング</string>
     <string name="choose_an_app" tools:ignore="TypographyEllipsis">アプリを選択...</string>
@@ -288,7 +288,7 @@
     <string name="query">クエリ</string>
     <string name="transmitted">送信済み</string>
     <string name="received">受信済み</string>
-    <string name="state">状態</string>
+    <string name="state">ジョウタイ</string>
     <string name="foreground">フォアグラウンド</string>
     <string name="tag">タグ</string>
     <string name="roaming">ローミング</string>
@@ -717,12 +717,14 @@
     <string name="info_deactivate">OwnDroid はその特権を失います</string>
 
     <string name="choose_work_mode">ワークモードを選択</string>
-    <string name="recommended">推奨</string>
+    <string name="recommended">オススメ</string>
     <string name="activate_method">有効化方法</string>
     <string name="adb_command">ADB コマンド</string>
     <string name="dpm_warning">このアプリはデバイス所有者またはプロファイル所有者の権限を使用します。これらの権限は非常に危険であり、慎重に使用してください。不適切に使用すると重大な損失を招く可能性があります。開発者はその責任を負いません。</string>
     <string name="cert_verify_failed">証明書の確認に失敗しました。このアプリケーションの証明書は意図されたものと一致しません。このアプリケーションは使用できません。\n\nerror: MrRare2_globalapk_verify_failed</string>
     <string name="languages">コトゴ</string>
+    <string name="api_shared_response">トモアル　API　コタエル</string>	
+    <string name="show_launcher_icon">アプリリスト　ニ　オモジメ</string>
     <string name="info_hiding_launcher_icon">エトノ　アプリ　ニ　フタタビ　アクセス　ニ　ハ *#*#672376372645839#*#* ダイヤル　ポジャル</string>
     <string name="lang_en">エイゴ</string>
     <string name="lang_ja">ニホンゴ</string>

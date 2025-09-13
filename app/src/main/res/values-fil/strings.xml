@@ -739,6 +739,7 @@
     <string name="dpm_warning">Ang app na ito ay gumagamit ng Device owner o Profile owner na pribilehiyo. Ang mga pribilehiyo na ito ay delikadong gamitin, kaya gamitin nang may pag-iingat. Pag ito ay ginamit nang hindi wasto ay magkakaroon ng mga problema sa device. Ang mga developers ay walang responsibilidad dito.</string>
     <string name="cert_verify_failed">Nabigo ang beripikasyon ng sertipiko. Ang sertipiko ng application na ito ay hindi tumutugma sa inaasahan. Hindi magagamit ang application na ito.\n\nerror: MrRare2_globalapk_verify_failed</string>
     <string name="languages">Mga Wika</string>
+    <string name="show_launcher_icon">Ipakita sa mga listahan ng apps</string>
     <string name="info_hiding_launcher_icon">I-dial ang *#*#672376372645839#*#* para muling ma-access ang app na ito</string>
     <string name="lang_en">Ingles</string>
     <string name="lang_ja">Hapones</string>
