@@ -1,14 +1,78 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
-  <group android:scaleX="0.495"
-      android:scaleY="0.495"
-      android:translateX="6.06"
-      android:translateY="6.06">
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M12,1L3,5v6c0,5.55 3.84,10.74 9,12 5.16,-1.26 9,-6.45 9,-12L21,5l-9,-4zM12,11.99h7c-0.53,4.12 -3.28,7.79 -7,8.94L12,12L5,12L5,6.3l7,-3.11v8.8z"/>
-  </group>
+    android:width="700dp"
+    android:height="700dp"
+    android:viewportWidth="700"
+    android:viewportHeight="700">
+    <group
+        android:scaleX="0.6"
+        android:scaleY="0.6"
+	android:translateX="240"
+        android:translateY="120">
+        <path
+            android:strokeColor="#FF000000"
+            android:strokeWidth="32"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M79.01 130.52c-20.83 15.14-43.77 27.01-66.68 38.65-20.1 10.2-40.09 20.45-61.74 26.9"/>
+        <path
+            android:strokeColor="#FF000000"
+            android:strokeWidth="32"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M-78.68 310.14c17.75 0.91 35.58 2.25 53.36 1.97 21.69-0.34 43.37-2.68 65.04-3.78 21.21-1.08 42.43-0.99 63.55-3.44"/>
+        <path
+            android:strokeColor="#FF000000"
+            android:strokeWidth="32"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M18.05 171.65c1.15 20.04 3.02 40.04 3.7 60.1 0.6 17.79-0.3 35.65 0.97 53.4 2.44 33.84 8.39 67.24 9.83 101.22 1.76 41.68-0.1 83.45 0.08 125.14 0.17 35.93 2.37 71.13 6.1 106.84"/>
+        <path
+            android:strokeColor="#FF000000"
+            android:strokeWidth="32"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M13.65 342.99c-16.73 33.98-35.95 67.38-63.77 93.63"/>
+        <path
+            android:strokeColor="#FF000000"
+            android:strokeWidth="32"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M57.28 345.07c14.97 20.84 31.87 41.41 52.93 56.34"/>
+        <path
+            android:strokeColor="#FF000000"
+            android:strokeWidth="32"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M348.9 125.44c-46.29 57.39-96.54 122.4-171.58 141.26"/>
+        <path
+            android:strokeColor="#FF000000"
+            android:strokeWidth="32"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M164.3 147.55c83.14 22.21 156.72 70.99 214.76 133.93"/>
+        <path
+            android:strokeColor="#FF000000"
+            android:strokeWidth="32"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M147.82 363.99c68.71 1.72 137.41 2.73 206.13 2.38 35.97-0.18 72.37 1.8 108.19-2.14"/>
+        <path
+            android:strokeColor="#FF000000"
+            android:strokeWidth="32"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M246.91 288.61c-6.7 20.55-13.3 41.33-22.96 60.73-12.08 24.26-27.86 47.08-42.21 70.04-15.94 25.51-32 52.16-53.91 73.08"/>
+        <path
+            android:strokeColor="#FF000000"
+            android:strokeWidth="32"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M308.76 415.13c0.28 27.31 0.26 54.64 1.03 81.94 0.57 20.19 2.01 40.58 1.01 60.78"/>
+        <path
+            android:strokeColor="#FF000000"
+            android:strokeWidth="32"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M378.03 646.39c7.07-0.2 14.1-0.11 21.18-0.15 3.72-0.02 7.62 0.69 10.93-1.22 10.03-5.8 22.49-19.57 25.83-30.82 3.27-10.99 1.26-25.7 1.7-37.08 1.99-50.73 0.96-100.32-12.68-149.66-46.97 0-93.92-0.75-140.88-0.92-31.59-0.12-63.11 0.65-94.69-0.2 3.42 27.01 8.6 53.82 11.71 80.86 5.11 44.52 6.69 89.56 4.58 134.29"/>
+    </group>
 </vector>
