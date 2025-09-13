@@ -7,7 +7,7 @@
         android:scaleX="0.6"
         android:scaleY="0.6"
 	android:translateX="240"
-        android:translateY="120">
+	android:translateY="120">
         <path
             android:strokeColor="#FF000000"
             android:strokeWidth="32"

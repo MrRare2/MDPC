@@ -345,7 +345,10 @@ fun SystemOptionsScreen(onNavigateUp: () -> Unit) {
                 getState = { Privilege.DPM.isStatusBarDisabled},
                 onCheckedChange = { Privilege.DPM.setStatusBarDisabled(Privilege.DAR, it) }
             )
-        }
+        } else if (VERSION.SDK_INT >= 23 && (privilege.device || (privilege.profile && privilege.affiliated))) {
+	    FunctionItem(R.string.enable_status_bar, icon = R.drawable.notifications_fill0) { Privilege.DPM.setStatusBarDisabled(Privilege.DAR, false) }
+	    FunctionItem(R.string.disable_status_bar, icon = R.drawable.notifications_off_fill0) { Privilege.DPM.setStatusBarDisabled(Privilege.DAR, true) }
+	}
         if(privilege.device || privilege.org) {
             if(VERSION.SDK_INT >= 30) {
                 SwitchItem(R.string.auto_time, icon = R.drawable.schedule_fill0,
@@ -359,7 +362,8 @@ fun SystemOptionsScreen(onNavigateUp: () -> Unit) {
             } else {
                 SwitchItem(R.string.require_auto_time, icon = R.drawable.schedule_fill0,
                     getState = { Privilege.DPM.autoTimeRequired },
-                    onCheckedChange = { Privilege.DPM.setAutoTimeRequired(Privilege.DAR, it) }, padding = false)
+                    onCheckedChange = { Privilege.DPM.setAutoTimeRequired(Privilege.DAR, it) }
+	        )
             }
         }
         if (!privilege.work) SwitchItem(R.string.master_mute, icon = R.drawable.volume_off_fill0,
