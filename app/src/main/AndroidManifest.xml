@@ -43,9 +43,18 @@
                 <action android:name="android.app.action.MANAGED_PROFILE_PROVISIONED"/>
                 <action android:name="android.app.action.PROFILE_PROVISIONING_COMPLETE"/>
                 <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+	<activity-alias
+	    android:name=".LauncherAlias"
+	    android:targetActivity=".MainActivity"
+	    android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
         <activity
             android:name=".ManageSpaceActivity"
             android:theme="@style/Theme.Transparent">

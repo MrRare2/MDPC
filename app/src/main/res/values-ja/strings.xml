@@ -725,6 +725,7 @@
     <string name="languages">言語</string>
     <string name="da_info">デバイス所有者として申請する</string>
     <string name="api_shared_response">共有APIレスポンス</string>
+    <string name="info_hiding_launcher_icon">このアプリに再度アクセスするには *#*#672376372645839#*#* をダイヤルしてください</string>
 
     <!-- 言語 -->
     <string name="lang_en">英語</string>

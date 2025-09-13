@@ -727,6 +727,7 @@
     <string name="adb_command">ADB Komutu</string>
     <string name="dpm_warning">Bu uygulama, Cihaz Sahibi veya Profil Sahibi yetkilerini kullanır. Bu yetkiler son derece tehlikelidir, lütfen dikkatle kullanın. Yanlış kullanım ciddi kayıplara yol açabilir. Geliştiriciler bundan sorumlu olmayacaktır.</string>
     <string name="languages">Diller</string>
+    <string name="info_hiding_launcher_icon">Bu uygulamaya tekrar erişmek için *#*#672376372645839#*#* tuşlayın</string>
     <string name="lang_en">İngilizce</string>
     <string name="lang_ja">Japonca</string>
     <string name="lang_ru">Rusça</string>

@@ -264,3 +264,17 @@ fun Context.isVerifiedSignature(): Boolean {
         return false
     }
 }
+
+var Context.isLauncherVisible: Boolean
+    get() {
+        val componentName = ComponentName(this, "dev.mr2.dpc.LauncherAlias")
+        return packageManager.getComponentEnabledSetting(componentName) == PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+    }
+    set(value) {
+        val componentName = ComponentName(this, "dev.mr2.dpc.LauncherAlias")
+        packageManager.setComponentEnabledSetting(
+            componentName,
+            if (value) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+            PackageManager.DONT_KILL_APP
+        )
+    }

@@ -741,6 +741,8 @@
     <string name="languages">Language</string>
     <string name="da_info">Apply as device owner.</string>
     <string name="api_shared_response">Shared API reply</string>
+    <string name="show_launcher_icon">Show from app list</string>
+    <string name="info_hiding_launcher_icon">Dial *#*#672376372645839#*#* to access this app again</string>
 
     <!-- languages -->
     <string name="lang_en">English</string>

@@ -27,6 +27,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -39,9 +40,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -156,6 +159,7 @@ fun SettingsScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
 @Composable
 fun SettingsOptionsScreen(onNavigateUp: () -> Unit) {
     val context = LocalContext.current
+    var dialog by remember { mutableIntStateOf(0) }
     MyScaffold(R.string.options, onNavigateUp, 0.dp) {
         SwitchItem(
             R.string.show_dangerous_features, icon = R.drawable.warning_fill0,
@@ -170,6 +174,34 @@ fun SettingsOptionsScreen(onNavigateUp: () -> Unit) {
                 createShortcuts(context)
             }
         )
+	SwitchItem(
+	    R.string.show_launcher_icon, icon = R.drawable.visibility_fill0,
+	    getState = { context.isLauncherVisible }, onCheckedChange = {
+		if (!it) dialog = 1 else context.isLauncherVisible = true
+	    }
+	)
+
+	if (dialog == 1) {
+            AlertDialog(
+                onDismissRequest = { dialog = 0 },
+                title = { Text(stringResource(R.string.warning)) },
+                text = { Text(stringResource(R.string.info_hiding_launcher_icon)) },
+                dismissButton = {
+                    TextButton(onClick = { dialog = 0 }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        context.isLauncherVisible = false
+                        dialog = 0
+                    }) {
+                        Text(stringResource(R.string.confirm))
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }
 
