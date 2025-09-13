@@ -135,7 +135,7 @@
     <string name="enable_camera">Enable camera</string>
     <string name="disable_screen_capture">Disable screen capture</string>
     <string name="disable_status_bar">Disable status bar</string>
-    <string name="enable_status_bar">Enablqe status bar</string>
+    <string name="enable_status_bar">Enable status bar</string>
     <string name="auto_time">Auto time</string>
     <string name="require_auto_time">Require auto time</string>
     <string name="auto_timezone">Auto timezone</string>
