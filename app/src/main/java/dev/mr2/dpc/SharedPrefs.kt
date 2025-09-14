@@ -15,7 +15,7 @@ class SharedPrefs(context: Context) {
     var displayDangerousFeatures by BooleanSharedPref("display_dangerous_features")
     var isApiEnabled by BooleanSharedPref("api.enabled")
     var apiKey by StringSharedPref("api.key")
-    var materialYou by BooleanSharedPref("theme.material_you", Build.VERSION.SDK_INT >= 31)
+    var themeColor by IntSharedPref("theme.color", if (Build.VERSION.SDK_INT >= 31) 0 else 1)
     /** -1: follow system, 0: off, 1: on */
     var darkTheme by IntSharedPref("theme.dark", -1)
     var blackTheme by BooleanSharedPref("theme.black")

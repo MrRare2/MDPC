@@ -210,24 +210,94 @@ fun SettingsOptionsScreen(onNavigateUp: () -> Unit) {
 @Composable
 fun AppearanceScreen(onNavigateUp: () -> Unit, currentTheme: ThemeSettings, onThemeChange: (ThemeSettings) -> Unit) {
     var darkThemeMenu by remember { mutableStateOf(false) }
+    var colorSelectorMenu by remember { mutableStateOf(false) }
     var theme by remember { mutableStateOf(currentTheme) }
     fun update(it: ThemeSettings) {
         theme = it
         onThemeChange(it)
     }
-    val darkThemeTextID = when(theme.darkTheme) {
+    val darkThemeTextID = when (theme.darkTheme) {
         1 -> R.string.on
         0 -> R.string.off
         else -> R.string.follow_system
     }
+    val colorSchemeTextID = when (theme.themeColor) {
+	1 -> R.string.color_blue
+	2 -> R.string.color_red
+	3 -> R.string.color_orange
+	4 -> R.string.color_yellow
+	5 -> R.string.color_pink
+	6 -> R.string.color_purple
+	7 -> R.string.color_green
+	else -> R.string.material_you_color
+    }
     MyScaffold(R.string.appearance, onNavigateUp, 0.dp) {
-        if(VERSION.SDK_INT >= 31) {
-            SwitchItem(
-                R.string.material_you_color,
-                state = theme.materialYou,
-                onCheckedChange = { update(theme.copy(materialYou = it)) }
-            )
-        }
+	Box {
+	    FunctionItem(R.string.color_scheme, stringResource(colorSchemeTextID)) { colorSelectorMenu = true }
+	    DropdownMenu(
+		expanded = colorSelectorMenu, onDismissRequest = { colorSelectorMenu = false },
+		offset = DpOffset(x = 25.dp, y = 0.dp)
+	    ) {
+		if (VERSION.SDK_INT >= 31) {
+		    DropdownMenuItem(
+			text = { Text(stringResource(R.string.material_you_color)) },
+			onClick = {
+			    update(theme.copy(themeColor = 0))
+			    colorSelectorMenu = false
+			}
+		    )
+	        }
+		DropdownMenuItem(
+		    text = { Text(stringResource(R.string.color_blue)) },
+		    onClick = {
+			update(theme.copy(themeColor = 1))
+			colorSelectorMenu = false
+		    }
+		)
+		DropdownMenuItem(
+                    text = { Text(stringResource(R.string.color_red)) },
+                    onClick = {
+                        update(theme.copy(themeColor = 2))
+			colorSelectorMenu = false
+                    }
+                )
+		DropdownMenuItem(
+                    text = { Text(stringResource(R.string.color_orange)) },
+                    onClick = {
+                        update(theme.copy(themeColor = 3))
+                        colorSelectorMenu = false
+                    }
+                )
+		DropdownMenuItem(
+                    text = { Text(stringResource(R.string.color_yellow)) },
+                    onClick = {
+                        update(theme.copy(themeColor = 4))
+                        colorSelectorMenu = false
+                    }
+                )
+		DropdownMenuItem(
+                    text = { Text(stringResource(R.string.color_pink)) },
+                    onClick = {
+                        update(theme.copy(themeColor = 5))
+                        colorSelectorMenu = false
+                    }
+                )
+		DropdownMenuItem(
+                    text = { Text(stringResource(R.string.color_purple)) },
+                    onClick = {
+                        update(theme.copy(themeColor = 6))
+                        colorSelectorMenu = false
+                    }
+                )
+		DropdownMenuItem(
+                    text = { Text(stringResource(R.string.color_green)) },
+                    onClick = {
+                        update(theme.copy(themeColor = 7))
+                        colorSelectorMenu = false
+                    }
+                )
+	    }
+	}
         Box {
             FunctionItem(R.string.dark_theme, stringResource(darkThemeTextID)) { darkThemeMenu = true }
             DropdownMenu(

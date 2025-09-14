@@ -744,6 +744,7 @@
     <string name="api_shared_response">Shared API reply</string>
     <string name="show_launcher_icon">Show from app list</string>
     <string name="info_hiding_launcher_icon">Dial *#*#672376372645839#*#* to access this app again</string>
+    <string name="color_scheme">Color scheme</string>
 
     <!-- languages -->
     <string name="lang_en">English</string>
@@ -753,4 +754,13 @@
     <string name="lang_tr">Türkçe</string>
     <string name="lang_fil">Filipino</string>
     <string name="lang_qmr">Mare-go (conlang)</string>
+
+    <!-- color schemes -->
+    <string name="color_blue">Miku Blue</string>
+    <string name="color_red">Teto Red</string>
+    <string name="color_orange">Neru Orange</string>
+    <string name="color_yellow">Kagamine Yellow</string>
+    <string name="color_pink">Megurine Pink</string>
+    <string name="color_purple">Classic Purple</string>
+    <string name="color_green">Android Green</string>
 </resources>
