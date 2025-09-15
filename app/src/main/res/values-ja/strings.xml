@@ -728,6 +728,14 @@
     <string name="api_shared_response">共有APIレスポンス</string>
     <string name="show_launcher_icon">アプリ一覧に表示</string>
     <string name="info_hiding_launcher_icon">このアプリに再度アクセスするには *#*#672376372645839#*#* をダイヤルしてください</string>
+    <string name="color_scheme">カラー設定</string>
+    <string name="color_blue">ミクブルー</string>
+    <string name="color_red">テト赤い</string>
+    <string name="color_orange">ネルオレンジ</string>
+    <string name="color_yellow">鏡音黄色</string>
+    <string name="color_pink">巡音ピンク</string>
+    <string name="color_purple">クラシックパープル</string>
+    <string name="color_green">アンドロイドグリーン</string>
 
     <!-- 言語 -->
     <string name="lang_en">英語</string>

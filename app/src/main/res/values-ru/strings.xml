@@ -687,6 +687,14 @@
     <string name="show_launcher_icon">Показать в списке приложений</string>
     <string name="info_hiding_launcher_icon">Чтобы снова получить доступ к этому приложению, наберите *#*#672376372645839#*#*</string>
     <string name="languages">Язык</string>
+    <string name="color_scheme">Цветовая схема</string>
+    <string name="color_blue">Мику голубой</string>
+    <string name="color_red">Тето красный</string>
+    <string name="color_orange">Неру оранжевый</string>
+    <string name="color_yellow">Кагамине жёлтый</string>
+    <string name="color_pink">Мегурине розовый</string>
+    <string name="color_purple">Классический фиолетовый</string>
+    <string name="color_green">Андроид зелёный</string>
     <string name="lang_en">Английский</string>
     <string name="lang_ja">Японский</string>
     <string name="lang_ru">Русский</string>

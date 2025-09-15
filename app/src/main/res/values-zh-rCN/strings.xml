@@ -707,6 +707,14 @@
     <string name="languages">语言</string>
     <string name="show_launcher_icon">在应用列表中显示</string>
     <string name="info_hiding_launcher_icon">要再次访问此应用，请拨打 *#*#672376372645839#*#*</string>
+    <string name="color_scheme">配色方案</string>
+    <string name="color_blue">初音蓝</string>
+    <string name="color_red">重音红</string>
+    <string name="color_orange">亚北橙</string>
+    <string name="color_yellow">镜音黄</string>
+    <string name="color_pink">巡音粉</string>
+    <string name="color_purple">经典紫</string>
+    <string name="color_green">安卓绿</string>
     <string name="lang_en">英语</string>
     <string name="lang_ja">日语</string>
     <string name="lang_ru">俄语</string>
