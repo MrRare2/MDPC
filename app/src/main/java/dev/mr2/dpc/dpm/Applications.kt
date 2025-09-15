@@ -89,6 +89,7 @@ import dev.mr2.dpc.ChoosePackageContract
 import dev.mr2.dpc.HorizontalPadding
 import dev.mr2.dpc.Privilege
 import dev.mr2.dpc.R
+import dev.mr2.dpc.SP
 import dev.mr2.dpc.getInstalledAppsFlags
 import dev.mr2.dpc.installedApps
 import dev.mr2.dpc.showOperationResultToast
@@ -202,17 +203,17 @@ fun ApplicationsFeaturesScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Un
             if(VERSION.SDK_INT >= 23) {
                 FunctionItem(R.string.permissions, icon = R.drawable.shield_fill0) { onNavigate(PermissionsManager()) }
             }
-            if(VERSION.SDK_INT >= 28) {
+            if (VERSION.SDK_INT >= 28) {
                 FunctionItem(R.string.disable_metered_data, icon = R.drawable.money_off_fill0) { onNavigate(DisableMeteredData) }
             }
-            if(VERSION.SDK_INT >= 28) {
+            if (SP.displayDangerousFeatures && VERSION.SDK_INT >= 28) {
                 FunctionItem(R.string.clear_app_storage, icon = R.drawable.mop_fill0) { onNavigate(ClearAppStorage) }
             }
             FunctionItem(R.string.install_app, icon = R.drawable.install_mobile_fill0) {
                 context.startActivity(Intent(context, AppInstallerActivity::class.java))
             }
-            FunctionItem(R.string.uninstall_app, icon = R.drawable.delete_fill0) { onNavigate(UninstallApp) }
-            if(VERSION.SDK_INT >= 28 && privilege.device) {
+            if (SP.displayDangerousFeatures) FunctionItem(R.string.uninstall_app, icon = R.drawable.delete_fill0) { onNavigate(UninstallApp) }
+            if (VERSION.SDK_INT >= 28 && privilege.device) {
                 FunctionItem(R.string.keep_uninstalled_packages, icon = R.drawable.delete_fill0) { onNavigate(KeepUninstalledPackages) }
             }
             if (VERSION.SDK_INT >= 28 && (privilege.device || (privilege.profile && privilege.affiliated))) {
@@ -258,7 +259,7 @@ fun ApplicationDetailsScreen(param: ApplicationDetails, onNavigateUp: () -> Unit
             Text(info.packageName, Modifier.alpha(0.7F).padding(bottom = 8.dp), style = typography.bodyMedium)
         }
         FunctionItem(R.string.permissions, icon = R.drawable.shield_fill0) { onNavigate(PermissionsManager(packageName)) }
-        if(VERSION.SDK_INT >= 24) SwitchItem(
+        if (VERSION.SDK_INT >= 24) SwitchItem(
             R.string.suspend, icon = R.drawable.block_fill0,
             getState = { Privilege.DPM.isPackageSuspended(Privilege.DAR, packageName) },
             onCheckedChange = { Privilege.DPM.setPackagesSuspended(Privilege.DAR, arrayOf(packageName), it) }
@@ -273,7 +274,7 @@ fun ApplicationDetailsScreen(param: ApplicationDetails, onNavigateUp: () -> Unit
             getState = { Privilege.DPM.isUninstallBlocked(Privilege.DAR, packageName) },
             onCheckedChange = { Privilege.DPM.setUninstallBlocked(Privilege.DAR, packageName, it) }
         )
-        if(VERSION.SDK_INT >= 30) SwitchItem(
+        if (VERSION.SDK_INT >= 30) SwitchItem(
             R.string.disable_user_control, icon = R.drawable.do_not_touch_fill0,
             getState = { packageName in Privilege.DPM.getUserControlDisabledPackages(Privilege.DAR) },
             onCheckedChange = { state ->
@@ -282,7 +283,7 @@ fun ApplicationDetailsScreen(param: ApplicationDetails, onNavigateUp: () -> Unit
                 )
             }
         )
-        if(VERSION.SDK_INT >= 28) SwitchItem(
+        if (VERSION.SDK_INT >= 28) SwitchItem(
             R.string.disable_metered_data, icon = R.drawable.money_off_fill0,
             getState = { packageName in Privilege.DPM.getMeteredDataDisabledPackages(Privilege.DAR) },
             onCheckedChange = { state ->
@@ -291,7 +292,7 @@ fun ApplicationDetailsScreen(param: ApplicationDetails, onNavigateUp: () -> Unit
                 )
             }
         )
-        if(privilege.device && VERSION.SDK_INT >= 28) SwitchItem(
+        if (privilege.device && VERSION.SDK_INT >= 28) SwitchItem(
             R.string.keep_after_uninstall, icon = R.drawable.delete_fill0,
             getState = { Privilege.DPM.getKeepUninstalledPackages(Privilege.DAR)?.contains(packageName) == true },
             onCheckedChange = { state ->
@@ -300,11 +301,11 @@ fun ApplicationDetailsScreen(param: ApplicationDetails, onNavigateUp: () -> Unit
                 )
             }
         )
-        if(VERSION.SDK_INT >= 28) FunctionItem(R.string.clear_app_storage, icon = R.drawable.mop_fill0) { dialog = 1 }
-        FunctionItem(R.string.uninstall, icon = R.drawable.delete_fill0) { dialog = 2 }
+        if (SP.displayDangerousFeatures && VERSION.SDK_INT >= 28) FunctionItem(R.string.clear_app_storage, icon = R.drawable.mop_fill0) { dialog = 1 }
+        if (SP.displayDangerousFeatures) FunctionItem(R.string.uninstall, icon = R.drawable.delete_fill0) { dialog = 2 }
     }
-    if(dialog == 1 && VERSION.SDK_INT >= 28) ClearAppStorageDialog(packageName) { dialog = 0 }
-    if(dialog == 2) UninstallAppDialog(packageName) { dialog = 0 }
+    if (dialog == 1 && VERSION.SDK_INT >= 28) ClearAppStorageDialog(packageName) { dialog = 0 }
+    if (dialog == 2) UninstallAppDialog(packageName) { dialog = 0 }
 }
 
 @Serializable object Suspend
