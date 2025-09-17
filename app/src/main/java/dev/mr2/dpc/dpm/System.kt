@@ -112,13 +112,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import dev.mr2.dpc.ChoosePackageContract
 import dev.mr2.dpc.HorizontalPadding
 import dev.mr2.dpc.NotificationUtils
 import dev.mr2.dpc.Privilege
@@ -143,6 +141,7 @@ import dev.mr2.dpc.ui.Notes
 import dev.mr2.dpc.ui.SwitchItem
 import dev.mr2.dpc.uriToStream
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -170,15 +169,15 @@ fun SystemManagerScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
     MyScaffold(R.string.system, onNavigateUp, 0.dp) {
         FunctionItem(R.string.options, icon = R.drawable.tune_fill0) { onNavigate(SystemOptions) }
         FunctionItem(R.string.keyguard, icon = R.drawable.screen_lock_portrait_fill0) { onNavigate(Keyguard) }
-        if(VERSION.SDK_INT >= 24 && privilege.device && !privilege.dhizuku)
+        if (VERSION.SDK_INT >= 24 && privilege.device && !privilege.dhizuku)
             FunctionItem(R.string.hardware_monitor, icon = R.drawable.memory_fill0) { onNavigate(HardwareMonitor) }
-        if(VERSION.SDK_INT >= 24 && privilege.device) {
+        if (VERSION.SDK_INT >= 24 && privilege.device) {
             FunctionItem(R.string.reboot, icon = R.drawable.restart_alt_fill0) { dialog = 1 }
         }
-        if(VERSION.SDK_INT >= 24 && privilege.device && (VERSION.SDK_INT < 28 || privilege.affiliated)) {
+        if (VERSION.SDK_INT >= 24 && privilege.device && (VERSION.SDK_INT < 28 || privilege.affiliated)) {
             FunctionItem(R.string.bug_report, icon = R.drawable.bug_report_fill0) { dialog = 2 }
         }
-        if(VERSION.SDK_INT >= 28 && (privilege.device || privilege.org)) {
+        if (VERSION.SDK_INT >= 28 && (privilege.device || privilege.org)) {
             FunctionItem(R.string.change_time, icon = R.drawable.schedule_fill0) { onNavigate(ChangeTime) }
             FunctionItem(R.string.change_timezone, icon = R.drawable.globe_fill0) { onNavigate(ChangeTimeZone) }
         }
@@ -188,55 +187,55 @@ fun SystemManagerScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
         }
         /*if(VERSION.SDK_INT >= 28 && (deviceOwner || profileOwner))
             FunctionItem(R.string.key_pairs, icon = R.drawable.key_vertical_fill0) { navCtrl.navigate("KeyPairs") }*/
-        if(VERSION.SDK_INT >= 35 && (privilege.device || (privilege.profile && privilege.affiliated)))
+        if (VERSION.SDK_INT >= 35 && (privilege.device || (privilege.profile && privilege.affiliated)))
             FunctionItem(R.string.content_protection_policy, icon = R.drawable.search_fill0) { onNavigate(ContentProtectionPolicy) }
-        if(VERSION.SDK_INT >= 23) {
+        if (VERSION.SDK_INT >= 23) {
             FunctionItem(R.string.permission_policy, icon = R.drawable.key_fill0) { onNavigate(PermissionPolicy) }
         }
-        if(VERSION.SDK_INT >= 34 && privilege.device) {
+        if (VERSION.SDK_INT >= 34 && privilege.device) {
             FunctionItem(R.string.mte_policy, icon = R.drawable.memory_fill0) { onNavigate(MtePolicy) }
         }
-        if(VERSION.SDK_INT >= 31) {
+        if (VERSION.SDK_INT >= 31) {
             FunctionItem(R.string.nearby_streaming_policy, icon = R.drawable.share_fill0) { onNavigate(NearbyStreamingPolicy) }
         }
-        if(VERSION.SDK_INT >= 28 && privilege.device) {
+        if (VERSION.SDK_INT >= 28 && privilege.device) {
             FunctionItem(R.string.lock_task_mode, icon = R.drawable.lock_fill0) { onNavigate(LockTaskMode) }
         }
         FunctionItem(R.string.ca_cert, icon = R.drawable.license_fill0) { onNavigate(CaCert) }
-        if(VERSION.SDK_INT >= 26 && !privilege.dhizuku && (privilege.device || privilege.org)) {
+        if (VERSION.SDK_INT >= 26 && !privilege.dhizuku && (privilege.device || privilege.org)) {
             FunctionItem(R.string.security_logging, icon = R.drawable.description_fill0) { onNavigate(SecurityLogging) }
         }
         FunctionItem(R.string.device_info, icon = R.drawable.perm_device_information_fill0) { onNavigate(DeviceInfo) }
-        if(VERSION.SDK_INT >= 24 && (privilege.profile || (VERSION.SDK_INT >= 26 && privilege.device))) {
+        if (VERSION.SDK_INT >= 24 && (privilege.profile || (VERSION.SDK_INT >= 26 && privilege.device))) {
             FunctionItem(R.string.org_name, icon = R.drawable.corporate_fare_fill0) { dialog = 3 }
         }
-        if(VERSION.SDK_INT >= 31) {
+        if (VERSION.SDK_INT >= 31) {
             FunctionItem(R.string.org_id, icon = R.drawable.corporate_fare_fill0) { dialog = 4 }
         }
-        if(enrollmentSpecificId != "") {
+        if (enrollmentSpecificId != "") {
             FunctionItem(R.string.enrollment_specific_id, icon = R.drawable.id_card_fill0) { dialog = 5 }
         }
-        if(VERSION.SDK_INT >= 24 && (privilege.device || privilege.org)) {
+        if (VERSION.SDK_INT >= 24 && (privilege.device || privilege.org)) {
             FunctionItem(R.string.lock_screen_info, icon = R.drawable.screen_lock_portrait_fill0) { onNavigate(LockScreenInfo) }
         }
-        if(VERSION.SDK_INT >= 24) {
+        if (VERSION.SDK_INT >= 24) {
             FunctionItem(R.string.support_messages, icon = R.drawable.chat_fill0) { onNavigate(SupportMessage) }
         }
         FunctionItem(R.string.disable_account_management, icon = R.drawable.account_circle_fill0) { onNavigate(DisableAccountManagement) }
-        if(VERSION.SDK_INT >= 23 && (privilege.device || privilege.org)) {
+        if (VERSION.SDK_INT >= 23 && (privilege.device || privilege.org)) {
             FunctionItem(R.string.system_update_policy, icon = R.drawable.system_update_fill0) { onNavigate(SetSystemUpdatePolicy) }
         }
-        if(VERSION.SDK_INT >= 29 && (privilege.device || privilege.org)) {
+        if (VERSION.SDK_INT >= 29 && (privilege.device || privilege.org)) {
             FunctionItem(R.string.install_system_update, icon = R.drawable.system_update_fill0) { onNavigate(InstallSystemUpdate) }
         }
-        if(VERSION.SDK_INT >= 30 && (privilege.device || privilege.org)) {
+        if (VERSION.SDK_INT >= 30 && (privilege.device || privilege.org)) {
             FunctionItem(R.string.frp_policy, icon = R.drawable.device_reset_fill0) { onNavigate(FrpPolicy) }
         }
-        if(SP.displayDangerousFeatures && !privilege.work) {
+        if (SP.displayDangerousFeatures && !privilege.work) {
             FunctionItem(R.string.wipe_data, icon = R.drawable.device_reset_fill0) { onNavigate(WipeData) }
         }
     }
-    if((dialog == 1 || dialog == 2) && VERSION.SDK_INT >= 24) AlertDialog(
+    if ((dialog == 1 || dialog == 2) && VERSION.SDK_INT >= 24) AlertDialog(
         onDismissRequest = { dialog = 0 },
         title = { Text(stringResource(if(dialog == 1) R.string.reboot else R.string.bug_report)) },
         text = { Text(stringResource(if(dialog == 1) R.string.info_reboot else R.string.confirm_bug_report)) },
@@ -1138,7 +1137,9 @@ fun NearbyStreamingPolicyScreen(onNavigateUp: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(28)
 @Composable
-fun LockTaskModeScreen(onNavigateUp: () -> Unit) {
+fun LockTaskModeScreen(
+    chosenPackage: Channel<String>, onChoosePackage: () -> Unit, onNavigateUp: () -> Unit
+) {
     val coroutine = rememberCoroutineScope()
     val pagerState = rememberPagerState { 3 }
     var tabIndex by remember { mutableIntStateOf(0) }
@@ -1173,7 +1174,7 @@ fun LockTaskModeScreen(onNavigateUp: () -> Unit) {
                 )
             }
             HorizontalPager(pagerState, verticalAlignment = Alignment.Top) { page ->
-                if(page == 0 || page == 1) {
+                if (page == 0 || page == 1) {
                     Column(
                         Modifier
                             .fillMaxSize()
@@ -1181,8 +1182,8 @@ fun LockTaskModeScreen(onNavigateUp: () -> Unit) {
                             .padding(horizontal = HorizontalPadding)
                             .padding(bottom = 80.dp)
                     ) {
-                        if(page == 0) StartLockTaskMode()
-                        else LockTaskPackages()
+                        if (page == 0) StartLockTaskMode(chosenPackage, onChoosePackage)
+                        else LockTaskPackages(chosenPackage, onChoosePackage)
                     }
                 } else {
                     Column(
@@ -1201,33 +1202,20 @@ fun LockTaskModeScreen(onNavigateUp: () -> Unit) {
 
 @RequiresApi(28)
 @Composable
-private fun ColumnScope.StartLockTaskMode() {
+private fun ColumnScope.StartLockTaskMode(
+    chosenPackage: Channel<String>, onChoosePackage: () -> Unit
+) {
     val context = LocalContext.current
     val focusMgr = LocalFocusManager.current
     var startLockTaskApp by rememberSaveable { mutableStateOf("") }
     var startLockTaskActivity by rememberSaveable { mutableStateOf("") }
     var specifyActivity by rememberSaveable { mutableStateOf(false) }
-    val choosePackage = rememberLauncherForActivityResult(ChoosePackageContract()) { result ->
-        result?.let { startLockTaskApp = it }
+    LaunchedEffect(Unit) {
+        startLockTaskApp = chosenPackage.receive()
     }
     Spacer(Modifier.padding(vertical = 5.dp))
-    OutlinedTextField(
-        value = startLockTaskApp,
-        onValueChange = { startLockTaskApp = it },
-        label = { Text(stringResource(R.string.package_name)) },
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        keyboardActions = KeyboardActions(onDone = { focusMgr.clearFocus() }),
-        trailingIcon = {
-            Icon(painter = painterResource(R.drawable.list_fill0), contentDescription = null,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .clickable { choosePackage.launch(null) }
-                    .padding(3.dp))
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 3.dp)
-    )
+    PackageNameTextField(startLockTaskApp, onChoosePackage,
+        Modifier.padding(vertical = 3.dp), { startLockTaskApp = it })
     CheckBoxItem(R.string.specify_activity, specifyActivity) { specifyActivity = it }
     AnimatedVisibility(specifyActivity) {
         OutlinedTextField(
@@ -1244,8 +1232,8 @@ private fun ColumnScope.StartLockTaskMode() {
     Button(
         modifier = Modifier.fillMaxWidth(),
         onClick = {
-            if(!NotificationUtils.checkPermission(context)) return@Button
-            if(!Privilege.DPM.isLockTaskPermitted(startLockTaskApp)) {
+            if (!NotificationUtils.checkPermission(context)) return@Button
+            if (!Privilege.DPM.isLockTaskPermitted(startLockTaskApp)) {
                 context.popToast(R.string.app_not_allowed)
                 return@Button
             }
@@ -1268,37 +1256,24 @@ private fun ColumnScope.StartLockTaskMode() {
 
 @RequiresApi(26)
 @Composable
-private fun ColumnScope.LockTaskPackages() {
+private fun ColumnScope.LockTaskPackages(
+    chosenPackage: Channel<String>, onChoosePackage: () -> Unit
+) {
     val context = LocalContext.current
     val focusMgr = LocalFocusManager.current
     val lockTaskPackages = remember { mutableStateListOf<String>() }
     var input by rememberSaveable { mutableStateOf("") }
-    val choosePackage = rememberLauncherForActivityResult(ChoosePackageContract()) { result ->
-        result?.let { input = it }
+    LaunchedEffect(Unit) {
+        lockTaskPackages.addAll(Privilege.DPM.getLockTaskPackages(Privilege.DAR))
+        input = chosenPackage.receive()
     }
-    LaunchedEffect(Unit) { lockTaskPackages.addAll(Privilege.DPM.getLockTaskPackages(Privilege.DAR)) }
     Spacer(Modifier.padding(vertical = 5.dp))
-    if(lockTaskPackages.isEmpty()) Text(text = stringResource(R.string.none))
-    for(i in lockTaskPackages) {
+    if (lockTaskPackages.isEmpty()) Text(text = stringResource(R.string.none))
+    for (i in lockTaskPackages) {
         ListItem(i) { lockTaskPackages -= i }
     }
-    OutlinedTextField(
-        value = input,
-        onValueChange = { input = it },
-        label = { Text(stringResource(R.string.package_name)) },
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        keyboardActions = KeyboardActions(onDone = { focusMgr.clearFocus() }),
-        trailingIcon = {
-            Icon(painter = painterResource(R.drawable.list_fill0), contentDescription = null,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .clickable { choosePackage.launch(null) }
-                    .padding(3.dp))
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 3.dp)
-    )
+    PackageNameTextField(input, onChoosePackage,
+        Modifier.padding(vertical = 3.dp), { input = it })
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Button(
             onClick = {

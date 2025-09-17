@@ -76,11 +76,6 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".PackageChooserActivity"
-            android:label="@string/package_chooser"
-            android:exported="false"
-            android:launchMode="singleInstance"/>
-        <activity
             android:name=".ShortcutsReceiverActivity"
             android:permission="dev.mr2.dpc.MyPermission"
             android:exported="true"

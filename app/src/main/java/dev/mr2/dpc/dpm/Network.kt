@@ -127,7 +127,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import dev.mr2.dpc.ChoosePackageContract
 import dev.mr2.dpc.HorizontalPadding
 import dev.mr2.dpc.Privilege
 import dev.mr2.dpc.R
@@ -153,6 +152,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -168,31 +168,31 @@ import kotlin.reflect.jvm.jvmErasure
 fun NetworkScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
     val privilege by Privilege.status.collectAsStateWithLifecycle()
     MyScaffold(R.string.network, onNavigateUp, 0.dp) {
-        if(!privilege.dhizuku) FunctionItem(R.string.wifi, icon = R.drawable.wifi_fill0) { onNavigate(WiFi) }
-        if(VERSION.SDK_INT >= 30) {
+        if (!privilege.dhizuku) FunctionItem(R.string.wifi, icon = R.drawable.wifi_fill0) { onNavigate(WiFi) }
+        if (VERSION.SDK_INT >= 30) {
             FunctionItem(R.string.options, icon = R.drawable.tune_fill0) { onNavigate(NetworkOptions) }
         }
-        if(VERSION.SDK_INT >= 23 && !privilege.dhizuku && (privilege.device || privilege.profile))
+        if (VERSION.SDK_INT >= 23 && !privilege.dhizuku && (privilege.device || privilege.profile))
             FunctionItem(R.string.network_stats, icon = R.drawable.query_stats_fill0) { onNavigate(QueryNetworkStats) }
-        if(VERSION.SDK_INT >= 29 && privilege.device) {
+        if (VERSION.SDK_INT >= 29 && privilege.device) {
             FunctionItem(R.string.private_dns, icon = R.drawable.dns_fill0) { onNavigate(PrivateDns) }
         }
-        if(VERSION.SDK_INT >= 24) {
+        if (VERSION.SDK_INT >= 24) {
             FunctionItem(R.string.always_on_vpn, icon = R.drawable.vpn_key_fill0) { onNavigate(AlwaysOnVpnPackage) }
         }
-        if(privilege.device) {
+        if (privilege.device) {
             FunctionItem(R.string.recommended_global_proxy, icon = R.drawable.vpn_key_fill0) { onNavigate(RecommendedGlobalProxy) }
         }
-        if(VERSION.SDK_INT >= 26 && !privilege.dhizuku && (privilege.device || privilege.work)) {
+        if (VERSION.SDK_INT >= 26 && !privilege.dhizuku && (privilege.device || privilege.work)) {
             FunctionItem(R.string.network_logging, icon = R.drawable.description_fill0) { onNavigate(NetworkLogging) }
         }
-        if(VERSION.SDK_INT >= 31) {
+        if (VERSION.SDK_INT >= 31) {
             FunctionItem(R.string.wifi_auth_keypair, icon = R.drawable.key_fill0) { onNavigate(WifiAuthKeypair) }
         }
         if (VERSION.SDK_INT >= 33 && (privilege.work || privilege.device)) {
             FunctionItem(R.string.preferential_network_service, icon = R.drawable.globe_fill0) { onNavigate(PreferentialNetworkService) }
         }
-        if(VERSION.SDK_INT >= 28 && privilege.device) {
+        if (VERSION.SDK_INT >= 28 && privilege.device) {
             FunctionItem(R.string.override_apn, icon = R.drawable.cell_tower_fill0) { onNavigate(OverrideApn) }
         }
     }
@@ -205,7 +205,7 @@ fun NetworkOptionsScreen(onNavigateUp: () -> Unit) {
     val privilege by Privilege.status.collectAsStateWithLifecycle()
     var dialog by remember { mutableIntStateOf(0) }
     MyScaffold(R.string.options, onNavigateUp, 0.dp) {
-        if(VERSION.SDK_INT >= 30 && (privilege.device || privilege.org)) {
+        if (VERSION.SDK_INT >= 30 && (privilege.device || privilege.org)) {
             SwitchItem(R.string.lockdown_admin_configured_network, icon = R.drawable.wifi_password_fill0,
                 getState = { Privilege.DPM.hasLockdownAdminConfiguredNetworks(Privilege.DAR) },
                 onCheckedChange = { Privilege.DPM.setConfiguredNetworksLockdownState(Privilege.DAR, it) },
@@ -213,7 +213,7 @@ fun NetworkOptionsScreen(onNavigateUp: () -> Unit) {
             )
         }
     }
-    if(dialog != 0) AlertDialog(
+    if (dialog != 0) AlertDialog(
         text = { Text(stringResource(R.string.info_lockdown_admin_configured_network)) },
         confirmButton = {
             TextButton(onClick = { dialog = 0 }) { Text(stringResource(R.string.confirm)) }
@@ -261,7 +261,7 @@ fun WifiScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit, onNavigateTo
                 )
             }
             HorizontalPager(state = pagerState, verticalAlignment = Alignment.Top) { page ->
-                if(page == 0) {
+                if (page == 0) {
                     val wm = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
                     val privilege by Privilege.status.collectAsStateWithLifecycle()
                     @Suppress("DEPRECATION") Column(
@@ -295,22 +295,22 @@ fun WifiScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit, onNavigateTo
                                 Text(stringResource(R.string.reconnect))
                             }
                         }
-                        if(VERSION.SDK_INT >= 24 && (privilege.device || privilege.org)) {
+                        if (VERSION.SDK_INT >= 24 && (privilege.device || privilege.org)) {
                             FunctionItem(R.string.wifi_mac_address) { wifiMacDialog = true }
                         }
-                        if(VERSION.SDK_INT >= 33 && (privilege.device || privilege.org)) {
+                        if (VERSION.SDK_INT >= 33 && (privilege.device || privilege.org)) {
                             FunctionItem(R.string.min_wifi_security_level) { onNavigate(WifiSecurityLevel) }
                             FunctionItem(R.string.wifi_ssid_policy) { onNavigate(WifiSsidPolicyScreen) }
                         }
                     }
-                } else if(page == 1) {
+                } else if (page == 1) {
                     SavedNetworks(onNavigateToUpdateNetwork)
                 } else {
                     AddNetworkScreen(null) {}
                 }
             }
         }
-        if(wifiMacDialog && VERSION.SDK_INT >= 24) {
+        if (wifiMacDialog && VERSION.SDK_INT >= 24) {
             AlertDialog(
                 onDismissRequest = { wifiMacDialog = false },
                 confirmButton = { TextButton(onClick = { wifiMacDialog = false }) { Text(stringResource(R.string.confirm)) } },
@@ -320,7 +320,7 @@ fun WifiScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit, onNavigateTo
                         value = mac ?: stringResource(R.string.none), label = { Text(stringResource(R.string.wifi_mac_address)) },
                         onValueChange = {}, readOnly = true, modifier = Modifier.fillMaxWidth(), textStyle = typography.bodyLarge,
                         trailingIcon = {
-                            if(mac != null) IconButton(onClick = { writeClipBoard(context, mac) }) {
+                            if (mac != null) IconButton(onClick = { writeClipBoard(context, mac) }) {
                                 Icon(painter = painterResource(R.drawable.content_copy_fill0), contentDescription = stringResource(R.string.copy))
                             }
                         }
@@ -354,9 +354,9 @@ private fun SavedNetworks(onNavigateToUpdateNetwork: (Bundle) -> Unit) {
     ) {
         val locationPermission = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
         val requestPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-            if(it) refresh()
+            if (it) refresh()
         }
-        if(!locationPermission.status.isGranted) {
+        if (!locationPermission.status.isGranted) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -390,7 +390,7 @@ private fun SavedNetworks(onNavigateToUpdateNetwork: (Bundle) -> Unit) {
             }
         }
     }
-    if(networkDetailsDialog != -1) AlertDialog(
+    if (networkDetailsDialog != -1) AlertDialog(
         text = {
             val network = configuredNetworks[networkDetailsDialog]
             val statusText = when(network.status) {
@@ -403,7 +403,7 @@ private fun SavedNetworks(onNavigateToUpdateNetwork: (Bundle) -> Unit) {
                 Text(stringResource(R.string.network_id) + ": " + network.networkId.toString())
                 SelectionContainer {
                     Text("SSID: " + network.SSID)
-                    if(network.BSSID != null) Text("BSSID: " + network.BSSID)
+                    if (network.BSSID != null) Text("BSSID: " + network.BSSID)
                 }
                 Text(stringResource(R.string.status) + ": " + stringResource(statusText))
                 Row(
@@ -499,18 +499,18 @@ private fun AddNetworkScreen(wifiConfig: WifiConfiguration? = null, onNavigateUp
     var httpProxyPort by remember { mutableStateOf("") }
     var httpProxyExclList by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
-        if(wifiConfig != null) {
+        if (wifiConfig != null) {
             status = wifiConfig.status
-            if(wifiConfig.status == WifiConfiguration.Status.CURRENT) status = WifiConfiguration.Status.ENABLED
+            if (wifiConfig.status == WifiConfiguration.Status.CURRENT) status = WifiConfiguration.Status.ENABLED
             ssid = wifiConfig.SSID.removeSurrounding("\"")
         }
     }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     Column(
-        modifier = (if(wifiConfig == null) Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 60.dp) else Modifier)
+        modifier = (if (wifiConfig == null) Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 60.dp) else Modifier)
             .padding(start = 8.dp, end = 8.dp, top = 12.dp)
     ) {
-        ExposedDropdownMenuBox(dropdownMenu == 1, { dropdownMenu = if(it) 1 else 0 }) {
+        ExposedDropdownMenuBox(dropdownMenu == 1, { dropdownMenu = if (it) 1 else 0 }) {
             val statusText = when(status) {
                 WifiConfiguration.Status.DISABLED -> R.string.disabled
                 WifiConfiguration.Status.ENABLED -> R.string.enabled
@@ -544,13 +544,13 @@ private fun AddNetworkScreen(wifiConfig: WifiConfiguration? = null, onNavigateUp
             modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
         )
         CheckBoxItem(R.string.hidden_ssid, hiddenSsid) { hiddenSsid = it }
-        if(VERSION.SDK_INT >= 30) {
+        if (VERSION.SDK_INT >= 30) {
             // TODO: more protocols
             val securityTypeTextMap = mutableMapOf(
                 WifiConfiguration.SECURITY_TYPE_OPEN to stringResource(R.string.wifi_security_open),
                 WifiConfiguration.SECURITY_TYPE_PSK to "PSK"
             )
-            ExposedDropdownMenuBox(dropdownMenu == 2, { dropdownMenu = if(it) 2 else 0 }) {
+            ExposedDropdownMenuBox(dropdownMenu == 2, { dropdownMenu = if (it) 2 else 0 }) {
                 OutlinedTextField(
                     value = securityTypeTextMap[securityType] ?: "", onValueChange = {}, label = { Text(stringResource(R.string.security)) },
                     trailingIcon = { ExpandExposedTextFieldIcon(dropdownMenu == 1) }, readOnly = true,
@@ -569,7 +569,7 @@ private fun AddNetworkScreen(wifiConfig: WifiConfiguration? = null, onNavigateUp
                 )
             }
         }
-        if(VERSION.SDK_INT >= 33) {
+        if (VERSION.SDK_INT >= 33) {
             val macRandomizationSettingTextMap = mapOf(
                 WifiConfiguration.RANDOMIZATION_NONE to R.string.none,
                 WifiConfiguration.RANDOMIZATION_PERSISTENT to R.string.persistent,
@@ -597,10 +597,10 @@ private fun AddNetworkScreen(wifiConfig: WifiConfiguration? = null, onNavigateUp
                 }
             }
         }
-        if(VERSION.SDK_INT >= 33) {
-            ExposedDropdownMenuBox(dropdownMenu == 4, { dropdownMenu = if(it) 4 else 0 }) {
+        if (VERSION.SDK_INT >= 33) {
+            ExposedDropdownMenuBox(dropdownMenu == 4, { dropdownMenu = if (it) 4 else 0 }) {
                 OutlinedTextField(
-                    value = if(useStaticIp) stringResource(R.string.static_str) else "DHCP",
+                    value = if (useStaticIp) stringResource(R.string.static_str) else "DHCP",
                     onValueChange = {}, readOnly = true,
                     label = { Text(stringResource(R.string.ip_settings)) },
                     trailingIcon = { ExpandExposedTextFieldIcon(dropdownMenu == 4) },
@@ -639,10 +639,10 @@ private fun AddNetworkScreen(wifiConfig: WifiConfiguration? = null, onNavigateUp
                 }
             }
         }
-        if(VERSION.SDK_INT >= 26) {
-            ExposedDropdownMenuBox(dropdownMenu == 5, { dropdownMenu = if(it) 5 else 0 }) {
+        if (VERSION.SDK_INT >= 26) {
+            ExposedDropdownMenuBox(dropdownMenu == 5, { dropdownMenu = if (it) 5 else 0 }) {
                 OutlinedTextField(
-                    value = if(useHttpProxy) "HTTP" else stringResource(R.string.none),
+                    value = if (useHttpProxy) "HTTP" else stringResource(R.string.none),
                     onValueChange = {}, readOnly = true,
                     label = { Text(stringResource(R.string.proxy)) },
                     trailingIcon = { ExpandExposedTextFieldIcon(dropdownMenu == 5) },
@@ -687,10 +687,10 @@ private fun AddNetworkScreen(wifiConfig: WifiConfiguration? = null, onNavigateUp
                     config.status = status
                     config.SSID = '"' + ssid + '"'
                     config.hiddenSSID = hiddenSsid
-                    if(VERSION.SDK_INT >= 30) config.setSecurityParams(securityType)
-                    if(securityType == WifiConfiguration.SECURITY_TYPE_PSK) config.preSharedKey = '"' + password + '"'
-                    if(VERSION.SDK_INT >= 33) config.macRandomizationSetting = macRandomizationSetting
-                    if(VERSION.SDK_INT >= 33 && useStaticIp) {
+                    if (VERSION.SDK_INT >= 30) config.setSecurityParams(securityType)
+                    if (securityType == WifiConfiguration.SECURITY_TYPE_PSK) config.preSharedKey = '"' + password + '"'
+                    if (VERSION.SDK_INT >= 33) config.macRandomizationSetting = macRandomizationSetting
+                    if (VERSION.SDK_INT >= 33 && useStaticIp) {
                         val ipConf = IpConfiguration.Builder()
                         val staticIpConf = StaticIpConfiguration.Builder()
                         val la: LinkAddress
@@ -702,14 +702,14 @@ private fun AddNetworkScreen(wifiConfig: WifiConfiguration? = null, onNavigateUp
                         ipConf.setStaticIpConfiguration(staticIpConf.build())
                         config.setIpConfiguration(ipConf.build())
                     }
-                    if(VERSION.SDK_INT >= 26 && useHttpProxy) {
+                    if (VERSION.SDK_INT >= 26 && useHttpProxy) {
                         config.httpProxy = ProxyInfo.buildDirectProxy(httpProxyHost, httpProxyPort.toInt(), httpProxyExclList.lines())
                     }
-                    if(wifiConfig != null) {
+                    if (wifiConfig != null) {
                         config.networkId = wifiConfig.networkId
                         createdNetworkId = wm.updateNetwork(config)
                     } else {
-                        if(VERSION.SDK_INT >= 31) {
+                        if (VERSION.SDK_INT >= 31) {
                             val result = wm.addNetworkPrivileged(config)
                             createdNetworkId = result.networkId
                             createNetworkResult = result.statusCode
@@ -725,9 +725,9 @@ private fun AddNetworkScreen(wifiConfig: WifiConfiguration? = null, onNavigateUp
             },
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
         ) {
-            Text(stringResource(if(wifiConfig != null) R.string.update else R.string.add))
+            Text(stringResource(if (wifiConfig != null) R.string.update else R.string.add))
         }
-        if(resultDialog) AlertDialog(
+        if (resultDialog) AlertDialog(
             text = {
                 val statusText = when(createNetworkResult) {
                     WifiManager.AddNetworkResult.STATUS_SUCCESS -> R.string.success
@@ -741,7 +741,7 @@ private fun AddNetworkScreen(wifiConfig: WifiConfiguration? = null, onNavigateUp
                 TextButton(
                     onClick = {
                         resultDialog = false
-                        if(createdNetworkId != -1) onNavigateUp()
+                        if (createdNetworkId != -1) onNavigateUp()
                     }
                 ) {
                     Text(stringResource(R.string.confirm))
@@ -836,7 +836,7 @@ fun WifiSsidPolicyScreen(onNavigateUp: () -> Unit) {
         Button(
             onClick = {
                 focusMgr.clearFocus()
-                Privilege.DPM.wifiSsidPolicy = if(selectedPolicyType == -1 || ssidList.isEmpty()) {
+                Privilege.DPM.wifiSsidPolicy = if (selectedPolicyType == -1 || ssidList.isEmpty()) {
                     null
                 } else {
                     WifiSsidPolicy(selectedPolicyType, ssidList.toSet())
@@ -873,9 +873,9 @@ private enum class NetworkStatsUID(val uid: Int, @StringRes val strRes: Int) {
 @RequiresApi(23)
 fun NetworkStats.toBucketList(): List<NetworkStats.Bucket> {
     val list = mutableListOf<NetworkStats.Bucket>()
-    while(hasNextBucket()) {
+    while (hasNextBucket()) {
         val bucket = NetworkStats.Bucket()
-        if(getNextBucket(bucket)) list += bucket
+        if (getNextBucket(bucket)) list += bucket
     }
     close()
     return list
@@ -886,7 +886,10 @@ fun NetworkStats.toBucketList(): List<NetworkStats.Bucket> {
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(23)
 @Composable
-fun NetworkStatsScreen(onNavigateUp: () -> Unit, onNavigateToViewer: (NetworkStatsViewer) -> Unit) {
+fun NetworkStatsScreen(
+    chosenPackage: Channel<String>, onChoosePackage: () -> Unit,
+    onNavigateUp: () -> Unit, onNavigateToViewer: (NetworkStatsViewer) -> Unit
+) {
     val context = LocalContext.current
     val privilege by Privilege.status.collectAsStateWithLifecycle()
     val fm = LocalFocusManager.current
@@ -904,13 +907,13 @@ fun NetworkStatsScreen(onNavigateUp: () -> Unit, onNavigateToViewer: (NetworkSta
     var state by rememberSaveable { mutableIntStateOf(NetworkStats.Bucket.STATE_ALL) }
     val startTimeTextFieldInteractionSource = remember { MutableInteractionSource() }
     val endTimeTextFieldInteractionSource = remember { MutableInteractionSource() }
-    if(startTimeTextFieldInteractionSource.collectIsPressedAsState().value) activeTextField = NetworkStatsActiveTextField.StartTime
-    if(endTimeTextFieldInteractionSource.collectIsPressedAsState().value) activeTextField = NetworkStatsActiveTextField.EndTime
+    if (startTimeTextFieldInteractionSource.collectIsPressedAsState().value) activeTextField = NetworkStatsActiveTextField.StartTime
+    if (endTimeTextFieldInteractionSource.collectIsPressedAsState().value) activeTextField = NetworkStatsActiveTextField.EndTime
     var errorMessage by remember { mutableStateOf<String?>(null) }
     MyScaffold(R.string.network_stats, onNavigateUp) {
         ExposedDropdownMenuBox(
             activeTextField == NetworkStatsActiveTextField.Type,
-            { activeTextField = if(it) NetworkStatsActiveTextField.Type else NetworkStatsActiveTextField.Type },
+            { activeTextField = if (it) NetworkStatsActiveTextField.Type else NetworkStatsActiveTextField.Type },
             Modifier.padding(top = 8.dp, bottom = 4.dp)
         ) {
             val typeTextMap = mapOf(
@@ -946,7 +949,7 @@ fun NetworkStatsScreen(onNavigateUp: () -> Unit, onNavigateToViewer: (NetworkSta
         }
         ExposedDropdownMenuBox(
             activeTextField == NetworkStatsActiveTextField.Target,
-            { activeTextField = if(it) NetworkStatsActiveTextField.Target else NetworkStatsActiveTextField.None }
+            { activeTextField = if (it) NetworkStatsActiveTextField.Target else NetworkStatsActiveTextField.None }
         ) {
             OutlinedTextField(
                 value = stringResource(target.strRes), onValueChange = {}, readOnly = true,
@@ -958,7 +961,7 @@ fun NetworkStatsScreen(onNavigateUp: () -> Unit, onNavigateToViewer: (NetworkSta
                 activeTextField == NetworkStatsActiveTextField.Target, { activeTextField = NetworkStatsActiveTextField.None }
             ) {
                 NetworkStatsTarget.entries.forEach {
-                    if(
+                    if (
                         VERSION.SDK_INT >= it.minApi &&
                         (privilege.device || it != NetworkStatsTarget.Device) &&
                         ((queryType == 1 && (it == NetworkStatsTarget.Device || it == NetworkStatsTarget.User)) ||
@@ -975,7 +978,7 @@ fun NetworkStatsScreen(onNavigateUp: () -> Unit, onNavigateToViewer: (NetworkSta
         }
         ExposedDropdownMenuBox(
             activeTextField == NetworkStatsActiveTextField.NetworkType,
-            { activeTextField = if(it) NetworkStatsActiveTextField.NetworkType else NetworkStatsActiveTextField.None }
+            { activeTextField = if (it) NetworkStatsActiveTextField.NetworkType else NetworkStatsActiveTextField.None }
         ) {
             OutlinedTextField(
                 value = stringResource(networkType.strRes), onValueChange = {}, readOnly = true,
@@ -999,11 +1002,11 @@ fun NetworkStatsScreen(onNavigateUp: () -> Unit, onNavigateToViewer: (NetworkSta
         }
         ExposedDropdownMenuBox(
             activeTextField == NetworkStatsActiveTextField.SubscriberId,
-            { activeTextField = if(it) NetworkStatsActiveTextField.SubscriberId else NetworkStatsActiveTextField.None }
+            { activeTextField = if (it) NetworkStatsActiveTextField.SubscriberId else NetworkStatsActiveTextField.None }
         ) {
             var readOnly by rememberSaveable { mutableStateOf(true) }
             OutlinedTextField(
-                value = subscriberId ?: "null", onValueChange = { if(!readOnly) subscriberId = it }, readOnly = readOnly,
+                value = subscriberId ?: "null", onValueChange = { if (!readOnly) subscriberId = it }, readOnly = readOnly,
                 label = { Text(stringResource(R.string.subscriber_id)) },
                 isError = !readOnly && subscriberId.isNullOrBlank(),
                 trailingIcon = { ExpandExposedTextFieldIcon(activeTextField == NetworkStatsActiveTextField.SubscriberId) },
@@ -1033,7 +1036,7 @@ fun NetworkStatsScreen(onNavigateUp: () -> Unit, onNavigateToViewer: (NetworkSta
             }
         }
         OutlinedTextField(
-            value = startTime.let { if(it == -1L) "" else it.humanReadableDate }, onValueChange = {}, readOnly = true,
+            value = startTime.let { if (it == -1L) "" else it.humanReadableDate }, onValueChange = {}, readOnly = true,
             label = { Text(stringResource(R.string.start_time)) },
             interactionSource = startTimeTextFieldInteractionSource,
             isError = startTime >= endTime,
@@ -1046,32 +1049,30 @@ fun NetworkStatsScreen(onNavigateUp: () -> Unit, onNavigateToViewer: (NetworkSta
             isError = startTime >= endTime,
             modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
         )
-        if(target == NetworkStatsTarget.Uid || target == NetworkStatsTarget.UidTag || target == NetworkStatsTarget.UidTagState)
+        if (target == NetworkStatsTarget.Uid || target == NetworkStatsTarget.UidTag || target == NetworkStatsTarget.UidTagState)
             ExposedDropdownMenuBox(
             activeTextField == NetworkStatsActiveTextField.Uid,
-            { activeTextField = if(it) NetworkStatsActiveTextField.Uid else NetworkStatsActiveTextField.None }
+            { activeTextField = if (it) NetworkStatsActiveTextField.Uid else NetworkStatsActiveTextField.None }
         ) {
             var uidText by rememberSaveable { mutableStateOf(context.getString(NetworkStatsUID.All.strRes)) }
             var readOnly by rememberSaveable { mutableStateOf(true) }
-            if(!readOnly && uidText.toIntOrNull() != null) uid = uidText.toInt()
-            val choosePackage = rememberLauncherForActivityResult(ChoosePackageContract()) {
-                it ?: return@rememberLauncherForActivityResult
-                if(VERSION.SDK_INT >= 24 && readOnly) {
-                    try {
-                        uid = context.packageManager.getPackageUid(it, 0)
-                        uidText = "$it ($uid)"
-                    } catch(_: NameNotFoundException) {
-                        context.showOperationResultToast(false)
-                    }
+	    if (!readOnly && uidText.toIntOrNull() != null) uid = uidText.toInt()
+            if (VERSION.SDK_INT >= 24) LaunchedEffect(Unit) {
+                val pkg = chosenPackage.receive()
+                try {
+                    uid = context.packageManager.getPackageUid(pkg, 0)
+                    uidText = "$uid ($pkg)"
+                } catch(_: NameNotFoundException) {
+                    context.showOperationResultToast(false)
                 }
             }
             OutlinedTextField(
-                value = uidText, onValueChange = { if(!readOnly) uidText = it }, readOnly = readOnly,
+                value = uidText, onValueChange = { if (!readOnly) uidText = it }, readOnly = readOnly,
                 label = { Text(stringResource(R.string.uid)) },
                 trailingIcon = { ExpandExposedTextFieldIcon(activeTextField == NetworkStatsActiveTextField.Uid) },
                 isError = !readOnly && uidText.toIntOrNull() == null,
                 modifier = Modifier
-                    .menuAnchor(if(readOnly) MenuAnchorType.PrimaryNotEditable else MenuAnchorType.PrimaryEditable)
+                    .menuAnchor(if (readOnly) MenuAnchorType.PrimaryNotEditable else MenuAnchorType.PrimaryEditable)
                     .fillMaxWidth().padding(bottom = 4.dp)
             )
             ExposedDropdownMenu(
@@ -1088,12 +1089,12 @@ fun NetworkStatsScreen(onNavigateUp: () -> Unit, onNavigateToViewer: (NetworkSta
                         }
                     )
                 }
-                if(VERSION.SDK_INT >= 24) DropdownMenuItem(
+                if (VERSION.SDK_INT >= 24) DropdownMenuItem(
                     text = { Text(stringResource(R.string.choose_an_app)) },
                     onClick = {
                         readOnly = true
                         activeTextField = NetworkStatsActiveTextField.None
-                        choosePackage.launch(null)
+                        onChoosePackage()
                     }
                 )
                 DropdownMenuItem(
@@ -1106,7 +1107,7 @@ fun NetworkStatsScreen(onNavigateUp: () -> Unit, onNavigateToViewer: (NetworkSta
                 )
             }
         }
-        if(VERSION.SDK_INT >= 24 && (target == NetworkStatsTarget.UidTag || target == NetworkStatsTarget.UidTagState))
+        if (VERSION.SDK_INT >= 24 && (target == NetworkStatsTarget.UidTag || target == NetworkStatsTarget.UidTagState))
             ExposedDropdownMenuBox(
             activeTextField == NetworkStatsActiveTextField.Tag,
             { activeTextField = if(it) NetworkStatsActiveTextField.Tag else NetworkStatsActiveTextField.None }
@@ -1457,15 +1458,18 @@ fun PrivateDnsScreen(onNavigateUp: () -> Unit) {
 
 @RequiresApi(24)
 @Composable
-fun AlwaysOnVpnPackageScreen(onNavigateUp: () -> Unit) {
+fun AlwaysOnVpnPackageScreen(
+    chosenPackage: Channel<String>, onChoosePackage: () -> Unit, onNavigateUp: () -> Unit
+) {
     val context = LocalContext.current
     var lockdown by rememberSaveable { mutableStateOf(false) }
     var pkgName by rememberSaveable { mutableStateOf("") }
-    val focusMgr = LocalFocusManager.current
-    val refresh = { pkgName = Privilege.DPM.getAlwaysOnVpnPackage(Privilege.DAR) ?: "" }
-    LaunchedEffect(Unit) { refresh() }
-    val choosePackage = rememberLauncherForActivityResult(ChoosePackageContract()) { result ->
-        result?.let { pkgName = it }
+    fun refresh() {
+        pkgName = Privilege.DPM.getAlwaysOnVpnPackage(Privilege.DAR) ?: ""
+    }
+    LaunchedEffect(Unit) {
+        refresh()
+        pkgName = chosenPackage.receive()
     }
     val setAlwaysOnVpn: (String?, Boolean)->Boolean = { vpnPkg: String?, lockdownEnabled: Boolean ->
         try {
@@ -1483,22 +1487,9 @@ fun AlwaysOnVpnPackageScreen(onNavigateUp: () -> Unit) {
         }
     }
     MyScaffold(R.string.always_on_vpn, onNavigateUp) {
-        OutlinedTextField(
-            value = pkgName,
-            onValueChange = { pkgName = it },
-            label = { Text(stringResource(R.string.package_name)) },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { focusMgr.clearFocus() }),
-            trailingIcon = {
-                Icon(painter = painterResource(R.drawable.list_fill0), contentDescription = null,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(50))
-                        .clickable { choosePackage.launch(null) }
-                        .padding(3.dp))
-            },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
-        )
-        SwitchItem(R.string.enable_lockdown, state = lockdown, onCheckedChange = { lockdown = it }, padding = false)
+	PackageNameTextField(pkgName, onChoosePackage,
+            Modifier.padding(vertical = 4.dp)) { pkgName = it }
+	SwitchItem(R.string.enable_lockdown, state = lockdown, onCheckedChange = { lockdown = it }, padding = false)
         Spacer(Modifier.padding(vertical = 5.dp))
         Button(
             onClick = { if(setAlwaysOnVpn(pkgName, lockdown)) refresh() },
@@ -2066,8 +2057,8 @@ fun AddApnSettingScreen(origin: ApnSetting?, onNavigateUp: () -> Unit) {
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions { fm.clearFocus() }
         )
-        if(VERSION.SDK_INT >= 33) Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), Arrangement.SpaceBetween) {
-            val fr = FocusRequester()
+        if (VERSION.SDK_INT >= 33) Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), Arrangement.SpaceBetween) {
+            val fr = remember { FocusRequester() }
             OutlinedTextField(
                 mtuV4, { mtuV4 = it }, Modifier.fillMaxWidth(0.49F),
                 label = { Text("MTU (IPv4)") },
@@ -2084,7 +2075,7 @@ fun AddApnSettingScreen(origin: ApnSetting?, onNavigateUp: () -> Unit) {
             )
         }
         Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-            val rotate by animateFloatAsState(if(dropdown == 2) 180F else 0F)
+            val rotate by animateFloatAsState(if (dropdown == 2) 180F else 0F)
             val mvnoTypeMap = mapOf(
                 ApnSetting.MVNO_TYPE_SPN to "SPM", ApnSetting.MVNO_TYPE_IMSI to "IMSI",
                 ApnSetting.MVNO_TYPE_GID to "GID", ApnSetting.MVNO_TYPE_ICCID to "ICCID"
@@ -2114,7 +2105,7 @@ fun AddApnSettingScreen(origin: ApnSetting?, onNavigateUp: () -> Unit) {
             keyboardActions = KeyboardActions { fm.clearFocus() }
         )
         Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-            val rotate by animateFloatAsState(if(dropdown == 3) 180F else 0F)
+            val rotate by animateFloatAsState(if (dropdown == 3) 180F else 0F)
             Text(stringResource(R.string.protocol))
             Row(Modifier.clickable { dropdown = 3 }.padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(protocolMap[protocol]!!, Modifier.padding(2.dp))
@@ -2127,7 +2118,7 @@ fun AddApnSettingScreen(origin: ApnSetting?, onNavigateUp: () -> Unit) {
             }
         }
         Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-            val rotate by animateFloatAsState(if(dropdown == 4) 180F else 0F)
+            val rotate by animateFloatAsState(if (dropdown == 4) 180F else 0F)
             Text(stringResource(R.string.roaming_protocol))
             Row(Modifier.clickable { dropdown = 4 }.padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(protocolMap[roamingProtocol]!!, Modifier.padding(2.dp))
@@ -2139,7 +2130,7 @@ fun AddApnSettingScreen(origin: ApnSetting?, onNavigateUp: () -> Unit) {
                 }
             }
         }
-        if(VERSION.SDK_INT >= 33) Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
+        if (VERSION.SDK_INT >= 33) Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
             Text(stringResource(R.string.persistent))
             Switch(persistent, { persistent = it })
         }
@@ -2158,8 +2149,8 @@ fun AddApnSettingScreen(origin: ApnSetting?, onNavigateUp: () -> Unit) {
                         setAuthType(authType)
                         setUser(user)
                         setPassword(password)
-                        if(VERSION.SDK_INT >= 33) profileId.toIntOrNull()?.let { setProfileId(it) }
-                        if(VERSION.SDK_INT >= 29) {
+                        if (VERSION.SDK_INT >= 33) profileId.toIntOrNull()?.let { setProfileId(it) }
+                        if (VERSION.SDK_INT >= 29) {
                             carrierId.toIntOrNull()?.let { setCarrierId(it) }
                             setProxyAddress(proxyAddress)
                             proxyPort.toIntOrNull()?.let { setProxyPort(it) }
@@ -2167,7 +2158,7 @@ fun AddApnSettingScreen(origin: ApnSetting?, onNavigateUp: () -> Unit) {
                             mmsProxyPort.toIntOrNull()?.let { setMmsProxyPort(it) }
                         }
                         setMmsc(mmsc.toUri())
-                        if(VERSION.SDK_INT >= 33) {
+                        if (VERSION.SDK_INT >= 33) {
                             mtuV4.toIntOrNull()?.let { setMtuV4(it) }
                             mtuV6.toIntOrNull()?.let { setMtuV6(it) }
                         }
@@ -2176,10 +2167,10 @@ fun AddApnSettingScreen(origin: ApnSetting?, onNavigateUp: () -> Unit) {
                         setOperatorNumeric(operatorNumeric)
                         setProtocol(protocol)
                         setRoamingProtocol(roamingProtocol)
-                        if(VERSION.SDK_INT >= 33) setPersistent(persistent)
-                        if(VERSION.SDK_INT >= 35) setAlwaysOn(alwaysOn)
+                        if (VERSION.SDK_INT >= 33) setPersistent(persistent)
+                        if (VERSION.SDK_INT >= 35) setAlwaysOn(alwaysOn)
                     }.build()
-                    if(origin == null) {
+                    if (origin == null) {
                         Privilege.DPM.addOverrideApn(Privilege.DAR, setting)
                     } else {
                         Privilege.DPM.updateOverrideApn(Privilege.DAR, origin.id, setting)
@@ -2193,7 +2184,7 @@ fun AddApnSettingScreen(origin: ApnSetting?, onNavigateUp: () -> Unit) {
         ) {
             Text(stringResource(if(origin != null) R.string.update else R.string.add))
         }
-        if(origin != null) Button(
+        if (origin != null) Button(
             {
                 Privilege.DPM.removeOverrideApn(Privilege.DAR, origin.id)
                 onNavigateUp()
@@ -2203,12 +2194,12 @@ fun AddApnSettingScreen(origin: ApnSetting?, onNavigateUp: () -> Unit) {
         ) {
             Text(stringResource(R.string.delete))
         }
-        if(dialog != 0) {
-            var address by remember { mutableStateOf((if(dialog == 1) proxyAddress else mmsProxyAddress)) }
-            var port by remember { mutableStateOf((if(dialog == 1) proxyPort else mmsProxyPort)) }
-            val fr = FocusRequester()
+        if (dialog != 0) {
+            var address by remember { mutableStateOf((if (dialog == 1) proxyAddress else mmsProxyAddress)) }
+            var port by remember { mutableStateOf((if (dialog == 1) proxyPort else mmsProxyPort)) }
+            val fr = remember { FocusRequester() }
             AlertDialog(
-                title = { Text(if(dialog == 1) "Proxy" else "MMS proxy") },
+                title = { Text(if (dialog == 1) "Proxy" else "MMS proxy") },
                 text = {
                     val focusManager = LocalFocusManager.current
                     Column {
@@ -2232,7 +2223,7 @@ fun AddApnSettingScreen(origin: ApnSetting?, onNavigateUp: () -> Unit) {
                 confirmButton = {
                     TextButton(
                         {
-                            if(dialog == 1) {
+                            if (dialog == 1) {
                                 proxyAddress = address
                                 proxyPort = port
                             } else {
@@ -2251,7 +2242,7 @@ fun AddApnSettingScreen(origin: ApnSetting?, onNavigateUp: () -> Unit) {
                 onDismissRequest = { dialog = 0 }
             )
         }
-        if(errorMessage != null) AlertDialog(
+        if (errorMessage != null) AlertDialog(
             title = { Text(stringResource(R.string.error)) },
             text = { Text(errorMessage ?: "") },
             confirmButton = {

@@ -82,7 +82,6 @@ import dev.mr2.dpc.dpm.AutoTimePolicyScreen
 import dev.mr2.dpc.dpm.AutoTimeZonePolicy
 import dev.mr2.dpc.dpm.AutoTimeZonePolicyScreen
 import dev.mr2.dpc.dpm.BlockUninstall
-import dev.mr2.dpc.dpm.BlockUninstallScreen
 import dev.mr2.dpc.dpm.CaCert
 import dev.mr2.dpc.dpm.CaCertScreen
 import dev.mr2.dpc.dpm.ChangeTime
@@ -104,9 +103,7 @@ import dev.mr2.dpc.dpm.CredentialManagerPolicyScreen
 import dev.mr2.dpc.dpm.CrossProfileIntentFilter
 import dev.mr2.dpc.dpm.CrossProfileIntentFilterScreen
 import dev.mr2.dpc.dpm.CrossProfilePackages
-import dev.mr2.dpc.dpm.CrossProfilePackagesScreen
 import dev.mr2.dpc.dpm.CrossProfileWidgetProviders
-import dev.mr2.dpc.dpm.CrossProfileWidgetProvidersScreen
 import dev.mr2.dpc.dpm.DelegatedAdmins
 import dev.mr2.dpc.dpm.DelegatedAdminsScreen
 import dev.mr2.dpc.dpm.DeleteWorkProfile
@@ -118,9 +115,7 @@ import dev.mr2.dpc.dpm.DhizukuServerSettingsScreen
 import dev.mr2.dpc.dpm.DisableAccountManagement
 import dev.mr2.dpc.dpm.DisableAccountManagementScreen
 import dev.mr2.dpc.dpm.DisableMeteredData
-import dev.mr2.dpc.dpm.DisableMeteredDataScreen
 import dev.mr2.dpc.dpm.DisableUserControl
-import dev.mr2.dpc.dpm.DisableUserControlScreen
 import dev.mr2.dpc.dpm.EnableSystemApp
 import dev.mr2.dpc.dpm.EnableSystemAppScreen
 import dev.mr2.dpc.dpm.FrpPolicy
@@ -128,13 +123,11 @@ import dev.mr2.dpc.dpm.FrpPolicyScreen
 import dev.mr2.dpc.dpm.HardwareMonitor
 import dev.mr2.dpc.dpm.HardwareMonitorScreen
 import dev.mr2.dpc.dpm.Hide
-import dev.mr2.dpc.dpm.HideScreen
 import dev.mr2.dpc.dpm.InstallExistingApp
 import dev.mr2.dpc.dpm.InstallExistingAppScreen
 import dev.mr2.dpc.dpm.InstallSystemUpdate
 import dev.mr2.dpc.dpm.InstallSystemUpdateScreen
 import dev.mr2.dpc.dpm.KeepUninstalledPackages
-import dev.mr2.dpc.dpm.KeepUninstalledPackagesScreen
 import dev.mr2.dpc.dpm.Keyguard
 import dev.mr2.dpc.dpm.KeyguardDisabledFeatures
 import dev.mr2.dpc.dpm.KeyguardDisabledFeaturesScreen
@@ -160,6 +153,8 @@ import dev.mr2.dpc.dpm.OrganizationOwnedProfile
 import dev.mr2.dpc.dpm.OrganizationOwnedProfileScreen
 import dev.mr2.dpc.dpm.OverrideApn
 import dev.mr2.dpc.dpm.OverrideApnScreen
+import dev.mr2.dpc.dpm.PackageFunctionScreen
+import dev.mr2.dpc.dpm.PackageFunctionScreenWithoutResult
 import dev.mr2.dpc.dpm.Password
 import dev.mr2.dpc.dpm.PasswordInfo
 import dev.mr2.dpc.dpm.PasswordInfoScreen
@@ -169,9 +164,8 @@ import dev.mr2.dpc.dpm.PermissionPolicyScreen
 import dev.mr2.dpc.dpm.PermissionsManager
 import dev.mr2.dpc.dpm.PermissionsManagerScreen
 import dev.mr2.dpc.dpm.PermittedAccessibilityServices
-import dev.mr2.dpc.dpm.PermittedAccessibilityServicesScreen
+import dev.mr2.dpc.dpm.PermittedAsAndImPackages
 import dev.mr2.dpc.dpm.PermittedInputMethods
-import dev.mr2.dpc.dpm.PermittedInputMethodsScreen
 import dev.mr2.dpc.dpm.PreferentialNetworkService
 import dev.mr2.dpc.dpm.PreferentialNetworkServiceScreen
 import dev.mr2.dpc.dpm.PrivateDns
@@ -198,7 +192,6 @@ import dev.mr2.dpc.dpm.SupportMessageScreen
 import dev.mr2.dpc.dpm.Suspend
 import dev.mr2.dpc.dpm.SuspendPersonalApp
 import dev.mr2.dpc.dpm.SuspendPersonalAppScreen
-import dev.mr2.dpc.dpm.SuspendScreen
 import dev.mr2.dpc.dpm.SystemManager
 import dev.mr2.dpc.dpm.SystemManagerScreen
 import dev.mr2.dpc.dpm.SystemOptions
@@ -376,6 +369,9 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
     val lifecycleOwner = LocalLifecycleOwner.current
     fun navigateUp() { navController.navigateUp() }
     fun navigate(destination: Any) { navController.navigate(destination) }
+    fun choosePackage() {
+        navController.navigate(ApplicationsList(false))
+    }
     LaunchedEffect(Unit) {
         if(!Privilege.status.value.activated) {
             navController.navigate(WorkModes(false)) {
@@ -406,7 +402,9 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
         composable<DhizukuServerSettings> { DhizukuServerSettingsScreen(::navigateUp) }
 
         composable<DelegatedAdmins> { DelegatedAdminsScreen(::navigateUp, ::navigate) }
-        composable<AddDelegatedAdmin>{ AddDelegatedAdminScreen(it.toRoute(), ::navigateUp) }
+	composable<AddDelegatedAdmin>{
+            AddDelegatedAdminScreen(vm.chosenPackage, ::choosePackage, it.toRoute(), ::navigateUp)
+        }
         composable<DeviceInfo> { DeviceInfoScreen(::navigateUp) }
         composable<LockScreenInfo> { LockScreenInfoScreen(::navigateUp) }
         composable<SupportMessage> { SupportMessageScreen(::navigateUp) }
@@ -431,7 +429,9 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
         composable<PermissionPolicy> { PermissionPolicyScreen(::navigateUp) }
         composable<MtePolicy> { MtePolicyScreen(::navigateUp) }
         composable<NearbyStreamingPolicy> { NearbyStreamingPolicyScreen(::navigateUp) }
-        composable<LockTaskMode> { LockTaskModeScreen(::navigateUp) }
+	composable<LockTaskMode> {
+            LockTaskModeScreen(vm.chosenPackage, ::choosePackage, ::navigateUp)
+        }
         composable<CaCert> { CaCertScreen(::navigateUp) }
         composable<SecurityLogging> { SecurityLoggingScreen(::navigateUp) }
         composable<DisableAccountManagement> { DisableAccountManagementScreen(::navigateUp) }
@@ -446,12 +446,16 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
         composable<AddNetwork> { AddNetworkScreen(it.arguments!!, ::navigateUp) }
         composable<WifiSecurityLevel> { WifiSecurityLevelScreen(::navigateUp) }
         composable<WifiSsidPolicyScreen> { WifiSsidPolicyScreen(::navigateUp) }
-        composable<QueryNetworkStats> { NetworkStatsScreen(::navigateUp, ::navigate) }
+	composable<QueryNetworkStats> {
+            NetworkStatsScreen(vm.chosenPackage, ::choosePackage, ::navigateUp, ::navigate)
+        }
         composable<NetworkStatsViewer>(mapOf(serializableNavTypePair<List<NetworkStatsViewer.Data>>())) {
             NetworkStatsViewerScreen(it.toRoute(), ::navigateUp)
         }
         composable<PrivateDns> { PrivateDnsScreen(::navigateUp) }
-        composable<AlwaysOnVpnPackage> { AlwaysOnVpnPackageScreen(::navigateUp) }
+	composable<AlwaysOnVpnPackage> {
+            AlwaysOnVpnPackageScreen(vm.chosenPackage, ::choosePackage, ::navigateUp)
+        }
         composable<RecommendedGlobalProxy> { RecommendedGlobalProxyScreen(::navigateUp) }
         composable<NetworkLogging> { NetworkLoggingScreen(::navigateUp) }
         composable<WifiAuthKeypair> { WifiAuthKeypairScreen(::navigateUp) }
@@ -468,14 +472,25 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
         composable<DeleteWorkProfile> { DeleteWorkProfileScreen(::navigateUp) }
 
         composable<ApplicationsList> {
-            AppChooserScreen(it.toRoute(), { dest ->
-                if(dest == null) navigateUp() else navigate(ApplicationDetails(dest))
+            val canSwitchView = (it.toRoute() as ApplicationsList).canSwitchView
+            AppChooserScreen(
+                canSwitchView, vm.installedPackages, vm.refreshPackagesProgress, { name ->
+	        if (canSwitchView) {
+                    if (name == null) {
+                        navigateUp()
+                    } else {
+                        navigate(ApplicationDetails(name))
+                    }
+                } else {
+                    if (name != null) vm.chosenPackage.trySend(name)
+                    navigateUp()
+                }
             }, {
                 SP.applicationsListView = false
                 navController.navigate(ApplicationsFeatures) {
                     popUpTo(Home)
                 }
-            })
+            }, vm::refreshPackageList)
         }
         composable<ApplicationsFeatures> {
             ApplicationsFeaturesScreen(::navigateUp, ::navigate) {
@@ -485,24 +500,79 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
                 }
             }
         }
-        composable<ApplicationDetails> { ApplicationDetailsScreen(it.toRoute(), ::navigateUp, ::navigate) }
-        composable<Suspend> { SuspendScreen(::navigateUp) }
-        composable<Hide> { HideScreen(::navigateUp) }
-        composable<BlockUninstall> { BlockUninstallScreen(::navigateUp) }
-        composable<DisableUserControl> { DisableUserControlScreen(::navigateUp) }
-        composable<PermissionsManager> { PermissionsManagerScreen(::navigateUp, it.toRoute()) }
-        composable<DisableMeteredData> { DisableMeteredDataScreen(::navigateUp) }
-        composable<ClearAppStorage> { ClearAppStorageScreen(::navigateUp) }
-        composable<UninstallApp> { UninstallAppScreen(::navigateUp) }
-        composable<KeepUninstalledPackages> { KeepUninstalledPackagesScreen(::navigateUp) }
-        composable<InstallExistingApp> { InstallExistingAppScreen(::navigateUp) }
-        composable<CrossProfilePackages> { CrossProfilePackagesScreen(::navigateUp) }
-        composable<CrossProfileWidgetProviders> { CrossProfileWidgetProvidersScreen(::navigateUp) }
-        composable<CredentialManagerPolicy> { CredentialManagerPolicyScreen(::navigateUp) }
-        composable<PermittedAccessibilityServices> { PermittedAccessibilityServicesScreen(::navigateUp) }
-        composable<PermittedInputMethods> { PermittedInputMethodsScreen(::navigateUp) }
-        composable<EnableSystemApp> { EnableSystemAppScreen(::navigateUp) }
-        composable<SetDefaultDialer> { SetDefaultDialerScreen(::navigateUp) }
+	
+	composable<ApplicationDetails> {
+            ApplicationDetailsScreen(it.toRoute(), vm, ::navigateUp, ::navigate)
+        }
+        composable<Suspend> {
+	    PackageFunctionScreen(R.string.suspend, vm.suspendedPackages, vm::getSuspendedPackaged,
+            vm::setPackageSuspended, ::navigateUp, vm.chosenPackage, ::choosePackage,
+	    R.string.info_suspend_app)
+        }
+        composable<Hide> {
+            PackageFunctionScreen(R.string.hide, vm.hiddenPackages, vm::getHiddenPackages,
+	    vm::setPackageHidden, ::navigateUp, vm.chosenPackage, ::choosePackage)
+        }
+        composable<BlockUninstall> {
+	    PackageFunctionScreenWithoutResult(R.string.block_uninstall, vm.ubPackages,
+            vm::getUbPackages, vm::setPackageUb, ::navigateUp, vm.chosenPackage, ::choosePackage)
+        }
+	composable<DisableUserControl> {
+            PackageFunctionScreenWithoutResult(R.string.disable_user_control, vm.ucdPackages,
+            vm::getUcdPackages, vm::setPackageUcd, ::navigateUp, vm.chosenPackage,
+            ::choosePackage, R.string.info_disable_user_control)
+        }
+	composable<PermissionsManager> {
+            PermissionsManagerScreen(vm.packagePermissions, vm::getPackagePermissions,
+            vm::setPackagePermission, ::navigateUp, it.toRoute(), vm.chosenPackage, ::choosePackage)
+        }
+	composable<DisableMeteredData> {
+            PackageFunctionScreen(R.string.disable_metered_data, vm.mddPackages,
+            vm::getMddPackages, vm::setPackageMdd, ::navigateUp, vm.chosenPackage, ::choosePackage)
+        }
+	composable<ClearAppStorage> {
+            ClearAppStorageScreen(vm.chosenPackage, ::choosePackage, vm::clearAppData, ::navigateUp)
+        }
+        composable<UninstallApp> {
+            UninstallAppScreen(vm.chosenPackage, ::choosePackage, vm::uninstallPackage, ::navigateUp)
+        }
+	composable<KeepUninstalledPackages> {
+            PackageFunctionScreenWithoutResult(R.string.keep_uninstalled_packages, vm.kuPackages,
+            vm::getKuPackages, vm::setPackageKu, ::navigateUp, vm.chosenPackage,
+            ::choosePackage, R.string.info_keep_uninstalled_apps)
+        }
+	composable<InstallExistingApp> {
+            InstallExistingAppScreen(vm.chosenPackage, ::choosePackage,
+            vm::installExistingApp, ::navigateUp)
+        }
+	composable<CrossProfilePackages> {
+            PackageFunctionScreenWithoutResult(R.string.cross_profile_apps, vm.cpPackages,
+            vm::getCpPackages, vm::setPackageCp, ::navigateUp, vm.chosenPackage, ::choosePackage)
+        }
+	composable<CrossProfileWidgetProviders> {
+            PackageFunctionScreen(R.string.cross_profile_widget, vm.cpwProviders,
+            vm::getCpwProviders, vm::setCpwProvider, ::navigateUp, vm.chosenPackage, ::choosePackage)
+        }
+	composable<CredentialManagerPolicy> {
+            CredentialManagerPolicyScreen(vm.chosenPackage, ::choosePackage,
+            vm.cmPackages, vm::getCmPolicy, vm::setCmPackage, vm::setCmPolicy, ::navigateUp)
+        }
+	composable<PermittedAccessibilityServices> {
+            PermittedAsAndImPackages(R.string.permitted_accessibility_services,
+            R.string.system_accessibility_always_allowed, vm.chosenPackage, ::choosePackage,
+            vm.pasPackages, vm::getPasPackages, vm::setPasPackage, vm::setPasPolicy, ::navigateUp)
+        }
+	composable<PermittedInputMethods> {
+            PermittedAsAndImPackages(R.string.permitted_ime, R.string.system_ime_always_allowed,
+	    vm.chosenPackage, ::choosePackage, vm.pimPackages, vm::getPimPackages,
+            vm::setPimPackage, vm::setPimPolicy, ::navigateUp)
+        }
+	composable<EnableSystemApp> {
+            EnableSystemAppScreen(vm.chosenPackage, ::choosePackage, vm::enableSystemApp, ::navigateUp)
+        }
+        composable<SetDefaultDialer> {
+            SetDefaultDialerScreen(vm.chosenPackage, ::choosePackage, vm::setDefaultDialer, ::navigateUp)
+        }
 
         composable<UserRestriction> {
             UserRestrictionScreen(::navigateUp) {
@@ -561,7 +631,7 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
     }
     LaunchedEffect(Unit) {
         val profileNotActivated = !SP.managedProfileActivated && Privilege.status.value.work
-        if(profileNotActivated) {
+        if (profileNotActivated) {
             Privilege.DPM.setProfileEnabled(Privilege.DAR)
             SP.managedProfileActivated = true
             context.popToast(R.string.work_profile_activated)
@@ -598,21 +668,24 @@ private fun HomeScreen(onNavigate: (Any) -> Unit) {
         },
         contentWindowInsets = WindowInsets.ime
     ) {
-        Column(Modifier.fillMaxSize().padding(it).verticalScroll(rememberScrollState())) {
-            if(privilege.device || privilege.profile) {
+        Column(Modifier
+            .fillMaxSize()
+            .padding(it)
+            .verticalScroll(rememberScrollState())) {
+            if (privilege.device || privilege.profile) {
                 HomePageItem(R.string.system, R.drawable.android_fill0) { onNavigate(SystemManager) }
                 HomePageItem(R.string.network, R.drawable.wifi_fill0) { onNavigate(Network) }
             }
-            if(privilege.work) {
+            if (privilege.work) {
                 HomePageItem(R.string.work_profile, R.drawable.work_fill0) {
                     onNavigate(WorkProfile)
                 }
             }
-            if(privilege.device || privilege.profile) {
+            if (privilege.device || privilege.profile) {
                 HomePageItem(R.string.applications, R.drawable.apps_fill0) {
                     onNavigate(if(SP.applicationsListView) ApplicationsList(true) else ApplicationsFeatures)
                 }
-                if(VERSION.SDK_INT >= 24) {
+                if (VERSION.SDK_INT >= 24) {
                     HomePageItem(R.string.user_restriction, R.drawable.person_off) { onNavigate(UserRestriction) }
                 }
                 HomePageItem(R.string.users,R.drawable.manage_accounts_fill0) { onNavigate(Users) }

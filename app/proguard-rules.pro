@@ -24,3 +24,5 @@
 -dontwarn android.app.ActivityThread
 -dontwarn android.app.ContextImpl
 -dontwarn android.app.LoadedApk
+
+-keep class dev.mr2.dpc.MyViewModel { *; }

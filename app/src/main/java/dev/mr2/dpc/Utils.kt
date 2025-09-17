@@ -11,7 +11,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContract
 import androidx.annotation.RequiresApi
 import androidx.annotation.StringRes
 import androidx.compose.ui.unit.dp
@@ -111,13 +110,6 @@ inline fun <reified T> serializableNavTypePair() =
         Json.decodeFromString(value)
     override fun serializeAsValue(value: T): String =
         Json.encodeToString(value)
-}
-
-class ChoosePackageContract: ActivityResultContract<Nothing?, String?>() {
-    override fun createIntent(context: Context, input: Nothing?): Intent =
-        Intent(context, PackageChooserActivity::class.java)
-    override fun parseResult(resultCode: Int, intent: Intent?): String? =
-        intent?.getStringExtra("package")
 }
 
 fun exportLogs(context: Context, uri: Uri) {
