@@ -68,8 +68,8 @@ class ApiReceiver: BroadcastReceiver() {
                 "SYSTEM_ENABLE_AUTO_TZ" -> { dpm.setAutoTimeZoneEnabled(receiver, true); true }
                 "SYSTEM_DISABLE_AUTO_TIME_OLD" -> { dpm.setAutoTimeRequired(receiver, false); true }
                 "SYSTEM_ENABLE_AUTO_TIME_OLD" -> { dpm.setAutoTimeRequired(receiver, true); true }
-                "SYSTEM_DISABLE_MASTER_VOLUME_MUTED" -> { dpm.setMasterVolumeMuted(receiver, false); true }
-                "SYSTEM_ENABLE_MASTER_VOLUME_MUTED" -> { dpm.setMasterVolumeMuted(receiver, true); true }
+                "SYSTEM_MASTER_VOLUME_MUTE" -> { dpm.setMasterVolumeMuted(receiver, true); true }
+                "SYSTEM_MASTER_VOLUME_UNMUTE" -> { dpm.setMasterVolumeMuted(receiver, false); true }
                 "SYSTEM_DISABLE_BACKUP_SERVICE" -> { dpm.setBackupServiceEnabled(receiver, false); true }
                 "SYSTEM_ENABLE_BACKUP_SERVICE" -> { dpm.setBackupServiceEnabled(receiver, true); true }
                 "SYSTEM_DISABLE_BT_SHARE" -> { dpm.setBluetoothContactSharingDisabled(receiver, true); true }
@@ -182,7 +182,7 @@ class ApiReceiver: BroadcastReceiver() {
 		"GET_ORGANIZATION_NAME" -> context.reply("ORGANIZATION_NAME", dpm.getOrganizationName(receiver) ?: "")
 		"GET_SHORT_SUPPORT_MESSAGE" -> context.reply("SHORT_SUPPORT_MESSAGE", dpm.getShortSupportMessage(receiver) ?: "")
 		"GET_LONG_SUPPORT_MESSAGE"  -> context.reply("LONG_SUPPORT_MESSAGE", dpm.getLongSupportMessage(receiver) ?: "")
-		"GET_LOCK_SCREEN_SCREEN_INFO_MESSAGE" -> context.reply("LOCK_SCREEN_MESSAGE", dpm.getDeviceOwnerLockScreenInfo() ?: "")
+		"GET_LOCK_SCREEN_INFO_MESSAGE" -> context.reply("LOCK_SCREEN_MESSAGE", dpm.getDeviceOwnerLockScreenInfo() ?: "")
 		"GET_START_SESSION_MESSAGE" -> context.reply("START_SESSION_MESSAGE", dpm.getStartUserSessionMessage(receiver) ?: "")
 		"GET_END_SESSION_MESSAGE" -> context.reply("END_SESSION_MESSAGE", dpm.getEndUserSessionMessage(receiver) ?: "")
 		"GET_DEVICE_OWNER_PACKAGE" -> context.reply("DEVICE_OWNER", receiver.packageName)
@@ -196,7 +196,7 @@ class ApiReceiver: BroadcastReceiver() {
 		"GET_CONTENT_PROTECTION_POLICY" -> context.reply("CONTENT_PROTECTION_POLICY", dpm.getContentProtectionPolicy(receiver))
 		"GET_FAILED_PASSWORD_ATTEMPTS" -> context.reply("FAILED_PASSWORD_ATTEMPT", dpm.getCurrentFailedPasswordAttempts())
 		"GET_DPM_ROLE_HOLDER_PACKAGE" -> context.reply("DPM_ROLE_HOLDER_PACKAGE", dpm.getDevicePolicyManagementRoleHolderPackage() ?: "")
-		"GET_ENROLLMENT_SPECIFIC_ID" -> context.reply("ENROLLMENR_SPECIFIC_ID", dpm.getEnrollmentSpecificId())
+		"GET_ENROLLMENT_SPECIFIC_ID" -> context.reply("ENROLLMENT_SPECIFIC_ID", dpm.getEnrollmentSpecificId())
 		"GET_GLOBAL_PRIVATE_DNS" -> context.reply("GLOBAL_PRIVATE_DNS", dpm.getGlobalPrivateDnsHost(receiver) ?: "")
 		"GET_GLOBAL_PRIVATE_DNS_MODE" -> context.reply("GLOBAL_PRIVATE_DNS_MODE", dpm.getGlobalPrivateDnsMode(receiver))
 		"GET_KEEP_UNINSTALL_PACKAGES" -> context.reply("KEEP_UNINSTALL_PACKAGES", dpm.getKeepUninstalledPackages(receiver) ?: mutableListOf<String>())
@@ -204,7 +204,7 @@ class ApiReceiver: BroadcastReceiver() {
 		"GET_LOCK_TASK_FEATURES" -> context.reply("LOCK_TASK_FEATURES", dpm.getLockTaskFeatures(receiver))
 		"GET_LOCK_TASK_PACKAGES" -> context.reply("LOCK_TASK_PACKAGES", dpm.getLockTaskPackages(receiver))
 		"GET_MAXIMUM_FAILED_PASSWORD_ATTEMPTS_FOR_WIPE" -> context.reply("MAXIMUM_FAILED_PASSWORD_ATTEMPTS_FOR_WIPE", dpm.getMaximumFailedPasswordsForWipe(receiver))
-		"GET_MAXIMUN_TIME_TO_LOCK" -> context.reply("MAXIMUM_TIME_TO_LOCK", dpm.getMaximumTimeToLock(receiver))
+		"GET_MAXIMUM_TIME_TO_LOCK" -> context.reply("MAXIMUM_TIME_TO_LOCK", dpm.getMaximumTimeToLock(receiver))
 		"GET_METERED_DATA_DISABLED_PACKAGES" -> context.reply("METERED_DATA_DISABLED_PACKAGES", dpm.getMeteredDataDisabledPackages(receiver))
 		"GET_MINIMUM_WIFI_SECURITY_LEVEL" -> context.reply("MINIMUM_WIFI_SECURITY_LEVEL", dpm.getMinimumRequiredWifiSecurityLevel())
 		"GET_MTE_POLICY" -> context.reply("MTE_POLICY", dpm.getMtePolicy())
@@ -253,9 +253,9 @@ class ApiReceiver: BroadcastReceiver() {
 		"IS_PREFERENTIAL_NETWORK_SERVICE" -> context.reply("PREFERENTIAL_NETWORK_SERVICE_STATE", dpm.isPreferentialNetworkServiceEnabled())
 		"IS_RESET_PASSWORD_TOKEN_ACTIVE" -> context.reply("RESET_PASSWORD_TOKEN_ACTIVE_STATE", dpm.isResetPasswordTokenActive(receiver))
 		"IS_SECURITY_LOGGING" -> context.reply("SECURITY_LOGGING_STATE", dpm.isSecurityLoggingEnabled(receiver))
-		"ASK_STATUS_BAR_STATE" -> context.reply("STATUS_BAR_STATE", dpm.isStatusBarDisabled())
+		"GET_STATUS_BAR_STATE" -> context.reply("STATUS_BAR_STATE", dpm.isStatusBarDisabled())
 		"IS_UNINSTALL_BLOCKED" -> context.reply("PACKAGE_${app!!}_UNINSTALL_BLOCK_STATE", dpm.isUninstallBlocked(receiver, app!!))
-		"IS_UNIQUE_DEVICE_ATTESTATION_SUPPORTED" -> context.reply("UNIQUE_DEVIC3_ATTESTATION_STATE", dpm.isUniqueDeviceAttestationSupported())
+		"IS_UNIQUE_DEVICE_ATTESTATION_SUPPORTED" -> context.reply("UNIQUE_DEVICE_ATTESTATION_STATE", dpm.isUniqueDeviceAttestationSupported())
 		"IS_USING_UNIFIED_PASSWORD" -> context.reply("UNIFIED_PASSWORD_STATE", dpm.isUsingUnifiedPassword(receiver))
 		"EMERGENCY_TRANSFER_DHIZUKU" -> {
 		    val newAdmin = ComponentName("com.rosan.dhizuku", "com.rosan.dhizuku.server.DhizukuDAReceiver")
