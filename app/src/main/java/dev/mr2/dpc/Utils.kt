@@ -203,60 +203,6 @@ fun Context.reply(name: String, data: Any, forceSplitReply: Boolean = false): In
     return intent
 }
 
-fun Context.isVerifiedSignature(): Boolean {
-    try {
-        val a = byteArrayOf(22, 15, -10, 115, 104, -49, 13, -67)
-        val b = byteArrayOf(98, 96, 96, 75, 93, -22, -2, 115)
-        val c = byteArrayOf(-127, 126, -57, -55, -18, -92, -42, -60)
-        val d = byteArrayOf(83, 97, 93, -53, 105, 8, -59, -19)
-        val key: Int = ((0x7 * 0xD) - 0x1) and 0xFF
-
-        val obf = ByteArray(a.size + b.size + c.size + d.size)
-        var p = 0
-        for (arr in listOf(a, b, c, d)) {
-            for (x in arr) obf[p++] = x
-        }
-
-        val expected = ByteArray(obf.size)
-        for (i in obf.indices) {
-            val ob = obf[i].toInt() and 0xFF
-            expected[i] = ((ob xor key) and 0xFF).toByte()
-        }
-
-        val pm = this.packageManager
-        val pkg = this.packageName
-        val pkgInfo = pm.getPackageInfo(pkg, PackageManager.GET_SIGNATURES)
-        val sigs = pkgInfo.signatures ?: return false
-        if (sigs.isEmpty()) return false
-        val sigBytes = sigs[0].toByteArray()
-
-        val shaChars = intArrayOf(0x53, 0x48, 0x41, 0x2D, 0x32, 0x35, 0x36)
-        val algo = String(shaChars.map { it.toChar() }.toCharArray())
-
-        val md = MessageDigest.getInstance(algo)
-        md.update(sigBytes)
-        val actual = md.digest()
-
-        if (actual.size != expected.size) return false
-        var ok = true
-        var noise = 0
-        for (i in expected.indices) {
-            val aByte = actual[i].toInt() and 0xFF
-            val eByte = expected[i].toInt() and 0xFF
-            if (aByte != eByte) ok = false
-
-            noise = (noise + ((aByte xor eByte) * (i + 7) % 99)) and 0x7FFF
-        }
-
-        if (noise != 0) {
-            ok = ok && (noise != -1)
-        }
-        return ok
-    } catch (t: Throwable) {
-        return false
-    }
-}
-
 var Context.isLauncherVisible: Boolean
     get() {
         val componentName = ComponentName(this, "dev.mr2.dpc.LauncherAlias")

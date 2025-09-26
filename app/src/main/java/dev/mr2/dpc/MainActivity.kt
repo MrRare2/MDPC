@@ -236,75 +236,6 @@ import dev.mr2.dpc.ui.theme.MDPCTheme
 import kotlinx.serialization.Serializable
 import java.util.Locale
 
-/* @ExperimentalMaterial3Api
-class MainActivity : FragmentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
-        super.onCreate(savedInstanceState)
-        val context = applicationContext
-        val locale = context.resources?.configuration?.locale
-        CJK = locale?.language in setOf("zh", "ja", "ko")
-        val vm by viewModels<MyViewModel>()
-        setContent {
-            var appLockDialog by rememberSaveable { mutableStateOf(false) }
-	    var certCheckDialog by rememberSaveable { mutableStateOf(false) }
-            val theme by vm.theme.collectAsStateWithLifecycle()
-            MDPCTheme(theme) {
-                Home(vm) { appLockDialog = true }
-                if (appLockDialog) {
-                    AppLockDialog({ appLockDialog = false }) { moveTaskToBack(true) }
-                }
-            }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-    }
-
-} */
-
-/*@ExperimentalMaterial3Api
-class MainActivity : FragmentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
-        super.onCreate(savedInstanceState)
-        val currentContext = applicationContext
-	val context = // here?
-        val locale = context.resources?.configuration?.locale
-        CJK = locale?.language in setOf("zh", "ja", "ko")
-        val vm by viewModels<MyViewModel>()
-        setContent {
-            var appLockDialog by rememberSaveable { mutableStateOf(false) }
-            var certCheckDialog by rememberSaveable { mutableStateOf(false) }
-            val theme by vm.theme.collectAsStateWithLifecycle()
-
-            LaunchedEffect(Unit) {
-                if (!context.isVerifiedSignature()) {
-                    certCheckDialog = true
-                }
-            }
-
-            MDPCTheme(theme) {
-                Home(vm) { appLockDialog = true }
-                if (appLockDialog && !certCheckDialog) {
-                    AppLockDialog(
-                        onSucceed = { appLockDialog = false },
-                        onDismiss = { moveTaskToBack(true) }
-                    )
-                }
-                if (certCheckDialog) {
-                    CertVerifyFailedDialog()
-                }
-            }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-    }
-}*/
-
 @ExperimentalMaterial3Api
 class MainActivity : FragmentActivity() {
 
@@ -332,24 +263,15 @@ class MainActivity : FragmentActivity() {
         val vm by viewModels<MyViewModel>()
 	setContent {
 	    var appLockDialog by rememberSaveable { mutableStateOf(false) }
-	    var certCheckDialog by rememberSaveable { mutableStateOf(false) }
 	    val theme by vm.theme.collectAsStateWithLifecycle()
-            LaunchedEffect(Unit) {
-                if (!context.isVerifiedSignature()) {
-                    certCheckDialog = true
-                }
-            }
 
             MDPCTheme(theme) {
                 Home(vm) { appLockDialog = true }
-                if (appLockDialog && !certCheckDialog) {
+                if (appLockDialog) {
                     AppLockDialog(
                         onSucceed = { appLockDialog = false },
                         onDismiss = { moveTaskToBack(true) }
                     )
-                }
-                if (certCheckDialog) {
-                    CertVerifyFailedDialog()
                 }
             }
         }
