@@ -118,11 +118,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mr2.dpc.HorizontalPadding
+import dev.mr2.dpc.MyShortcut
 import dev.mr2.dpc.NotificationUtils
 import dev.mr2.dpc.Privilege
 import dev.mr2.dpc.R
+import dev.mr2.dpc.ShortcutUtils
 import dev.mr2.dpc.SP
-import dev.mr2.dpc.createShortcuts
 import dev.mr2.dpc.formatFileSize
 import dev.mr2.dpc.humanReadableDate
 import dev.mr2.dpc.parseDate
@@ -332,14 +333,14 @@ fun SystemOptionsScreen(onNavigateUp: () -> Unit) {
         SwitchItem(R.string.disable_cam, icon = R.drawable.no_photography_fill0,
             getState = { Privilege.DPM.getCameraDisabled(null) }, onCheckedChange = {
                 Privilege.DPM.setCameraDisabled(Privilege.DAR, it)
-                createShortcuts(context)
+		ShortcutUtils.setShortcut(context, MyShortcut.DisableCamera, !it)
             }
         )
         SwitchItem(R.string.disable_screen_capture, icon = R.drawable.screenshot_fill0,
             getState = { Privilege.DPM.getScreenCaptureDisabled(null) },
             onCheckedChange = { Privilege.DPM.setScreenCaptureDisabled(Privilege.DAR, it) }
         )
-        if(VERSION.SDK_INT >= 34 && (privilege.device || (privilege.profile && privilege.affiliated))) {
+        if (VERSION.SDK_INT >= 34 && (privilege.device || (privilege.profile && privilege.affiliated))) {
             SwitchItem(R.string.disable_status_bar, icon = R.drawable.notifications_fill0,
                 getState = { Privilege.DPM.isStatusBarDisabled},
                 onCheckedChange = { Privilege.DPM.setStatusBarDisabled(Privilege.DAR, it) }
@@ -348,8 +349,8 @@ fun SystemOptionsScreen(onNavigateUp: () -> Unit) {
 	    FunctionItem(R.string.enable_status_bar, icon = R.drawable.notifications_fill0) { Privilege.DPM.setStatusBarDisabled(Privilege.DAR, false) }
 	    FunctionItem(R.string.disable_status_bar, icon = R.drawable.notifications_off_fill0) { Privilege.DPM.setStatusBarDisabled(Privilege.DAR, true) }
 	}
-        if(privilege.device || privilege.org) {
-            if(VERSION.SDK_INT >= 30) {
+        if (privilege.device || privilege.org) {
+            if (VERSION.SDK_INT >= 30) {
                 SwitchItem(R.string.auto_time, icon = R.drawable.schedule_fill0,
                     getState = { Privilege.DPM.getAutoTimeEnabled(Privilege.DAR) },
                     onCheckedChange = { Privilege.DPM.setAutoTimeEnabled(Privilege.DAR, it) }
@@ -368,40 +369,40 @@ fun SystemOptionsScreen(onNavigateUp: () -> Unit) {
         if (!privilege.work) SwitchItem(R.string.master_mute, icon = R.drawable.volume_off_fill0,
             getState = { Privilege.DPM.isMasterVolumeMuted(Privilege.DAR) }, onCheckedChange = {
                 Privilege.DPM.setMasterVolumeMuted(Privilege.DAR, it)
-                createShortcuts(context)
+		ShortcutUtils.setShortcut(context, MyShortcut.Mute, !it)
             }
         )
-        if(VERSION.SDK_INT >= 26) {
+        if (VERSION.SDK_INT >= 26) {
             SwitchItem(R.string.backup_service, icon = R.drawable.backup_fill0,
                 getState = { Privilege.DPM.isBackupServiceEnabled(Privilege.DAR) },
                 onCheckedChange = { Privilege.DPM.setBackupServiceEnabled(Privilege.DAR, it) },
                 onClickBlank = { dialog = 1 }
             )
         }
-        if(VERSION.SDK_INT >= 24 && privilege.work) {
+        if (VERSION.SDK_INT >= 24 && privilege.work) {
             SwitchItem(R.string.disable_bt_contact_share, icon = R.drawable.account_circle_fill0,
                 getState = { Privilege.DPM.getBluetoothContactSharingDisabled(Privilege.DAR) },
                 onCheckedChange = { Privilege.DPM.setBluetoothContactSharingDisabled(Privilege.DAR, it) }
             )
         }
-        if(VERSION.SDK_INT >= 30 && privilege.device) {
+        if (VERSION.SDK_INT >= 30 && privilege.device) {
             SwitchItem(R.string.common_criteria_mode , icon =R.drawable.security_fill0,
                 getState = { Privilege.DPM.isCommonCriteriaModeEnabled(Privilege.DAR) },
                 onCheckedChange = { Privilege.DPM.setCommonCriteriaModeEnabled(Privilege.DAR, it) },
                 onClickBlank = { dialog = 2 }
             )
         }
-        if(VERSION.SDK_INT >= 31 && (privilege.device || privilege.org) && Privilege.DPM.canUsbDataSignalingBeDisabled()) {
+        if (VERSION.SDK_INT >= 31 && (privilege.device || privilege.org) && Privilege.DPM.canUsbDataSignalingBeDisabled()) {
             SwitchItem(
                 R.string.disable_usb_signal, icon = R.drawable.usb_fill0, getState = { !Privilege.DPM.isUsbDataSignalingEnabled },
                 onCheckedChange = { Privilege.DPM.isUsbDataSignalingEnabled = !it },
             )
         }
     }
-    if(dialog != 0) AlertDialog(
+    if (dialog != 0) AlertDialog(
         text = {
             Text(stringResource(
-                when(dialog) {
+                when (dialog) {
                     1 -> R.string.info_backup_service
                     2 -> R.string.info_common_criteria_mode
                     else -> R.string.options

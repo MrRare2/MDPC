@@ -63,7 +63,6 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.core.content.edit
-import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -170,8 +169,7 @@ fun SettingsOptionsScreen(onNavigateUp: () -> Unit) {
             R.string.shortcuts, icon = R.drawable.open_in_new,
             getState = { SP.shortcuts }, onCheckedChange = {
                 SP.shortcuts = it
-                ShortcutManagerCompat.removeAllDynamicShortcuts(context)
-                createShortcuts(context)
+		ShortcutUtils.setAllShortcuts(context)
             }
         )
 	SwitchItem(

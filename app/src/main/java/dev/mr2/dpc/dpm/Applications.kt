@@ -54,6 +54,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -315,7 +317,7 @@ fun PermissionsManagerScreen(
                 Spacer(Modifier.padding(vertical = 4.dp))
             }
         }
-        items(permissionList(), { it.permission }) {
+        items(runtimePermissions, { it.permission }) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -620,6 +622,55 @@ fun PermittedAsAndImPackages(
     val context = LocalContext.current
     val packages by packagesState.collectAsStateWithLifecycle()
     var packageName by remember { mutableStateOf("") }
+    var allowAll by rememberSaveable { mutableStateOf(getPackages()) }
+    LaunchedEffect(Unit) {
+        packageName = chosenPackage.receive()
+    }
+    MyLazyScaffold(title, onNavigateUp) {
+        item {
+            SwitchItem(R.string.allow_all, state = allowAll, onCheckedChange = { allowAll = it })
+        }
+        if (!allowAll) items(packages, { it.name }) {
+            ApplicationItem(it) { setPackage(it.name, false) }
+        }
+        item {
+            if (!allowAll) {
+                PackageNameTextField(packageName, onChoosePackage,
+                    Modifier.padding(HorizontalPadding, 8.dp)) { packageName = it }
+                Button(
+                    {
+                        setPackage(packageName, true)
+                        packageName = ""
+                    },
+                    Modifier.fillMaxWidth().padding(horizontal = HorizontalPadding),
+                    packageName.isValidPackageName
+                ) {
+                    Text(stringResource(R.string.add))
+                }
+            }
+            Button(
+                {
+                    context.showOperationResultToast(setPolicy(allowAll))
+                },
+                Modifier.fillMaxWidth().padding(top = 8.dp).padding(horizontal = HorizontalPadding)
+            ) {
+                Text(stringResource(R.string.apply))
+            }
+            Spacer(Modifier.height(10.dp))
+            Notes(note, HorizontalPadding)
+        }
+    }
+}
+
+/* @Composable
+fun PermittedAsAndImPackages(
+    title: Int, note: Int, chosenPackage: Channel<String>, onChoosePackage: () -> Unit,
+    packagesState: MutableStateFlow<List<AppInfo>>, getPackages: () -> Boolean,
+    setPackage: (String, Boolean) -> Unit, setPolicy: (Boolean) -> Boolean, onNavigateUp: () -> Unit
+) {
+    val context = LocalContext.current
+    val packages by packagesState.collectAsStateWithLifecycle()
+    var packageName by remember { mutableStateOf("") }
     var allowAll by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         allowAll = getPackages()
@@ -659,7 +710,7 @@ fun PermittedAsAndImPackages(
             Notes(note, HorizontalPadding)
         }
     }
-}
+} */
 
 @Serializable object EnableSystemApp
 

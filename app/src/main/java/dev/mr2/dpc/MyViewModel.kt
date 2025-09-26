@@ -25,7 +25,7 @@ import dev.mr2.dpc.dpm.AppStatus
 import dev.mr2.dpc.dpm.getPackageInstaller
 import dev.mr2.dpc.dpm.isValidPackageName
 import dev.mr2.dpc.dpm.parsePackageInstallerMessage
-import dev.mr2.dpc.dpm.permissionList
+import dev.mr2.dpc.dpm.runtimePermissions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
@@ -133,7 +133,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     @RequiresApi(23)
     fun getPackagePermissions(name: String) {
         if (name.isValidPackageName) {
-            packagePermissions.value = permissionList().associate {
+            packagePermissions.value = runtimePermissions.associate {
                 it.permission to DPM.getPermissionGrantState(DAR, name, it.permission)
             }
 	} else {
