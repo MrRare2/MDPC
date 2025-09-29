@@ -66,8 +66,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.mr2.dpc.dpm.parsePackageInstallerMessage
 import dev.mr2.dpc.ui.FullWidthCheckBoxItem
@@ -92,11 +92,10 @@ class AppInstallerActivity:FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        val myVm by viewModels<MyViewModel>()
         val vm by viewModels<AppInstallerViewModel>()
         vm.initialize(intent)
+	val theme = ThemeSettings(SP.themeColor, SP.darkTheme, SP.blackTheme)
         setContent {
-            val theme by myVm.theme.collectAsStateWithLifecycle()
             MDPCTheme(theme) {
                 val installing by vm.installing.collectAsStateWithLifecycle()
                 val options by vm.options.collectAsStateWithLifecycle()
@@ -319,7 +318,7 @@ class AppInstallerViewModel(application: Application): AndroidViewModel(applicat
         intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)?.let { uri -> packages.update { it + uri } }
         intent.getParcelableArrayExtra(Intent.EXTRA_STREAM)?.forEach { uri -> packages.update { it + (uri as Uri) } }
         intent.clipData?.let { clipData ->
-            for(i in 0..clipData.itemCount) {
+            for (i in 0..clipData.itemCount) {
                 packages.update { it + clipData.getItemAt(i).uri }
             }
         }

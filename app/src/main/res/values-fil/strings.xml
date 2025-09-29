@@ -79,7 +79,6 @@
     <string name="profile_owner">Profile owner</string>
     <string name="device_owner">Device owner</string>
     <string name="delegated_admins">Mga delegadong admin</string>
-    <string name="delegated_scope">(mga) delegadong scope</string>
     <string name="manage_application_restrictions">I-manage ang mga restriksyon application</string>
     <string name="manage_certificates">I-manage ang mga certificates</string>
     <string name="select_keychain_certificates">I-seelect ang KeyChain certificate</string>
@@ -105,7 +104,6 @@
     <string name="disable_account_management">I-disable ang account management</string>
     <string name="account_type">Type ng account</string>
     <string name="transfer_ownership">Ilipat sa ibang device admin</string>
-    <string name="target_component_name">Target component name</string>
     <string name="lock_screen_info">Info sa lock screen</string>
     <string name="support_messages">Support Messages</string>
     <string name="short_support_msg">Maikling mensahe</string>
@@ -144,7 +142,7 @@
     <string name="backup_service">Serbisyo ng backup</string>
     <string name="disable_bt_contact_share">I-disable ang pag-bahagi ng mga kontak gamit ang Bluetooth</string>
     <string name="common_criteria_mode">Common Criteria mode</string>
-    <string name="disable_usb_signal">I-disable ang USB signal</string>
+    <string name="enable_usb_signal">I-enable ang USB signal</string>
     <string name="keyguard">Keyguard</string>
     <string name="lock_now">I-lock ang screen</string>
     <string name="lock_screen">Lock screen</string>
@@ -249,8 +247,6 @@
 
     <string name="install_system_update">Mag-install ng system update</string>
     <string name="select_ota_package" tools:ignore="TypographyEllipsis">Mag-select ng OTA package...</string>
-    <string name="start_install_system_update">I-start ang pag-install ng system update</string>
-    <string name="install_system_update_failed">"Hindi ma-install ang system update: "</string>
     <string name="battery_low">Mababa ang lebel ng baterya</string>
     <string name="update_file_invalid">Update file is invalid</string>
     <string name="incorrect_os_ver">Maling bersyon ng OS</string>
@@ -374,10 +370,7 @@
     <string name="profile_max_time_off">Max time off</string>
     <string name="profile_max_time_out_desc">Ang mga personal na apps ay masususpinde pagkatapos ma-close ang work profile sa itinakdang oras. 0 ay walang limit.</string>
     <string name="personal_app_suspended_because_timeout">Nasuspinde ang personal app dahil sa: %1$s</string>
-    <string name="cannot_less_than_72_hours">Hindi pwedeng bababa sa 72 oras</string>
     <string name="intent_filter">Intent filter</string>
-    <string name="add_intent_filter_work_to_personal">I-dagdag(work to personal)</string>
-    <string name="add_intent_filter_personal_to_work">I-dagdag(personal to work)</string>
     <string name="clear_cross_profile_filters">Clear all filters</string>
     <string name="org_id">Organization ID</string>
     <string name="length_6_to_64">Ang haba ay dapat nasa 6~64 characters</string>
@@ -737,7 +730,6 @@
     <string name="activate_method">Activate method</string>
     <string name="adb_command">ADB command</string>
     <string name="dpm_warning">Ang app na ito ay gumagamit ng Device owner o Profile owner na pribilehiyo. Ang mga pribilehiyo na ito ay delikadong gamitin, kaya gamitin nang may pag-iingat. Pag ito ay ginamit nang hindi wasto ay magkakaroon ng mga problema sa device. Ang mga developers ay walang responsibilidad dito.</string>
-    <string name="cert_verify_failed">Nabigo ang beripikasyon ng sertipiko. Ang sertipiko ng application na ito ay hindi tumutugma sa inaasahan. Hindi magagamit ang application na ito.\n\nerror: MrRare2_globalapk_verify_failed</string>
     <string name="languages">Mga Wika</string>
     <string name="show_launcher_icon">Ipakita sa mga listahan ng apps</string>
     <string name="info_hiding_launcher_icon">I-dial ang *#*#672376372645839#*#* para muling ma-access ang app na ito</string>

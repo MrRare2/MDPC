@@ -54,7 +54,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -168,13 +167,13 @@ fun ApplicationsFeaturesScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Un
                 .padding(bottom = 80.dp)
         ) {
             val privilege by Privilege.status.collectAsStateWithLifecycle()
-            if(VERSION.SDK_INT >= 24) FunctionItem(R.string.suspend, icon = R.drawable.block_fill0) { onNavigate(Suspend) }
+            if (VERSION.SDK_INT >= 24) FunctionItem(R.string.suspend, icon = R.drawable.block_fill0) { onNavigate(Suspend) }
             FunctionItem(R.string.hide, icon = R.drawable.visibility_off_fill0) { onNavigate(Hide) }
             FunctionItem(R.string.block_uninstall, icon = R.drawable.delete_forever_fill0) { onNavigate(BlockUninstall) }
-            if(VERSION.SDK_INT >= 30 && (privilege.device || (VERSION.SDK_INT >= 33 && privilege.profile))) {
+            if (VERSION.SDK_INT >= 30 && (privilege.device || (VERSION.SDK_INT >= 33 && privilege.profile))) {
                 FunctionItem(R.string.disable_user_control, icon = R.drawable.do_not_touch_fill0) { onNavigate(DisableUserControl) }
             }
-            if(VERSION.SDK_INT >= 23) {
+            if (VERSION.SDK_INT >= 23) {
                 FunctionItem(R.string.permissions, icon = R.drawable.shield_fill0) { onNavigate(PermissionsManager()) }
             }
             if (VERSION.SDK_INT >= 28) {
@@ -195,13 +194,13 @@ fun ApplicationsFeaturesScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Un
                     onNavigate(InstallExistingApp)
                 }
             }
-            if(VERSION.SDK_INT >= 30 && privilege.work) {
+            if (VERSION.SDK_INT >= 30 && privilege.work) {
                 FunctionItem(R.string.cross_profile_apps, icon = R.drawable.work_fill0) { onNavigate(CrossProfilePackages) }
             }
-            if(privilege.work) {
+            if (privilege.work) {
                 FunctionItem(R.string.cross_profile_widget, icon = R.drawable.widgets_fill0) { onNavigate(CrossProfileWidgetProviders) }
             }
-            if(VERSION.SDK_INT >= 34 && privilege.device) {
+            if (VERSION.SDK_INT >= 34 && privilege.device) {
                 FunctionItem(R.string.credential_manager_policy, icon = R.drawable.license_fill0) { onNavigate(CredentialManagerPolicy) }
             }
             FunctionItem(R.string.permitted_accessibility_services, icon = R.drawable.settings_accessibility_fill0) {
@@ -209,7 +208,7 @@ fun ApplicationsFeaturesScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Un
             }
             FunctionItem(R.string.permitted_ime, icon = R.drawable.keyboard_fill0) { onNavigate(PermittedInputMethods) }
             FunctionItem(R.string.enable_system_app, icon = R.drawable.enable_fill0) { onNavigate(EnableSystemApp) }
-            if(VERSION.SDK_INT >= 34 && (privilege.device || privilege.work)) {
+            if (VERSION.SDK_INT >= 34 && (privilege.device || privilege.work)) {
                 FunctionItem(R.string.set_default_dialer, icon = R.drawable.call_fill0) { onNavigate(SetDefaultDialer) }
             }
         }
@@ -275,6 +274,7 @@ fun ApplicationDetailsScreen(
         )
         if (SP.displayDangerousFeatures && VERSION.SDK_INT >= 28) FunctionItem(R.string.clear_app_storage, icon = R.drawable.mop_fill0) { dialog = 1 }
         if (SP.displayDangerousFeatures) FunctionItem(R.string.uninstall, icon = R.drawable.delete_fill0) { dialog = 2 }
+	Spacer(Modifier.height(40.dp))
     }
     if (dialog == 1 && VERSION.SDK_INT >= 28)
         ClearAppStorageDialog(packageName, vm::clearAppData) { dialog = 0 }
@@ -560,7 +560,8 @@ fun CredentialManagerPolicyScreen(
     cmPackages: MutableStateFlow<List<AppInfo>>, getCmPolicy: () -> Int,
     setCmPackage: (String, Boolean) -> Unit, setCmPolicy: (Int) -> Unit, onNavigateUp: () -> Unit
 ) {
-    var policy by remember { mutableIntStateOf(getCmPolicy()) }
+    val context = LocalContext.current
+    var policy by rememberSaveable { mutableIntStateOf(getCmPolicy()) }
     val packages by cmPackages.collectAsStateWithLifecycle()
     var packageName by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
@@ -579,31 +580,35 @@ fun CredentialManagerPolicyScreen(
             }
             Spacer(Modifier.padding(vertical = 4.dp))
         }
-        items(packages, { it.name }) {
+        if (policy != -1) items(packages, { it.name }) {
             ApplicationItem(it) { setCmPackage(it.name, false) }
         }
         item {
             Column(Modifier.padding(horizontal = HorizontalPadding)) {
-		PackageNameTextField(packageName, onChoosePackage,
-                    Modifier.padding(vertical = 8.dp)) { packageName = it }
-                Button(
-                    {
-                        setCmPackage(packageName, true)
-                        packageName = ""
-                    },
-                    Modifier.fillMaxWidth(),
-                    enabled = packageName.isValidPackageName
-                ) {
-                    Text(stringResource(R.string.add))
+		if (policy != -1) {
+                    PackageNameTextField(packageName, onChoosePackage,
+                        Modifier.padding(vertical = 8.dp)) { packageName = it }
+                    Button(
+                        {
+                            setCmPackage(packageName, true)
+                            packageName = ""
+                        },
+                        Modifier.fillMaxWidth(),
+			enabled = packageName.isValidPackageName
+                    ) {
+                        Text(stringResource(R.string.add))
+                    }
                 }
                 Button(
                     {
 			setCmPolicy(policy)
+			context.showOperationResultToast(true)
                     },
                     Modifier.fillMaxWidth()
                 ) {
                     Text(stringResource(R.string.apply))
                 }
+		Spacer(Modifier.height(40.dp))
             }
         }
     }
@@ -658,59 +663,10 @@ fun PermittedAsAndImPackages(
             }
             Spacer(Modifier.height(10.dp))
             Notes(note, HorizontalPadding)
+	    Spacer(Modifier.height(40.dp))
         }
     }
 }
-
-/* @Composable
-fun PermittedAsAndImPackages(
-    title: Int, note: Int, chosenPackage: Channel<String>, onChoosePackage: () -> Unit,
-    packagesState: MutableStateFlow<List<AppInfo>>, getPackages: () -> Boolean,
-    setPackage: (String, Boolean) -> Unit, setPolicy: (Boolean) -> Boolean, onNavigateUp: () -> Unit
-) {
-    val context = LocalContext.current
-    val packages by packagesState.collectAsStateWithLifecycle()
-    var packageName by remember { mutableStateOf("") }
-    var allowAll by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        allowAll = getPackages()
-        packageName = chosenPackage.receive()
-    }
-    MyLazyScaffold(title, onNavigateUp) {
-        item {
-            SwitchItem(R.string.allow_all, state = allowAll, onCheckedChange = { allowAll = it })
-        }
-        if (allowAll) items(packages, { it.name }) {
-            ApplicationItem(it) { setPackage(it.name, false) }
-        }
-        item {
-	    if (allowAll) {
-                PackageNameTextField(packageName, onChoosePackage,
-                    Modifier.padding(HorizontalPadding, 8.dp)) { packageName = it }
-                Button(
-                    {
-                        setPackage(packageName, true)
-                        packageName = ""
-                    },
-		    Modifier.fillMaxWidth().padding(horizontal = HorizontalPadding),
-                    packageName.isValidPackageName
-                ) {
-                    Text(stringResource(R.string.add))
-                }
-            }
-            Button(
-                {
-		    context.showOperationResultToast(setPolicy(allowAll))
-                },
-                Modifier.fillMaxWidth().padding(top = 8.dp).padding(horizontal = HorizontalPadding)
-            ) {
-                Text(stringResource(R.string.apply))
-            }
-	    Spacer(Modifier.height(10.dp))
-            Notes(note, HorizontalPadding)
-        }
-    }
-} */
 
 @Serializable object EnableSystemApp
 
@@ -817,6 +773,7 @@ fun PackageFunctionScreen(
                 Text(stringResource(R.string.add))
             }
             if (notes != null) Notes(notes, HorizontalPadding)
+	    Spacer(Modifier.height(40.dp))
         }
     }
 }

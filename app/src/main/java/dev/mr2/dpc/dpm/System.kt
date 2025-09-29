@@ -1,10 +1,7 @@
 package dev.mr2.dpc.dpm
 
 import android.annotation.SuppressLint
-import android.app.ActivityOptions
 import android.app.admin.DevicePolicyManager
-import android.app.admin.DevicePolicyManager.FLAG_EVICT_CREDENTIAL_ENCRYPTION_KEY
-import android.app.admin.DevicePolicyManager.InstallSystemUpdateCallback
 import android.app.admin.DevicePolicyManager.MTE_DISABLED
 import android.app.admin.DevicePolicyManager.MTE_ENABLED
 import android.app.admin.DevicePolicyManager.MTE_NOT_CONTROLLED_BY_POLICY
@@ -19,15 +16,10 @@ import android.app.admin.DevicePolicyManager.WIPE_EUICC
 import android.app.admin.DevicePolicyManager.WIPE_EXTERNAL_STORAGE
 import android.app.admin.DevicePolicyManager.WIPE_RESET_PROTECTION_DATA
 import android.app.admin.DevicePolicyManager.WIPE_SILENTLY
-import android.app.admin.FactoryResetProtectionPolicy
-import android.app.admin.SystemUpdateInfo
-import android.app.admin.SystemUpdatePolicy
 import android.app.admin.SystemUpdatePolicy.TYPE_INSTALL_AUTOMATIC
 import android.app.admin.SystemUpdatePolicy.TYPE_INSTALL_WINDOWED
 import android.app.admin.SystemUpdatePolicy.TYPE_POSTPONE
-import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import android.os.Build.VERSION
 import android.os.HardwarePropertiesManager
@@ -43,12 +35,12 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -68,6 +60,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -80,11 +73,7 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -101,7 +90,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -117,16 +105,16 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.mr2.dpc.AppInfo
 import dev.mr2.dpc.HorizontalPadding
 import dev.mr2.dpc.MyShortcut
-import dev.mr2.dpc.NotificationUtils
+import dev.mr2.dpc.MyViewModel
 import dev.mr2.dpc.Privilege
 import dev.mr2.dpc.R
-import dev.mr2.dpc.ShortcutUtils
 import dev.mr2.dpc.SP
 import dev.mr2.dpc.formatFileSize
 import dev.mr2.dpc.humanReadableDate
-import dev.mr2.dpc.parseDate
+import dev.mr2.dpc.parseTimestamp
 import dev.mr2.dpc.popToast
 import dev.mr2.dpc.showOperationResultToast
 import dev.mr2.dpc.ui.CheckBoxItem
@@ -140,26 +128,22 @@ import dev.mr2.dpc.ui.MySmallTitleScaffold
 import dev.mr2.dpc.ui.NavIcon
 import dev.mr2.dpc.ui.Notes
 import dev.mr2.dpc.ui.SwitchItem
-import dev.mr2.dpc.uriToStream
-import kotlinx.coroutines.Dispatchers
+import dev.mr2.dpc.yesOrNo
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import java.io.ByteArrayOutputStream
-import java.security.MessageDigest
-import java.security.cert.CertificateFactory
-import java.security.cert.X509Certificate
-import java.util.Date
 import java.util.TimeZone
-import java.util.concurrent.Executors
 import kotlin.math.roundToLong
 
 @Serializable object SystemManager
 
 @Composable
-fun SystemManagerScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
+fun SystemManagerScreen(
+    vm: MyViewModel, onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit
+) {
     val context = LocalContext.current
     val privilege by Privilege.status.collectAsStateWithLifecycle()
     /** 1: reboot, 2: bug report, 3: org name, 4: org id, 5: enrollment specific id*/
@@ -248,10 +232,10 @@ fun SystemManagerScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
         confirmButton = {
             TextButton(
                 onClick = {
-                    if(dialog == 1) {
-                        Privilege.DPM.reboot(Privilege.DAR)
+                    if (dialog == 1) {
+                        vm.reboot()
                     } else {
-                        context.showOperationResultToast(Privilege.DPM.requestBugreport(Privilege.DAR))
+                        context.showOperationResultToast(vm.requestBugReport())
                     }
                     dialog = 0
                 }
@@ -267,16 +251,19 @@ fun SystemManagerScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
             text = {
                 val focusMgr = LocalFocusManager.current
                 LaunchedEffect(Unit) {
-                    if(dialog == 5 && VERSION.SDK_INT >= 31) input = Privilege.DPM.enrollmentSpecificId
+		    if (dialog == 5 && VERSION.SDK_INT >= 31) input = vm.getEnrollmentSpecificId()
+                    if (dialog == 3 && VERSION.SDK_INT >= 24) input = vm.getOrgName()
                 }
                 Column {
                     OutlinedTextField(
                         input, { input = it },
-                        Modifier.fillMaxWidth().padding(bottom = if (dialog != 3) 8.dp else 0.dp),
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = if (dialog != 3) 8.dp else 0.dp),
                         readOnly = dialog == 5,
                         label = {
                             Text(stringResource(
-                                when(dialog){
+                                when (dialog){
                                     3 -> R.string.org_name
                                     4 -> R.string.org_id
                                     5 -> R.string.enrollment_specific_id
@@ -285,14 +272,14 @@ fun SystemManagerScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
                             ))
                         },
                         supportingText = {
-                            if(dialog == 4) Text(stringResource(R.string.length_6_to_64))
+                            if (dialog == 4) Text(stringResource(R.string.length_6_to_64))
                         },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions { focusMgr.clearFocus() },
                         textStyle = typography.bodyLarge
                     )
-                    if(dialog == 5) Text(stringResource(R.string.info_enrollment_specific_id))
-                    if(dialog == 4) Text(stringResource(R.string.info_org_id))
+                    if (dialog == 5) Text(stringResource(R.string.info_enrollment_specific_id))
+                    if (dialog == 4) Text(stringResource(R.string.info_org_id))
                 }
             },
             onDismissRequest = { dialog = 0 },
@@ -302,16 +289,12 @@ fun SystemManagerScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
             confirmButton = {
                 TextButton(
                     onClick = {
-                        try {
-                            if (dialog == 3 && VERSION.SDK_INT >= 24) Privilege.DPM.setOrganizationName(Privilege.DAR, input)
-                            if (dialog == 4 && VERSION.SDK_INT >= 31) {
-                                Privilege.DPM.setOrganizationId(input)
-                                enrollmentSpecificId = Privilege.DPM.enrollmentSpecificId
-                            }
-                            dialog = 0
-                        } catch(_: IllegalStateException) {
-                            context.showOperationResultToast(false)
+			if (dialog == 3 && VERSION.SDK_INT >= 24) vm.setOrgName(input)
+                        if (dialog == 4 && VERSION.SDK_INT >= 31) {
+                            vm.setOrgId(input)
+                            enrollmentSpecificId = vm.getEnrollmentSpecificId()
                         }
+			dialog = 0
                     },
                     enabled = dialog != 4 || input.length in 6..64
                 ) {
@@ -322,81 +305,72 @@ fun SystemManagerScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
     }
 }
 
+data class SystemOptionsStatus(
+    val cameraDisabled: Boolean = false,
+    val screenCaptureDisabled: Boolean = false,
+    val statusBarDisabled: Boolean = false,
+    val autoTimeEnabled: Boolean = true,
+    val autoTimeZoneEnabled: Boolean = true,
+    val autoTimeRequired: Boolean = true,
+    val masterVolumeMuted: Boolean = false,
+    val backupServiceEnabled: Boolean = false,
+    val btContactSharingDisabled: Boolean = false,
+    val commonCriteriaMode: Boolean = false,
+    val usbSignalEnabled: Boolean = true,
+    val canDisableUsbSignal: Boolean = true
+)
+
 @Serializable object SystemOptions
 
 @Composable
-fun SystemOptionsScreen(onNavigateUp: () -> Unit) {
-    val context = LocalContext.current
+fun SystemOptionsScreen(vm: MyViewModel, onNavigateUp: () -> Unit) {
     val privilege by Privilege.status.collectAsStateWithLifecycle()
     var dialog by remember { mutableIntStateOf(0) }
+    val status by vm.systemOptionsStatus.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) { vm.getSystemOptionsStatus() }
     MyScaffold(R.string.options, onNavigateUp, 0.dp) {
-        SwitchItem(R.string.disable_cam, icon = R.drawable.no_photography_fill0,
-            getState = { Privilege.DPM.getCameraDisabled(null) }, onCheckedChange = {
-                Privilege.DPM.setCameraDisabled(Privilege.DAR, it)
-		ShortcutUtils.setShortcut(context, MyShortcut.DisableCamera, !it)
-            }
-        )
-        SwitchItem(R.string.disable_screen_capture, icon = R.drawable.screenshot_fill0,
-            getState = { Privilege.DPM.getScreenCaptureDisabled(null) },
-            onCheckedChange = { Privilege.DPM.setScreenCaptureDisabled(Privilege.DAR, it) }
-        )
-        if (VERSION.SDK_INT >= 34 && (privilege.device || (privilege.profile && privilege.affiliated))) {
-            SwitchItem(R.string.disable_status_bar, icon = R.drawable.notifications_fill0,
-                getState = { Privilege.DPM.isStatusBarDisabled},
-                onCheckedChange = { Privilege.DPM.setStatusBarDisabled(Privilege.DAR, it) }
-            )
+	SwitchItem(R.string.disable_cam, status.cameraDisabled, vm::setCameraDisabled,
+            R.drawable.no_photography_fill0)
+        SwitchItem(R.string.disable_screen_capture, status.screenCaptureDisabled,
+            vm::setScreenCaptureDisabled, R.drawable.screenshot_fill0)
+	if (VERSION.SDK_INT >= 34 && privilege.run { device || (profile && affiliated) }) {
+            SwitchItem(R.string.disable_status_bar, status.statusBarDisabled,
+                vm::setStatusBarDisabled, R.drawable.notifications_fill0)
         } else if (VERSION.SDK_INT >= 23 && (privilege.device || (privilege.profile && privilege.affiliated))) {
-	    FunctionItem(R.string.enable_status_bar, icon = R.drawable.notifications_fill0) { Privilege.DPM.setStatusBarDisabled(Privilege.DAR, false) }
-	    FunctionItem(R.string.disable_status_bar, icon = R.drawable.notifications_off_fill0) { Privilege.DPM.setStatusBarDisabled(Privilege.DAR, true) }
-	}
+            FunctionItem(R.string.enable_status_bar, icon = R.drawable.notifications_fill0) { vm.setStatusBarDisabled(false) }
+            FunctionItem(R.string.disable_status_bar, icon = R.drawable.notifications_off_fill0) { vm.setStatusBarDisabled(true) }
+        }
         if (privilege.device || privilege.org) {
-            if (VERSION.SDK_INT >= 30) {
-                SwitchItem(R.string.auto_time, icon = R.drawable.schedule_fill0,
-                    getState = { Privilege.DPM.getAutoTimeEnabled(Privilege.DAR) },
-                    onCheckedChange = { Privilege.DPM.setAutoTimeEnabled(Privilege.DAR, it) }
-                )
-                SwitchItem(R.string.auto_timezone, icon = R.drawable.globe_fill0,
-                    getState = { Privilege.DPM.getAutoTimeZoneEnabled(Privilege.DAR) },
-                    onCheckedChange = { Privilege.DPM.setAutoTimeZoneEnabled(Privilege.DAR, it) }
-                )
-            } else {
-                SwitchItem(R.string.require_auto_time, icon = R.drawable.schedule_fill0,
-                    getState = { Privilege.DPM.autoTimeRequired },
-                    onCheckedChange = { Privilege.DPM.setAutoTimeRequired(Privilege.DAR, it) }
-	        )
+	    if (VERSION.SDK_INT >= 30) {
+                 SwitchItem(R.string.auto_time, status.autoTimeEnabled, vm::setAutoTimeEnabled,
+                    R.drawable.schedule_fill0)
+                SwitchItem(R.string.auto_timezone, status.autoTimeZoneEnabled,
+                    vm::setAutoTimeZoneEnabled, R.drawable.globe_fill0)
+	    } else {
+                SwitchItem(R.string.require_auto_time, status.autoTimeRequired,
+                    vm::setAutoTimeRequired, R.drawable.schedule_fill0)
             }
         }
-        if (!privilege.work) SwitchItem(R.string.master_mute, icon = R.drawable.volume_off_fill0,
-            getState = { Privilege.DPM.isMasterVolumeMuted(Privilege.DAR) }, onCheckedChange = {
-                Privilege.DPM.setMasterVolumeMuted(Privilege.DAR, it)
-		ShortcutUtils.setShortcut(context, MyShortcut.Mute, !it)
-            }
-        )
+	if (!privilege.work) SwitchItem(R.string.master_mute,
+            status.masterVolumeMuted, vm::setMasterVolumeMuted, R.drawable.volume_off_fill0)
         if (VERSION.SDK_INT >= 26) {
             SwitchItem(R.string.backup_service, icon = R.drawable.backup_fill0,
-                getState = { Privilege.DPM.isBackupServiceEnabled(Privilege.DAR) },
-                onCheckedChange = { Privilege.DPM.setBackupServiceEnabled(Privilege.DAR, it) },
-                onClickBlank = { dialog = 1 }
-            )
+            state = status.backupServiceEnabled, onCheckedChange = vm::setBackupServiceEnabled,
+                onClickBlank = { dialog = 1 })
         }
         if (VERSION.SDK_INT >= 24 && privilege.work) {
-            SwitchItem(R.string.disable_bt_contact_share, icon = R.drawable.account_circle_fill0,
-                getState = { Privilege.DPM.getBluetoothContactSharingDisabled(Privilege.DAR) },
-                onCheckedChange = { Privilege.DPM.setBluetoothContactSharingDisabled(Privilege.DAR, it) }
-            )
+            SwitchItem(R.string.disable_bt_contact_share, status.btContactSharingDisabled,
+                vm::setBtContactSharingDisabled, R.drawable.account_circle_fill0)
         }
-        if (VERSION.SDK_INT >= 30 && privilege.device) {
-            SwitchItem(R.string.common_criteria_mode , icon =R.drawable.security_fill0,
-                getState = { Privilege.DPM.isCommonCriteriaModeEnabled(Privilege.DAR) },
-                onCheckedChange = { Privilege.DPM.setCommonCriteriaModeEnabled(Privilege.DAR, it) },
-                onClickBlank = { dialog = 2 }
-            )
+        if (VERSION.SDK_INT >= 30 && (privilege.device || privilege.org)) {
+            SwitchItem(R.string.common_criteria_mode, icon = R.drawable.security_fill0,
+                state = status.commonCriteriaMode,
+                onCheckedChange = vm::setCommonCriteriaModeEnabled,
+                onClickBlank = { dialog = 2 })
         }
-        if (VERSION.SDK_INT >= 31 && (privilege.device || privilege.org) && Privilege.DPM.canUsbDataSignalingBeDisabled()) {
-            SwitchItem(
-                R.string.disable_usb_signal, icon = R.drawable.usb_fill0, getState = { !Privilege.DPM.isUsbDataSignalingEnabled },
-                onCheckedChange = { Privilege.DPM.isUsbDataSignalingEnabled = !it },
-            )
+        if (VERSION.SDK_INT >= 31 && (privilege.device || privilege.org) && status.canDisableUsbSignal) {
+            SwitchItem(R.string.enable_usb_signal, status.usbSignalEnabled,
+                vm::setUsbSignalEnabled, R.drawable.usb_fill0)
         }
     }
     if (dialog != 0) AlertDialog(
@@ -419,23 +393,26 @@ fun SystemOptionsScreen(onNavigateUp: () -> Unit) {
 @Serializable object Keyguard
 
 @Composable
-fun KeyguardScreen(onNavigateUp: () -> Unit) {
+fun KeyguardScreen(
+    setKeyguardDisabled: (Boolean) -> Boolean, lock: (Boolean) -> Unit, onNavigateUp: () -> Unit
+) {
     val context = LocalContext.current
     val privilege by Privilege.status.collectAsStateWithLifecycle()
     MyScaffold(R.string.keyguard, onNavigateUp) {
-        if(VERSION.SDK_INT >= 23 && (privilege.device || (VERSION.SDK_INT >= 28 && privilege.profile && privilege.affiliated))) {
+        if (VERSION.SDK_INT >= 23 && (privilege.device ||
+                    (VERSION.SDK_INT >= 28 && privilege.profile && privilege.affiliated))) {
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Button(
-                    onClick = { context.showOperationResultToast(Privilege.DPM.setKeyguardDisabled(Privilege.DAR, true)) },
+                    onClick = { context.showOperationResultToast(setKeyguardDisabled(true)) },
                     modifier = Modifier.fillMaxWidth(0.49F)
                 ) {
                     Text(stringResource(R.string.disable))
                 }
                 Button(
-                    onClick = { context.showOperationResultToast(Privilege.DPM.setKeyguardDisabled(Privilege.DAR, false)) },
+                    onClick = { context.showOperationResultToast(setKeyguardDisabled(false)) },
                     modifier = Modifier.fillMaxWidth(0.96F)
                 ) {
                     Text(stringResource(R.string.enable))
@@ -444,88 +421,83 @@ fun KeyguardScreen(onNavigateUp: () -> Unit) {
             Notes(R.string.info_disable_keyguard)
             Spacer(Modifier.padding(vertical = 12.dp))
         }
-        if(VERSION.SDK_INT >= 23) Text(text = stringResource(R.string.lock_now), style = typography.headlineLarge)
+        if (VERSION.SDK_INT >= 23) Text(text = stringResource(R.string.lock_now), style = typography.headlineLarge)
         Spacer(Modifier.padding(vertical = 2.dp))
-        var flag by remember { mutableIntStateOf(0) }
-        if(VERSION.SDK_INT >= 26 && privilege.work) {
-            CheckBoxItem(
-                R.string.evict_credential_encryption_key,
-                flag and FLAG_EVICT_CREDENTIAL_ENCRYPTION_KEY != 0
-            ) { flag = flag xor FLAG_EVICT_CREDENTIAL_ENCRYPTION_KEY }
-            Spacer(Modifier.padding(vertical = 2.dp))
-        }
+        var evictKey by remember { mutableStateOf(false) }
         Button(
-            onClick = {
-                if(VERSION.SDK_INT >= 26) Privilege.DPM.lockNow(flag) else Privilege.DPM.lockNow()
-            },
+            onClick = { lock(evictKey) },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(stringResource(R.string.lock_now))
         }
-        if(VERSION.SDK_INT >= 26 && privilege.work) {
+        if (VERSION.SDK_INT >= 26 && privilege.work) {
+            CheckBoxItem(R.string.evict_credential_encryption_key, evictKey) { evictKey = true }
+            Spacer(Modifier.height(5.dp))
             Notes(R.string.info_evict_credential_encryption_key)
         }
     }
 }
 
+data class HardwareProperties(
+    val temperatures: Map<Int, List<Float>> = emptyMap(),
+    val cpuUsages: List<Pair<Long, Long>> = emptyList(),
+    val fanSpeeds: List<Float> = emptyList()
+)
+
+@RequiresApi(24)
+val temperatureTypes = mapOf(
+    HardwarePropertiesManager.DEVICE_TEMPERATURE_CPU to R.string.cpu_temp,
+    HardwarePropertiesManager.DEVICE_TEMPERATURE_GPU to R.string.gpu_temp,
+    HardwarePropertiesManager.DEVICE_TEMPERATURE_BATTERY to R.string.battery_temp,
+    HardwarePropertiesManager.DEVICE_TEMPERATURE_SKIN to R.string.skin_temp
+)
+
 @Serializable object HardwareMonitor
 
 @RequiresApi(24)
 @Composable
-fun HardwareMonitorScreen(onNavigateUp: () -> Unit) {
-    val context = LocalContext.current
-    val hpm = context.getSystemService(HardwarePropertiesManager::class.java)
+fun HardwareMonitorScreen(
+    hardwareProperties: StateFlow<HardwareProperties>, getHardwareProperties: suspend () -> Unit,
+    setRefreshInterval: (Float) -> Unit,
+    onNavigateUp: () -> Unit
+) {
+    val properties by hardwareProperties.collectAsStateWithLifecycle()
     var refreshInterval by remember { mutableFloatStateOf(1F) }
     val refreshIntervalMs = (refreshInterval * 1000).roundToLong()
-    val temperatures = remember { mutableStateMapOf<Int, List<Float>>() }
-    val tempTypeMap = mapOf(
-        HardwarePropertiesManager.DEVICE_TEMPERATURE_CPU to R.string.cpu_temp,
-        HardwarePropertiesManager.DEVICE_TEMPERATURE_GPU to R.string.gpu_temp,
-        HardwarePropertiesManager.DEVICE_TEMPERATURE_BATTERY to R.string.battery_temp,
-        HardwarePropertiesManager.DEVICE_TEMPERATURE_SKIN to R.string.skin_temp
-    )
-    val cpuUsages = remember { mutableStateListOf<Pair<Long, Long>>() }
-    val fanSpeeds = remember { mutableStateListOf<Float>() }
-    fun refresh() {
-        cpuUsages.clear()
-        cpuUsages.addAll(hpm.cpuUsages.map { it.active to it.total })
-        temperatures.clear()
-        tempTypeMap.forEach {
-            temperatures += it.key to hpm.getDeviceTemperatures(it.key, HardwarePropertiesManager.TEMPERATURE_CURRENT).toList()
-        }
-        fanSpeeds.clear()
-        fanSpeeds.addAll(hpm.fanSpeeds.toList())
-    }
+    
     LaunchedEffect(Unit) {
-        while(true) {
-            refresh()
-            delay(refreshIntervalMs)
+        while (true) {
+	    getHardwareProperties()
         }
     }
     MyScaffold(R.string.hardware_monitor, onNavigateUp) {
-        Text(stringResource(R.string.refresh_interval), style = typography.titleLarge, modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
-        Slider(refreshInterval, { refreshInterval = it }, valueRange = 0.5F..2F, steps = 14)
+	Text(stringResource(R.string.refresh_interval), Modifier.padding(top = 8.dp, bottom = 4.dp),
+            style = typography.titleLarge)
+        Slider(refreshInterval, {
+            refreshInterval = it
+            setRefreshInterval(it)
+        }, valueRange = 0.5F..2F, steps = 14)
         Text("${refreshIntervalMs}ms")
         Spacer(Modifier.padding(vertical = 10.dp))
-        temperatures.forEach { tempMapItem ->
-            Text(stringResource(tempTypeMap[tempMapItem.key]!!), style = typography.titleLarge, modifier = Modifier.padding(vertical = 4.dp))
-            if(tempMapItem.value.isEmpty()) {
+	properties.temperatures.forEach { tempMapItem ->
+            Text(stringResource(temperatureTypes[tempMapItem.key]!!), style = typography.titleLarge, modifier = Modifier.padding(vertical = 4.dp))
+            if (tempMapItem.value.isEmpty()) {
                 Text(stringResource(R.string.unsupported))
             } else {
                 tempMapItem.value.forEachIndexed { index, temp ->
                     Row(modifier = Modifier.padding(vertical = 4.dp)) {
                         Text(index.toString(), style = typography.titleMedium, modifier = Modifier.padding(start = 8.dp, end = 12.dp))
-                        Text(if(temp == HardwarePropertiesManager.UNDEFINED_TEMPERATURE) stringResource(R.string.undefined) else temp.toString())
+                        Text(if (temp == HardwarePropertiesManager.UNDEFINED_TEMPERATURE) stringResource(R.string.undefined) else temp.toString())
                     }
                 }
             }
             Spacer(Modifier.padding(vertical = 10.dp))
         }
         Text(stringResource(R.string.cpu_usages), style = typography.titleLarge, modifier = Modifier.padding(vertical = 4.dp))
-        if(cpuUsages.isEmpty()) {
+        if (properties.cpuUsages.isEmpty()) {
             Text(stringResource(R.string.unsupported))
         } else {
-            cpuUsages.forEachIndexed { index, usage ->
+            properties.cpuUsages.forEachIndexed { index, usage ->
                 Row(modifier = Modifier.padding(vertical = 4.dp)) {
                     Text(index.toString(), style = typography.titleMedium, modifier = Modifier.padding(start = 8.dp, end = 12.dp))
                     Column {
@@ -537,10 +509,10 @@ fun HardwareMonitorScreen(onNavigateUp: () -> Unit) {
         }
         Spacer(Modifier.padding(vertical = 10.dp))
         Text(stringResource(R.string.fan_speeds), style = typography.titleLarge, modifier = Modifier.padding(vertical = 4.dp))
-        if(fanSpeeds.isEmpty()) {
+        if (properties.fanSpeeds.isEmpty()) {
             Text(stringResource(R.string.unsupported))
         } else {
-            fanSpeeds.forEachIndexed { index, speed ->
+            properties.fanSpeeds.forEachIndexed { index, speed ->
                 Row(modifier = Modifier.padding(vertical = 4.dp)) {
                     Text(index.toString(), style = typography.titleMedium, modifier = Modifier.padding(start = 8.dp, end = 12.dp))
                     Text("$speed RPM")
@@ -555,104 +527,110 @@ fun HardwareMonitorScreen(onNavigateUp: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(28)
 @Composable
-fun ChangeTimeScreen(onNavigateUp: () -> Unit) {
+fun ChangeTimeScreen(setTime: (Long) -> Boolean, onNavigateUp: () -> Unit) {
     val context = LocalContext.current
     val focusMgr = LocalFocusManager.current
+    var tab by remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState { 2 }
+    tab = pagerState.currentPage
+    val coroutine = rememberCoroutineScope()
     var picker by remember { mutableIntStateOf(0) } //0:None, 1:DatePicker, 2:TimePicker
     val datePickerState = rememberDatePickerState()
     val timePickerState = rememberTimePickerState()
     val dateInteractionSource = remember { MutableInteractionSource() }
     val timeInteractionSource = remember { MutableInteractionSource() }
-    if(dateInteractionSource.collectIsPressedAsState().value) picker = 1
-    if(timeInteractionSource.collectIsPressedAsState().value) picker = 2
-    MyScaffold(R.string.change_time, onNavigateUp) {
-        SingleChoiceSegmentedButtonRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 4.dp)
+    if (dateInteractionSource.collectIsPressedAsState().value) picker = 1
+    if (timeInteractionSource.collectIsPressedAsState().value) picker = 2
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                { Text(stringResource(R.string.change_time)) },
+                navigationIcon = { NavIcon(onNavigateUp) },
+                colors = TopAppBarDefaults.topAppBarColors(colorScheme.surfaceContainer)
+            )
+        },
+        contentWindowInsets = WindowInsets.ime
+    ) { paddingValues ->
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
         ) {
-            val coroutine = rememberCoroutineScope()
-            SegmentedButton(
-                selected = pagerState.targetPage == 0, shape = SegmentedButtonDefaults.itemShape(0, 2),
-                onClick = {
-                    coroutine.launch {
-                        pagerState.animateScrollToPage(0)
-                    }
-                }
-            ) {
-                Text(stringResource(R.string.selector))
+            TabRow(tab) {
+                Tab(
+                    tab == 0, { coroutine.launch { pagerState.animateScrollToPage(0) } },
+                    text = { Text(stringResource(R.string.selector)) }
+                )
+                Tab(
+                    tab == 1, { coroutine.launch { pagerState.animateScrollToPage(1) } },
+                    text = { Text(stringResource(R.string.manually_input)) }
+                )
             }
-            SegmentedButton(
-                selected = pagerState.targetPage == 1, shape = SegmentedButtonDefaults.itemShape(1, 2),
-                onClick = {
-                    coroutine.launch {
-                        pagerState.animateScrollToPage(1)
-                    }
-                }
-            ) {
-                Text(stringResource(R.string.manually_input))
-            }
-        }
-        HorizontalPager(
-            state = pagerState, modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Top
-        ) { page ->
-            Column(Modifier.padding(top = 4.dp)) {
-                if(page == 0) {
-                    OutlinedTextField(
-                        value = datePickerState.selectedDateMillis?.humanReadableDate ?: "",
-                        onValueChange = {}, readOnly = true,
-                        label = { Text(stringResource(R.string.date)) },
-                        interactionSource = dateInteractionSource,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = timePickerState.hour.toString() + ":" + timePickerState.minute.toString(),
-                        onValueChange = {}, readOnly = true,
-                        label = { Text(stringResource(R.string.time)) },
-                        interactionSource = timeInteractionSource,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                    )
-                    Button(
-                        onClick = {
-                            val timeMillis = datePickerState.selectedDateMillis!! + timePickerState.hour * 3600000 + timePickerState.minute * 60000
-                            context.showOperationResultToast(Privilege.DPM.setTime(Privilege.DAR, timeMillis))
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = datePickerState.selectedDateMillis != null
-                    ) {
-                        Text(stringResource(R.string.apply))
-                    }
-                } else {
-                    var inputTime by remember { mutableStateOf("") }
-                    OutlinedTextField(
-                        value = inputTime,
-                        label = { Text(stringResource(R.string.time_unit_ms)) },
-                        onValueChange = { inputTime = it },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { focusMgr.clearFocus() }),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Button(
-                        onClick = {
-                            val timeMillis = inputTime.toLong()
-                            context.showOperationResultToast(Privilege.DPM.setTime(Privilege.DAR, timeMillis))
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        enabled = inputTime.toLongOrNull() != null
-                    ) {
-                        Text(stringResource(R.string.apply))
+            HorizontalPager(
+                pagerState, Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top
+            ) { page ->
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(top = 8.dp)
+                        .padding(horizontal = HorizontalPadding)
+                ) {
+                    if (page == 0) {
+                        OutlinedTextField(
+                            value = datePickerState.selectedDateMillis?.humanReadableDate ?: "",
+                            onValueChange = {}, readOnly = true,
+                            label = { Text(stringResource(R.string.date)) },
+                            interactionSource = dateInteractionSource,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = timePickerState.hour.toString() + ":" + timePickerState.minute.toString(),
+                            onValueChange = {}, readOnly = true,
+                            label = { Text(stringResource(R.string.time)) },
+                            interactionSource = timeInteractionSource,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                        )
+                        Button(
+                            onClick = {
+                                val timeMillis = datePickerState.selectedDateMillis!! +
+                                        timePickerState.hour * 3600000 + timePickerState.minute * 60000
+                                context.showOperationResultToast(setTime(timeMillis))
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = datePickerState.selectedDateMillis != null
+                        ) {
+                            Text(stringResource(R.string.apply))
+                        }
+                    } else {
+                        var inputTime by remember { mutableStateOf("") }
+                        OutlinedTextField(
+                            value = inputTime,
+                            label = { Text(stringResource(R.string.time_unit_ms)) },
+                            onValueChange = { inputTime = it },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { focusMgr.clearFocus() }),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Button(
+                            onClick = {
+                                context.showOperationResultToast(setTime(inputTime.toLong()))
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            enabled = inputTime.toLongOrNull() != null
+                        ) {
+                            Text(stringResource(R.string.apply))
+                        }
                     }
                 }
             }
         }
     }
-    if(picker == 1) DatePickerDialog(
+    if (picker == 1) DatePickerDialog(
         confirmButton = {
             TextButton(onClick = { picker = 0; focusMgr.clearFocus() } ) {
                 Text(stringResource(R.string.confirm))
@@ -662,7 +640,7 @@ fun ChangeTimeScreen(onNavigateUp: () -> Unit) {
     ) {
         DatePicker(datePickerState)
     }
-    if(picker == 2) AlertDialog(
+    if (picker == 2) AlertDialog(
         text = { TimePicker(timePickerState) },
         confirmButton = {
             TextButton(onClick = { picker = 0; focusMgr.clearFocus() } ) {
@@ -677,7 +655,7 @@ fun ChangeTimeScreen(onNavigateUp: () -> Unit) {
 
 @RequiresApi(28)
 @Composable
-fun ChangeTimeZoneScreen(onNavigateUp: () -> Unit) {
+fun ChangeTimeZoneScreen(setTimeZone: (String) -> Boolean, onNavigateUp: () -> Unit) {
     val context = LocalContext.current
     val focusMgr = LocalFocusManager.current
     var inputTimezone by remember { mutableStateOf("") }
@@ -699,16 +677,17 @@ fun ChangeTimeZoneScreen(onNavigateUp: () -> Unit) {
         Spacer(Modifier.padding(vertical = 5.dp))
         Button(
             onClick = {
-                context.showOperationResultToast(Privilege.DPM.setTimeZone(Privilege.DAR, inputTimezone))
+                context.showOperationResultToast(setTimeZone(inputTimezone))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+	    enabled = inputTimezone.isNotEmpty()
         ) {
             Text(stringResource(R.string.apply))
         }
         Spacer(Modifier.padding(vertical = 10.dp))
         Notes(R.string.disable_auto_time_zone_before_set)
     }
-    if(dialog) AlertDialog(
+    if (dialog) AlertDialog(
         text = {
             LazyColumn {
                 items(TimeZone.getAvailableIDs()) {
@@ -740,8 +719,11 @@ fun ChangeTimeZoneScreen(onNavigateUp: () -> Unit) {
 
 @RequiresApi(36)
 @Composable
-fun AutoTimePolicyScreen(onNavigateUp: () -> Unit) = MyScaffold(R.string.auto_time_policy, onNavigateUp, 0.dp) {
-    var policy by remember { mutableIntStateOf(Privilege.DPM.autoTimePolicy) }
+fun AutoTimePolicyScreen(
+    getPolicy: () -> Int, setPolicy: (Int) -> Unit, onNavigateUp: () -> Unit
+) = MyScaffold(R.string.auto_time_policy, onNavigateUp, 0.dp) {
+    val context = LocalContext.current
+    var policy by remember { mutableIntStateOf(getPolicy()) }
     listOf(
         DevicePolicyManager.AUTO_TIME_ENABLED to R.string.enable,
         DevicePolicyManager.AUTO_TIME_DISABLED to R.string.disabled,
@@ -751,10 +733,15 @@ fun AutoTimePolicyScreen(onNavigateUp: () -> Unit) = MyScaffold(R.string.auto_ti
             policy = it.first
         }
     }
-    Button({
-        Privilege.DPM.autoTimePolicy = policy
-        policy = Privilege.DPM.autoTimePolicy
-    }, Modifier.fillMaxWidth().padding(horizontal = HorizontalPadding)) {
+    Button(
+        {
+            setPolicy(policy)
+            context.showOperationResultToast(true)
+        },
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = HorizontalPadding)
+    ) {
         Text(stringResource(R.string.apply))
     }
 }
@@ -763,8 +750,11 @@ fun AutoTimePolicyScreen(onNavigateUp: () -> Unit) = MyScaffold(R.string.auto_ti
 
 @RequiresApi(36)
 @Composable
-fun AutoTimeZonePolicyScreen(onNavigateUp: () -> Unit) = MyScaffold(R.string.auto_timezone_policy, onNavigateUp, 0.dp) {
-    var policy by remember { mutableIntStateOf(Privilege.DPM.autoTimeZonePolicy) }
+fun AutoTimeZonePolicyScreen(
+    getPolicy: () -> Int, setPolicy: (Int) -> Unit, onNavigateUp: () -> Unit
+) = MyScaffold(R.string.auto_timezone_policy, onNavigateUp, 0.dp) {
+    val context = LocalContext.current
+    var policy by remember { mutableIntStateOf(getPolicy()) }
     listOf(
         DevicePolicyManager.AUTO_TIME_ZONE_ENABLED to R.string.enable,
         DevicePolicyManager.AUTO_TIME_ZONE_DISABLED to R.string.disabled,
@@ -775,9 +765,11 @@ fun AutoTimeZonePolicyScreen(onNavigateUp: () -> Unit) = MyScaffold(R.string.aut
         }
     }
     Button({
-        Privilege.DPM.autoTimeZonePolicy = policy
-        policy = Privilege.DPM.autoTimeZonePolicy
-    }, Modifier.fillMaxWidth().padding(horizontal = HorizontalPadding)) {
+	setPolicy(policy)
+        context.showOperationResultToast(true)
+    }, Modifier
+        .fillMaxWidth()
+        .padding(horizontal = HorizontalPadding)) {
         Text(stringResource(R.string.apply))
     }
 }
@@ -966,11 +958,11 @@ fun KeyPairs(navCtrl: NavHostController) {
 
 @RequiresApi(35)
 @Composable
-fun ContentProtectionPolicyScreen(onNavigateUp: () -> Unit) {
+fun ContentProtectionPolicyScreen(
+    getPolicy: () -> Int, setPolicy: (Int) -> Unit, onNavigateUp: () -> Unit
+) {
     val context = LocalContext.current
-    var policy by remember { mutableIntStateOf(DevicePolicyManager.CONTENT_PROTECTION_NOT_CONTROLLED_BY_POLICY) }
-    fun refresh() { policy = Privilege.DPM.getContentProtectionPolicy(Privilege.DAR) }
-    LaunchedEffect(Unit) { refresh() }
+    var policy by remember { mutableIntStateOf(getPolicy()) }
     MyScaffold(R.string.content_protection_policy, onNavigateUp, 0.dp) {
         mapOf(
             DevicePolicyManager.CONTENT_PROTECTION_NOT_CONTROLLED_BY_POLICY to R.string.not_controlled_by_policy,
@@ -981,8 +973,7 @@ fun ContentProtectionPolicyScreen(onNavigateUp: () -> Unit) {
         }
         Button(
             onClick = {
-                Privilege.DPM.setContentProtectionPolicy(Privilege.DAR, policy)
-                refresh()
+		setPolicy(policy)
                 context.showOperationResultToast(true)
             },
             modifier = Modifier
@@ -999,9 +990,11 @@ fun ContentProtectionPolicyScreen(onNavigateUp: () -> Unit) {
 
 @RequiresApi(23)
 @Composable
-fun PermissionPolicyScreen(onNavigateUp: () -> Unit) {
+fun PermissionPolicyScreen(
+    getPolicy: () -> Int, setPolicy: (Int) -> Unit, onNavigateUp: () -> Unit
+) {
     val context = LocalContext.current
-    var selectedPolicy by remember { mutableIntStateOf(Privilege.DPM.getPermissionPolicy(Privilege.DAR)) }
+    var selectedPolicy by remember { mutableIntStateOf(getPolicy()) }
     MyScaffold(R.string.permission_policy, onNavigateUp, 0.dp) {
         FullWidthRadioButtonItem(R.string.default_stringres, selectedPolicy == PERMISSION_POLICY_PROMPT) {
             selectedPolicy = PERMISSION_POLICY_PROMPT
@@ -1015,12 +1008,12 @@ fun PermissionPolicyScreen(onNavigateUp: () -> Unit) {
         Spacer(Modifier.padding(vertical = 5.dp))
         Button(
             onClick = {
-                Privilege.DPM.setPermissionPolicy(Privilege.DAR,selectedPolicy)
+                setPolicy(selectedPolicy)
                 context.showOperationResultToast(true)
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = HorizontalPadding)
+                .padding(HorizontalPadding, 5.dp)
         ) {
             Text(stringResource(R.string.apply))
         }
@@ -1032,24 +1025,19 @@ fun PermissionPolicyScreen(onNavigateUp: () -> Unit) {
 
 @RequiresApi(34)
 @Composable
-fun MtePolicyScreen(onNavigateUp: () -> Unit) {
-    val context = LocalContext.current
-    var selectedMtePolicy by remember { mutableIntStateOf(Privilege.DPM.mtePolicy) }
+fun MtePolicyScreen(
+    getPolicy: () -> Int, setPolicy: (Int) -> Boolean, onNavigateUp: () -> Unit
+) {
+    var policy by remember { mutableIntStateOf(getPolicy()) }
     MyScaffold(R.string.mte_policy, onNavigateUp, 0.dp) {
-        FullWidthRadioButtonItem(R.string.decide_by_user, selectedMtePolicy == MTE_NOT_CONTROLLED_BY_POLICY) {
-            selectedMtePolicy = MTE_NOT_CONTROLLED_BY_POLICY
+        FullWidthRadioButtonItem(R.string.decide_by_user, policy == MTE_NOT_CONTROLLED_BY_POLICY) {
+            policy = MTE_NOT_CONTROLLED_BY_POLICY
         }
-        FullWidthRadioButtonItem(R.string.enabled, selectedMtePolicy == MTE_ENABLED) { selectedMtePolicy = MTE_ENABLED }
-        FullWidthRadioButtonItem(R.string.disabled, selectedMtePolicy == MTE_DISABLED) { selectedMtePolicy = MTE_DISABLED }
+        FullWidthRadioButtonItem(R.string.enabled, policy == MTE_ENABLED) { policy = MTE_ENABLED }
+        FullWidthRadioButtonItem(R.string.disabled, policy == MTE_DISABLED) { policy = MTE_DISABLED }
         Button(
             onClick = {
-                try {
-                    Privilege.DPM.mtePolicy = selectedMtePolicy
-                    context.showOperationResultToast(true)
-                } catch(_: java.lang.UnsupportedOperationException) {
-                    context.popToast(R.string.unsupported)
-                }
-                selectedMtePolicy = Privilege.DPM.mtePolicy
+                if (!setPolicy(policy)) policy = getPolicy()
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -1065,9 +1053,12 @@ fun MtePolicyScreen(onNavigateUp: () -> Unit) {
 
 @RequiresApi(31)
 @Composable
-fun NearbyStreamingPolicyScreen(onNavigateUp: () -> Unit) {
+fun NearbyStreamingPolicyScreen(
+    getAppPolicy: () -> Int, setAppPolicy: (Int) -> Unit, getNotificationPolicy: () -> Int,
+    setNotificationPolicy: (Int) -> Unit, onNavigateUp: () -> Unit
+) {
     val context = LocalContext.current
-    var appPolicy by remember { mutableIntStateOf(Privilege.DPM.nearbyAppStreamingPolicy) }
+    var appPolicy by remember { mutableIntStateOf(getAppPolicy()) }
     MySmallTitleScaffold(R.string.nearby_streaming_policy, onNavigateUp, 0.dp) {
         Text(
             stringResource(R.string.nearby_app_streaming),
@@ -1085,8 +1076,7 @@ fun NearbyStreamingPolicyScreen(onNavigateUp: () -> Unit) {
         ) { appPolicy = NEARBY_STREAMING_SAME_MANAGED_ACCOUNT_ONLY }
         Button(
             onClick = {
-                Privilege.DPM.nearbyAppStreamingPolicy = appPolicy
-                appPolicy = Privilege.DPM.nearbyAppStreamingPolicy
+		setAppPolicy(appPolicy)
                 context.showOperationResultToast(true)
             },
             modifier = Modifier
@@ -1096,7 +1086,8 @@ fun NearbyStreamingPolicyScreen(onNavigateUp: () -> Unit) {
             Text(stringResource(R.string.apply))
         }
         Notes(R.string.info_nearby_app_streaming_policy, HorizontalPadding)
-        var notificationPolicy by remember { mutableIntStateOf(Privilege.DPM.nearbyNotificationStreamingPolicy) }
+        Spacer(Modifier.height(20.dp))
+        var notificationPolicy by remember { mutableIntStateOf(getNotificationPolicy()) }
         Text(
             stringResource(R.string.nearby_notification_streaming),
             Modifier.padding(start = 8.dp, top = 10.dp, bottom = 4.dp), style = typography.titleLarge
@@ -1119,8 +1110,7 @@ fun NearbyStreamingPolicyScreen(onNavigateUp: () -> Unit) {
         ) { notificationPolicy = NEARBY_STREAMING_SAME_MANAGED_ACCOUNT_ONLY }
         Button(
             onClick = {
-                Privilege.DPM.nearbyNotificationStreamingPolicy = notificationPolicy
-                notificationPolicy = Privilege.DPM.nearbyNotificationStreamingPolicy
+		setNotificationPolicy(notificationPolicy)
                 context.showOperationResultToast(true)
             },
             modifier = Modifier
@@ -1139,12 +1129,18 @@ fun NearbyStreamingPolicyScreen(onNavigateUp: () -> Unit) {
 @RequiresApi(28)
 @Composable
 fun LockTaskModeScreen(
-    chosenPackage: Channel<String>, onChoosePackage: () -> Unit, onNavigateUp: () -> Unit
+    chosenPackage: Channel<String>, onChoosePackage: () -> Unit,
+    lockTaskPackages: StateFlow<List<AppInfo>>, getLockTaskPackages: () -> Unit,
+    setLockTaskPackage: (String, Boolean) -> Unit, startLockTaskMode: (String, String) -> Unit,
+    getLockTaskFeatures: () -> Int, setLockTaskFeature: (Int) -> String?, onNavigateUp: () -> Unit
 ) {
     val coroutine = rememberCoroutineScope()
     val pagerState = rememberPagerState { 3 }
     var tabIndex by remember { mutableIntStateOf(0) }
     tabIndex = pagerState.targetPage
+    LaunchedEffect(Unit) {
+        getLockTaskPackages()
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -1175,26 +1171,12 @@ fun LockTaskModeScreen(
                 )
             }
             HorizontalPager(pagerState, verticalAlignment = Alignment.Top) { page ->
-                if (page == 0 || page == 1) {
-                    Column(
-                        Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(horizontal = HorizontalPadding)
-                            .padding(bottom = 80.dp)
-                    ) {
-                        if (page == 0) StartLockTaskMode(chosenPackage, onChoosePackage)
-                        else LockTaskPackages(chosenPackage, onChoosePackage)
-                    }
+                if (page == 0) {
+                    StartLockTaskMode(startLockTaskMode, chosenPackage, onChoosePackage)
+                } else if (page == 1) {
+                    LockTaskPackages(chosenPackage, onChoosePackage, lockTaskPackages, setLockTaskPackage)
                 } else {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(bottom = 80.dp)
-                    ) {
-                        LockTaskFeatures()
-                    }
+                    LockTaskFeatures(getLockTaskFeatures, setLockTaskFeature)
                 }
             }
         }
@@ -1203,205 +1185,183 @@ fun LockTaskModeScreen(
 
 @RequiresApi(28)
 @Composable
-private fun ColumnScope.StartLockTaskMode(
+private fun StartLockTaskMode(
+    startLockTaskMode: (String, String) -> Unit,
     chosenPackage: Channel<String>, onChoosePackage: () -> Unit
 ) {
-    val context = LocalContext.current
     val focusMgr = LocalFocusManager.current
-    var startLockTaskApp by rememberSaveable { mutableStateOf("") }
-    var startLockTaskActivity by rememberSaveable { mutableStateOf("") }
+    var packageName by rememberSaveable { mutableStateOf("") }
+    var activity by rememberSaveable { mutableStateOf("") }
     var specifyActivity by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        startLockTaskApp = chosenPackage.receive()
+        packageName = chosenPackage.receive()
     }
-    Spacer(Modifier.padding(vertical = 5.dp))
-    PackageNameTextField(startLockTaskApp, onChoosePackage,
-        Modifier.padding(vertical = 3.dp), { startLockTaskApp = it })
-    CheckBoxItem(R.string.specify_activity, specifyActivity) { specifyActivity = it }
-    AnimatedVisibility(specifyActivity) {
-        OutlinedTextField(
-            value = startLockTaskActivity,
-            onValueChange = { startLockTaskActivity = it },
-            label = { Text("Activity") },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { focusMgr.clearFocus() }),
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = HorizontalPadding)
+            .verticalScroll(rememberScrollState())
+    ) {
+        Spacer(Modifier.height(5.dp))
+        PackageNameTextField(packageName, onChoosePackage) { packageName = it }
+	Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(specifyActivity, {
+                specifyActivity = it
+                activity = ""
+            })
+            OutlinedTextField(
+		value = activity,
+                onValueChange = { activity = it },
+                label = { Text("Activity") },
+                enabled = specifyActivity,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { focusMgr.clearFocus() }),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+	Button(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 5.dp)
-        )
+		.padding(bottom = 5.dp),
+            onClick = {
+                startLockTaskMode(packageName, activity)
+            },
+            enabled = packageName.isNotBlank() && (!specifyActivity || activity.isNotBlank())
+        ) {
+            Text(stringResource(R.string.start))
+        }
+        Notes(R.string.info_start_lock_task_mode)
     }
-    Button(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = {
-            if (!NotificationUtils.checkPermission(context)) return@Button
-            if (!Privilege.DPM.isLockTaskPermitted(startLockTaskApp)) {
-                context.popToast(R.string.app_not_allowed)
-                return@Button
-            }
-            val options = ActivityOptions.makeBasic().setLockTaskEnabled(true)
-            val packageManager = context.packageManager
-            val launchIntent = if(specifyActivity) Intent().setComponent(ComponentName(startLockTaskApp, startLockTaskActivity))
-            else packageManager.getLaunchIntentForPackage(startLockTaskApp)
-            if (launchIntent != null) {
-                context.startActivity(launchIntent, options.toBundle())
-            } else {
-                context.showOperationResultToast(false)
-            }
-        },
-        enabled = startLockTaskApp.isNotBlank() && (!specifyActivity || startLockTaskActivity.isNotBlank())
-    ) {
-        Text(stringResource(R.string.start))
-    }
-    Notes(R.string.info_start_lock_task_mode)
 }
 
 @RequiresApi(26)
 @Composable
-private fun ColumnScope.LockTaskPackages(
-    chosenPackage: Channel<String>, onChoosePackage: () -> Unit
+private fun LockTaskPackages(
+    chosenPackage: Channel<String>, onChoosePackage: () -> Unit,
+    lockTaskPackages: StateFlow<List<AppInfo>>, setLockTaskPackage: (String, Boolean) -> Unit
 ) {
-    val context = LocalContext.current
-    val focusMgr = LocalFocusManager.current
-    val lockTaskPackages = remember { mutableStateListOf<String>() }
-    var input by rememberSaveable { mutableStateOf("") }
+    val packages by lockTaskPackages.collectAsStateWithLifecycle()
+    var packageName by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(Unit) {
-        lockTaskPackages.addAll(Privilege.DPM.getLockTaskPackages(Privilege.DAR))
-        input = chosenPackage.receive()
+	packageName = chosenPackage.receive()
     }
-    Spacer(Modifier.padding(vertical = 5.dp))
-    if (lockTaskPackages.isEmpty()) Text(text = stringResource(R.string.none))
-    for (i in lockTaskPackages) {
-        ListItem(i) { lockTaskPackages -= i }
-    }
-    PackageNameTextField(input, onChoosePackage,
-        Modifier.padding(vertical = 3.dp), { input = it })
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Button(
-            onClick = {
-                lockTaskPackages.add(input)
-                input = ""
-            },
-            modifier = Modifier.fillMaxWidth(0.49F)
-        ) {
-            Text(stringResource(R.string.add))
+    LazyColumn {
+        items(packages, { it.name }) {
+            ApplicationItem(it) { setLockTaskPackage(it.name, false) }
         }
-        Button(
-            onClick = {
-                lockTaskPackages.remove(input)
-                input = ""
-            },
-            modifier = Modifier.fillMaxWidth(0.96F)
-        ) {
-            Text(stringResource(R.string.remove))
+	item {
+            Column(Modifier
+                .padding(horizontal = HorizontalPadding)
+                .padding(bottom = 40.dp)) {
+                PackageNameTextField(packageName, onChoosePackage,
+                    Modifier.padding(vertical = 3.dp)) { packageName = it }
+                Button(
+                    onClick = {
+			setLockTaskPackage(packageName, true)
+                        packageName = ""
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = packageName.isValidPackageName
+                ) {
+                    Text(stringResource(R.string.add))
+                }
+                Notes(R.string.info_lock_task_packages)
+		Spacer(Modifier.height(40.dp))
+	    }
         }
     }
-    Button(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = {
-            Privilege.DPM.setLockTaskPackages(Privilege.DAR, lockTaskPackages.toTypedArray())
-            context.showOperationResultToast(true)
-        }
-    ) {
-        Text(stringResource(R.string.apply))
-    }
-    Notes(R.string.info_lock_task_packages)
 }
 
 @RequiresApi(28)
 @Composable
-private fun ColumnScope.LockTaskFeatures() {
+private fun LockTaskFeatures(
+    getLockTaskFeatures: () -> Int, setLockTaskFeature: (Int) -> String?
+) {
     val context = LocalContext.current
-    var flags by remember { mutableIntStateOf(0) }
-    var custom by rememberSaveable { mutableStateOf(false) }
+    var flags by remember { mutableIntStateOf(getLockTaskFeatures()) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    fun refresh() {
-        flags = Privilege.DPM.getLockTaskFeatures(Privilege.DAR)
-        custom = flags != 0
-    }
-    LaunchedEffect(Unit) { refresh() }
-    Spacer(Modifier.padding(vertical = 5.dp))
-    FullWidthRadioButtonItem(R.string.disable_all, !custom) { custom = false }
-    FullWidthRadioButtonItem(R.string.custom, custom) { custom = true }
-    AnimatedVisibility(custom, Modifier.padding(top = 4.dp)) {
-        Column {
-            listOf(
-                DevicePolicyManager.LOCK_TASK_FEATURE_SYSTEM_INFO to R.string.ltf_sys_info,
-                DevicePolicyManager.LOCK_TASK_FEATURE_NOTIFICATIONS to R.string.ltf_notifications,
-                DevicePolicyManager.LOCK_TASK_FEATURE_HOME to R.string.ltf_home,
-                DevicePolicyManager.LOCK_TASK_FEATURE_OVERVIEW to R.string.ltf_overview,
-                DevicePolicyManager.LOCK_TASK_FEATURE_GLOBAL_ACTIONS to R.string.ltf_global_actions,
-                DevicePolicyManager.LOCK_TASK_FEATURE_KEYGUARD to R.string.ltf_keyguard
-            ).let {
-                if(VERSION.SDK_INT >= 30)
-                    it.plus(DevicePolicyManager.LOCK_TASK_FEATURE_BLOCK_ACTIVITY_START_IN_TASK to R.string.ltf_block_activity_start_in_task)
-                else it
-            }.forEach { (id, title) ->
-                FullWidthCheckBoxItem(title, flags and id != 0) { flags = flags xor id }
-            }
-        }
-    }
-    Button(
-        modifier = Modifier
+     Column(
+        Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp, horizontal = HorizontalPadding),
-        onClick = {
-            try {
-                Privilege.DPM.setLockTaskFeatures(Privilege.DAR, flags)
-                context.showOperationResultToast(true)
-            } catch (e: IllegalArgumentException) {
-                errorMessage = e.message
-            }
-            refresh()
-        }
+	    .verticalScroll(rememberScrollState())
     ) {
-        Text(stringResource(R.string.apply))
+        Spacer(Modifier.padding(vertical = 5.dp))
+        listOf(
+            DevicePolicyManager.LOCK_TASK_FEATURE_SYSTEM_INFO to R.string.ltf_sys_info,
+            DevicePolicyManager.LOCK_TASK_FEATURE_NOTIFICATIONS to R.string.ltf_notifications,
+            DevicePolicyManager.LOCK_TASK_FEATURE_HOME to R.string.ltf_home,
+            DevicePolicyManager.LOCK_TASK_FEATURE_OVERVIEW to R.string.ltf_overview,
+	    DevicePolicyManager.LOCK_TASK_FEATURE_GLOBAL_ACTIONS to R.string.ltf_global_actions,
+            DevicePolicyManager.LOCK_TASK_FEATURE_KEYGUARD to R.string.ltf_keyguard
+        ).let {
+            if (VERSION.SDK_INT >= 30) it.plus(
+                DevicePolicyManager.LOCK_TASK_FEATURE_BLOCK_ACTIVITY_START_IN_TASK to
+                        R.string.ltf_block_activity_start_in_task)
+			else it
+        }.forEach { (id, title) ->
+            FullWidthCheckBoxItem(title, flags and id != 0) { flags = flags xor id }
+        }
+        Button(
+            onClick = {
+                val result = setLockTaskFeature(flags)
+                if (result == null) {
+                    context.showOperationResultToast(true)
+                } else {
+                    errorMessage = result
+	        }
+	    },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp, horizontal = HorizontalPadding)
+        ) {
+            Text(stringResource(R.string.apply))
+        }
+        Spacer(Modifier.height(40.dp))
+        ErrorDialog(errorMessage) { errorMessage = null }
     }
-    ErrorDialog(errorMessage) { errorMessage = null }
 }
 
 data class CaCertInfo(
     val hash: String,
-    val data: ByteArray
+    val serialNumber: String,
+    val issuer: String,
+    val subject: String,
+    val issuedTime: String,
+    val expiresTime: String,
+    val bytes: ByteArray
 )
 
 @Serializable object CaCert
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalStdlibApi::class)
 @Composable
-fun CaCertScreen(onNavigateUp: () -> Unit) {
+fun CaCertScreen(
+    caCertificates: StateFlow<List<CaCertInfo>>, getCerts: () -> Unit,
+    installCert: (CaCertInfo) -> Boolean, parseCert: (Uri) -> CaCertInfo?,
+    exportCert: (Uri, CaCertInfo) -> Unit, uninstallCert: (CaCertInfo) -> Unit,
+    uninstallAllCerts: () -> Unit, onNavigateUp: () -> Unit
+) {
     val context = LocalContext.current
     /** 0:none, 1:install, 2:info, 3:uninstall all */
     var dialog by remember { mutableIntStateOf(0) }
-    var caCertByteArray by remember { mutableStateOf(byteArrayOf()) }
-    val coroutine = rememberCoroutineScope()
-    val getCertLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {uri ->
+    val caCerts by caCertificates.collectAsStateWithLifecycle()
+    var selectedCaCert by remember { mutableStateOf<CaCertInfo?>(null) }
+    val getCertLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()) { uri ->
         if(uri != null) {
-            uriToStream(context, uri) {
-                caCertByteArray = it.readBytes()
-            }
+            selectedCaCert = parseCert(uri)
             dialog = 1
         }
     }
-    val exportCertLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument()) { uri ->
-        if(uri != null) {
-            context.contentResolver.openOutputStream(uri)?.use {
-                it.write(caCertByteArray)
-            }
-            context.showOperationResultToast(true)
-        }
+    val exportCertLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument()) { uri ->
+        if(uri != null) exportCert(uri, selectedCaCert!!)
     }
-    val caCerts = remember { mutableStateListOf<CaCertInfo>() }
-    fun refresh() {
-        caCerts.clear()
-        coroutine.launch(Dispatchers.IO) {
-            val md = MessageDigest.getInstance("SHA-256")
-            Privilege.DPM.getInstalledCaCerts(Privilege.DAR).forEach { ba ->
-                val hash = md.digest(ba).toHexString()
-                withContext(Dispatchers.Main) { caCerts += CaCertInfo(hash, ba) }
-            }
-        }
-    }
-    LaunchedEffect(Unit) { refresh() }
+    LaunchedEffect(Unit) { getCerts() }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -1435,8 +1395,7 @@ fun CaCertScreen(onNavigateUp: () -> Unit) {
                     Modifier
                         .fillMaxWidth()
                         .clickable {
-                            caCertByteArray = cert.data
-                            dialog = 2
+                            selectedCaCert = cert
                         }
                         .animateItem()
                         .padding(vertical = 10.dp, horizontal = 8.dp)
@@ -1446,40 +1405,34 @@ fun CaCertScreen(onNavigateUp: () -> Unit) {
                 HorizontalDivider()
             }
             item {
-                if(caCerts.isEmpty()) Text(stringResource(R.string.no_ca_cert), Modifier.padding(top = 8.dp), colorScheme.onSurfaceVariant)
-                else Spacer(Modifier.padding(vertical = 30.dp))
+                Spacer(Modifier.height(40.dp))
             }
         }
-        if(dialog != 0) AlertDialog(
-            text = {
-                if(dialog == 3) Text(stringResource(R.string.uninstall_all_user_ca_cert))
-                else {
-                    var text: String
-                    val sha256 = MessageDigest.getInstance("SHA-256").digest(caCertByteArray).toHexString()
-                    try {
-                        val cf = CertificateFactory.getInstance("X.509")
-                        val cert = cf.generateCertificate(caCertByteArray.inputStream()) as X509Certificate
-                        text = "Serial number\n" + cert.serialNumber.toString(16) + "\n\n" +
-                                "Subject\n" + cert.subjectX500Principal.name + "\n\n" +
-                                "Issuer\n" + cert.issuerX500Principal.name + "\n\n" +
-                                "Issued on: " + parseDate(cert.notBefore) + "\n" +
-                                "Expires on: " + parseDate(cert.notAfter) + "\n\n" +
-                                "SHA-256 fingerprint" + "\n$sha256"
-                    } catch(e: Exception) {
-                        e.printStackTrace()
-                        text = stringResource(R.string.parse_cert_failed)
-                    }
-                    Column(Modifier.verticalScroll(rememberScrollState())) {
-                        SelectionContainer {
-                            Text(text)
-                        }
-                        if(dialog == 2) Row(Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp), Arrangement.SpaceBetween) {
+        if (selectedCaCert != null && (dialog == 1 || dialog == 2)) {
+            val cert = selectedCaCert!!
+            AlertDialog(
+                text = {
+                    Column {
+                        Text("Serial number", style = typography.labelLarge)
+                        SelectionContainer { Text(cert.serialNumber) }
+                        Text("Subject", style = typography.labelLarge)
+                        SelectionContainer { Text(cert.subject) }
+                        Text("Issuer", style = typography.labelLarge)
+                        SelectionContainer { Text(cert.issuer) }
+                        Text("Issued on", style = typography.labelLarge)
+                        SelectionContainer { Text(cert.issuedTime) }
+                        Text("Expires on", style = typography.labelLarge)
+                        SelectionContainer { Text(cert.expiresTime) }
+                        Text("SHA-256 fingerprint", style = typography.labelLarge)
+                        SelectionContainer { Text(cert.hash) }
+                        if (dialog == 2) Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp), Arrangement.SpaceBetween
+                        ) {
                             TextButton(
                                 onClick = {
-                                    Privilege.DPM.uninstallCaCert(Privilege.DAR, caCertByteArray)
-                                    refresh()
+                                    uninstallCert(cert)
                                     dialog = 0
                                 },
                                 modifier = Modifier.fillMaxWidth(0.49F),
@@ -1489,7 +1442,7 @@ fun CaCertScreen(onNavigateUp: () -> Unit) {
                             }
                             FilledTonalButton(
                                 onClick = {
-                                    exportCertLauncher.launch(sha256.substring(0..7) + ".0")
+                                    exportCertLauncher.launch(cert.hash.substring(0..7) + ".0")
                                 },
                                 modifier = Modifier.fillMaxWidth(0.96F)
                             ) {
@@ -1497,34 +1450,58 @@ fun CaCertScreen(onNavigateUp: () -> Unit) {
                             }
                         }
                     }
-                }
-            },
-            confirmButton = {
-                TextButton({
-                    try {
-                        if(dialog == 1) {
-                            context.showOperationResultToast(Privilege.DPM.installCaCert(Privilege.DAR, caCertByteArray))
+                },
+                confirmButton = {
+                    if (dialog == 1) {
+                        TextButton({
+                            context.showOperationResultToast(installCert(cert))
+                            dialog = 0
+                        }) {
+                            Text(stringResource(R.string.install))
                         }
-                        if(dialog == 3) {
-                            Privilege.DPM.uninstallAllUserCaCerts(Privilege.DAR)
+                    } else {
+                        TextButton({
+                            dialog = 0
+                        }) {
+                            Text(stringResource(R.string.confirm))
                         }
-                        refresh()
-                        dialog = 0
-                    } catch(e: Exception) {
-                        e.printStackTrace()
-                        context.showOperationResultToast(false)
                     }
-                }) {
-                    Text(stringResource(if(dialog == 1) R.string.install else R.string.confirm))
-                }
-            },
-            dismissButton = {
-                if(dialog != 2) TextButton({ dialog = 0 }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
-            onDismissRequest = { dialog = 0 }
-        )
+                },
+                dismissButton = {
+                    if (dialog == 1) {
+                        TextButton({
+                            dialog = 0
+                        }) {
+                            Text(stringResource(R.string.cancel))
+                        }
+                    }
+                },
+                onDismissRequest = {}
+            )
+        }
+        if (dialog == 3) {
+            AlertDialog(
+                text = {
+                    Text(stringResource(R.string.uninstall_all_user_ca_cert))
+                },
+                confirmButton = {
+                    TextButton({
+                        uninstallAllCerts()
+                        dialog = 0
+                    }) {
+                        Text(stringResource(R.string.confirm))
+                    }
+                },
+                dismissButton = {
+                    TextButton({
+                        dialog = 0
+                    }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                },
+                onDismissRequest = { dialog = 0 }
+            )
+        }
     }
 }
 
@@ -1539,12 +1516,12 @@ fun SecurityLoggingScreen(onNavigateUp: () -> Unit) {
     LaunchedEffect(Unit) { fileSize = logFile.length() }
     var preRebootSecurityLogs by remember { mutableStateOf(byteArrayOf()) }
     val exportPreRebootSecurityLogs = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-        if(uri != null) context.contentResolver.openOutputStream(uri)?.use { outStream ->
+        if (uri != null) context.contentResolver.openOutputStream(uri)?.use { outStream ->
             preRebootSecurityLogs.inputStream().copyTo(outStream)
         }
     }
     val exportSecurityLogs = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-        if(uri != null) context.contentResolver.openOutputStream(uri)?.use { outStream ->
+        if (uri != null) context.contentResolver.openOutputStream(uri)?.use { outStream ->
             outStream.write("[".toByteArray())
             logFile.inputStream().use { it.copyTo(outStream) }
             outStream.write("]".toByteArray())
@@ -1585,7 +1562,7 @@ fun SecurityLoggingScreen(onNavigateUp: () -> Unit) {
         Button(
             onClick = {
                 val logs = Privilege.DPM.retrievePreRebootSecurityLogs(Privilege.DAR)
-                if(logs == null) {
+                if (logs == null) {
                     context.popToast(R.string.no_logs)
                     return@Button
                 } else {
@@ -1608,21 +1585,19 @@ fun SecurityLoggingScreen(onNavigateUp: () -> Unit) {
 @Serializable object DisableAccountManagement
 
 @Composable
-fun DisableAccountManagementScreen(onNavigateUp: () -> Unit) {
+fun DisableAccountManagementScreen(
+    mdAccounts: StateFlow<List<String>>, getMdAccounts: () -> Unit,
+    setMdAccount: (String, Boolean) -> Unit, onNavigateUp: () -> Unit
+) {
     val focusMgr = LocalFocusManager.current
+    val list by mdAccounts.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) { getMdAccounts() }
     MyScaffold(R.string.disable_account_management, onNavigateUp) {
-        val list = remember { mutableStateListOf<String>() }
-        fun refreshList() {
-            list.clear()
-            Privilege.DPM.accountTypesWithManagementDisabled?.forEach { list += it }
-        }
-        LaunchedEffect(Unit) { refreshList() }
+
         Column(modifier = Modifier.animateContentSize()) {
-            if(list.isEmpty()) Text(stringResource(R.string.none))
-            for(i in list) {
+            for (i in list) {
                 ListItem(i) {
-                    Privilege.DPM.setAccountManagementDisabled(Privilege.DAR, i, false)
-                    refreshList()
+                    setMdAccount(i, false)
                 }
             }
         }
@@ -1634,9 +1609,8 @@ fun DisableAccountManagementScreen(onNavigateUp: () -> Unit) {
             trailingIcon = {
                 IconButton(
                     onClick = {
-                        Privilege.DPM.setAccountManagementDisabled(Privilege.DAR, inputText, true)
+                        setMdAccount(inputText, true)
                         inputText = ""
-                        refreshList()
                     },
                     enabled = inputText != ""
                 ) {
@@ -1654,62 +1628,57 @@ fun DisableAccountManagementScreen(onNavigateUp: () -> Unit) {
     }
 }
 
+data class FrpPolicyInfo(
+    val supported: Boolean,
+    val usePolicy: Boolean,
+    val enabled: Boolean,
+    val accounts: List<String>
+)
+
 @Serializable object FrpPolicy
 
 @RequiresApi(30)
 @Composable
-fun FrpPolicyScreen(onNavigateUp: () -> Unit) {
+fun FrpPolicyScreen(
+    getFrpPolicy: () -> FrpPolicyInfo, setFrpPolicy: (FrpPolicyInfo) -> Unit,
+    onNavigateUp: () -> Unit
+) {
     val focusMgr = LocalFocusManager.current
     var usePolicy by remember { mutableStateOf(false) }
     var enabled by remember { mutableStateOf(false) }
-    var unsupported by remember { mutableStateOf(false) }
+    var supported by remember { mutableStateOf(false) }
     val accountList = remember { mutableStateListOf<String>() }
     var inputAccount by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
-        var policy: FactoryResetProtectionPolicy? = null
-        try {
-            policy = Privilege.DPM.getFactoryResetProtectionPolicy(Privilege.DAR)
-        } catch(_: UnsupportedOperationException) {
-            unsupported = true
-            policy = null
-        } finally {
-            if(policy == null) {
-                usePolicy = false
-            } else {
-                usePolicy = true
-                enabled = policy.isFactoryResetProtectionEnabled
-            }
+        val info = getFrpPolicy()
+        supported = info.supported
+        if (info.supported) {
+            usePolicy = info.usePolicy
+            enabled = info.enabled
+            accountList.addAll(info.accounts)
         }
     }
-    MyScaffold(R.string.frp_policy, onNavigateUp) {
-        if(unsupported) {
+    MyScaffold(R.string.frp_policy, onNavigateUp, 0.dp) {
+        if (!supported) {
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+                    .padding(HorizontalPadding, 8.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(colorScheme.primaryContainer)
             ) {
                 Text(stringResource(R.string.frp_not_supported), Modifier.padding(8.dp), color = colorScheme.onPrimaryContainer)
             }
         } else {
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 6.dp, vertical = 8.dp)
-            ) {
-                Text(stringResource(R.string.use_policy), style = typography.titleLarge)
-                Switch(checked = usePolicy, onCheckedChange = { usePolicy = it })
-            }
+            SwitchItem(R.string.use_policy, usePolicy, { usePolicy = it })
         }
-        AnimatedVisibility(usePolicy) {
-            Column {
-                CheckBoxItem(R.string.enable_frp, enabled) { enabled = it }
+        if (usePolicy) {
+            FullWidthCheckBoxItem(R.string.enable_frp, enabled) { enabled = it }
+            Column(Modifier.padding(horizontal = HorizontalPadding)) {
                 Text(stringResource(R.string.account_list_is))
                 Column(modifier = Modifier.animateContentSize()) {
-                    if(accountList.isEmpty()) Text(stringResource(R.string.none))
-                    for(i in accountList) {
+                    if (accountList.isEmpty()) Text(stringResource(R.string.none))
+                    for (i in accountList) {
                         ListItem(i) { accountList -= i }
                     }
                 }
@@ -1733,61 +1702,65 @@ fun FrpPolicyScreen(onNavigateUp: () -> Unit) {
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+            Button(
+                onClick = {
+                    focusMgr.clearFocus()
+                    setFrpPolicy(FrpPolicyInfo(true, usePolicy, enabled, accountList))
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp, horizontal = HorizontalPadding)
+            ) {
+                Text(stringResource(R.string.apply))
+            }
         }
-        if(!unsupported) Button(
-            onClick = {
-                focusMgr.clearFocus()
-                val policy = FactoryResetProtectionPolicy.Builder()
-                    .setFactoryResetProtectionEnabled(enabled)
-                    .setFactoryResetProtectionAccounts(accountList)
-                    .build()
-                Privilege.DPM.setFactoryResetProtectionPolicy(Privilege.DAR, policy)
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp)
-        ) {
-            Text(stringResource(R.string.apply))
-        }
-        Notes(R.string.info_frp_policy)
+        Notes(R.string.info_frp_policy, HorizontalPadding)
     }
 }
 
 @Serializable object WipeData
 
 @Composable
-fun WipeDataScreen(onNavigateUp: () -> Unit) {
+fun WipeDataScreen(
+    wipeData: (Boolean, Int, String) -> Unit, onNavigateUp: () -> Unit
+) {
     val context = LocalContext.current
     val userManager = context.getSystemService(Context.USER_SERVICE) as UserManager
     val privilege by Privilege.status.collectAsStateWithLifecycle()
     val focusMgr = LocalFocusManager.current
-    var flag by remember { mutableIntStateOf(0) }
-    var warning by remember { mutableStateOf(false) }
-    var wipeDevice by remember { mutableStateOf(false) }
-    var silent by remember { mutableStateOf(false) }
+    var flag by remember { mutableIntStateOf(WIPE_SILENTLY) }
+    var dialog by remember { mutableIntStateOf(0) } // 0: none, 1: wipe data, 2: wipe device
     var reason by remember { mutableStateOf("") }
-    MyScaffold(R.string.wipe_data, onNavigateUp) {
-        CheckBoxItem(R.string.wipe_external_storage, flag and WIPE_EXTERNAL_STORAGE != 0) { flag = flag xor WIPE_EXTERNAL_STORAGE }
-        if(VERSION.SDK_INT >= 22 && privilege.device) CheckBoxItem(
-            R.string.wipe_reset_protection_data, flag and WIPE_RESET_PROTECTION_DATA != 0) { flag = flag xor WIPE_RESET_PROTECTION_DATA }
-        if(VERSION.SDK_INT >= 28) CheckBoxItem(R.string.wipe_euicc, flag and WIPE_EUICC != 0) { flag = flag xor WIPE_EUICC }
-        if(VERSION.SDK_INT >= 29) CheckBoxItem(R.string.wipe_silently, silent) { silent = it }
-        AnimatedVisibility(!silent && VERSION.SDK_INT >= 28) {
-            OutlinedTextField(
-                value = reason, onValueChange = { reason = it },
-                label = { Text(stringResource(R.string.reason)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 3.dp)
-            )
+    MyScaffold(R.string.wipe_data, onNavigateUp, 0.dp) {
+        FullWidthCheckBoxItem(R.string.wipe_external_storage, flag and WIPE_EXTERNAL_STORAGE != 0) {
+            flag = flag xor WIPE_EXTERNAL_STORAGE
         }
-        Spacer(Modifier.padding(vertical = 5.dp))
-        if(VERSION.SDK_INT < 34 || !userManager.isSystemUser) {
+        if (VERSION.SDK_INT >= 22 && privilege.device) FullWidthCheckBoxItem(
+            R.string.wipe_reset_protection_data, flag and WIPE_RESET_PROTECTION_DATA != 0) {
+            flag = flag xor WIPE_RESET_PROTECTION_DATA
+        }
+        if (VERSION.SDK_INT >= 28) FullWidthCheckBoxItem(R.string.wipe_euicc,
+            flag and WIPE_EUICC != 0) {
+            flag = flag xor WIPE_EUICC
+        }
+        if (VERSION.SDK_INT < 34 || !userManager.isSystemUser) {
+            if (VERSION.SDK_INT >= 29) CheckBoxItem(R.string.wipe_silently, flag and WIPE_SILENTLY != 0) {
+                flag = flag xor WIPE_SILENTLY
+                reason = ""
+            }
+            AnimatedVisibility(flag and WIPE_SILENTLY != 0 && VERSION.SDK_INT >= 28) {
+                OutlinedTextField(
+                    value = reason, onValueChange = { reason = it },
+                    label = { Text(stringResource(R.string.reason)) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                )
+            }
             Button(
                 onClick = {
                     focusMgr.clearFocus()
-                    wipeDevice = false
-                    warning = true
+                    dialog = 1
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = colorScheme.error, contentColor = colorScheme.onError),
                 modifier = Modifier.fillMaxWidth()
@@ -1799,18 +1772,16 @@ fun WipeDataScreen(onNavigateUp: () -> Unit) {
             Button(
                 onClick = {
                     focusMgr.clearFocus()
-                    wipeDevice = true
-                    warning = true
+                    dialog = 2
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = colorScheme.error, contentColor = colorScheme.onError),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().padding(horizontal = HorizontalPadding)
             ) {
                 Text("WipeDevice")
             }
         }
     }
-    if(warning) {
-        LaunchedEffect(Unit) { silent = reason == "" }
+    if (dialog != 0) {
         AlertDialog(
             title = {
                 Text(text = stringResource(R.string.warning), color = colorScheme.error)
@@ -1818,34 +1789,25 @@ fun WipeDataScreen(onNavigateUp: () -> Unit) {
             text = {
                 Text(
                     text = stringResource(
-                        if(VERSION.SDK_INT >= 23 && userManager.isSystemUser) R.string.wipe_data_warning
+                        if (VERSION.SDK_INT >= 23 && userManager.isSystemUser) R.string.wipe_data_warning
                         else R.string.info_wipe_data_in_managed_user
                     ),
                     color = colorScheme.error
                 )
             },
-            onDismissRequest = { warning = false },
+            onDismissRequest = { dialog = 0 },
             confirmButton = {
                 var timer by remember { mutableIntStateOf(6) }
                 LaunchedEffect(Unit) {
-                    while(timer > 0) {
+                    while (timer > 0) {
                         timer -= 1
                         delay(1000)
                     }
                 }
-                val timerText = if(timer > 0) "(${timer}s)" else ""
+                val timerText = if (timer > 0) "(${timer}s)" else ""
                 TextButton(
                     onClick = {
-                        if(silent && VERSION.SDK_INT >= 29) { flag = flag or WIPE_SILENTLY }
-                        if(wipeDevice && VERSION.SDK_INT >= 34) {
-                            Privilege.DPM.wipeDevice(flag)
-                        } else {
-                            if(VERSION.SDK_INT >= 28 && reason != "") {
-                                Privilege.DPM.wipeData(flag, reason)
-                            } else {
-                                Privilege.DPM.wipeData(flag)
-                            }
-                        }
+                        wipeData(dialog == 2, flag, reason)
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = colorScheme.error),
                     modifier = Modifier.animateContentSize(),
@@ -1855,7 +1817,7 @@ fun WipeDataScreen(onNavigateUp: () -> Unit) {
                 }
             },
             dismissButton = {
-                TextButton(onClick = { warning = false }) {
+                TextButton(onClick = { dialog = 0 }) {
                     Text(stringResource(R.string.cancel))
                 }
             }
@@ -1863,35 +1825,53 @@ fun WipeDataScreen(onNavigateUp: () -> Unit) {
     }
 }
 
+data class SystemUpdatePolicyInfo(val type: Int, val start: Int, val end: Int)
+data class PendingSystemUpdateInfo(val exists: Boolean, val time: Long, val securityPatch: Boolean)
+
 @Serializable object SetSystemUpdatePolicy
 
 @RequiresApi(23)
 @Composable
-fun SystemUpdatePolicyScreen(onNavigateUp: () -> Unit) {
+fun SystemUpdatePolicyScreen(
+    getPolicy: () -> SystemUpdatePolicyInfo, setPolicy: (SystemUpdatePolicyInfo) -> Unit,
+    getPendingUpdate: () -> PendingSystemUpdateInfo, onNavigateUp: () -> Unit
+) {
     val context = LocalContext.current
     val focusMgr = LocalFocusManager.current
+    var policyType by remember { mutableIntStateOf(-1) }
+    var windowedPolicyStart by remember { mutableStateOf("") }
+    var windowedPolicyEnd by remember { mutableStateOf("") }
+    var pendingUpdate by remember { mutableStateOf(PendingSystemUpdateInfo(false, 0, false)) }
+    LaunchedEffect(Unit) {
+        val policy = getPolicy()
+        policyType = policy.type
+        if (policy.type == TYPE_INSTALL_WINDOWED) {
+            windowedPolicyStart = policy.start.toString()
+            windowedPolicyEnd = policy.end.toString()
+        }
+        if (VERSION.SDK_INT >= 26) pendingUpdate = getPendingUpdate()
+    }
     MyScaffold(R.string.system_update_policy, onNavigateUp, 0.dp) {
-        var selectedPolicy by remember { mutableStateOf(Privilege.DPM.systemUpdatePolicy?.policyType) }
+        FullWidthRadioButtonItem(R.string.none, policyType == -1) { policyType = -1 }
         FullWidthRadioButtonItem(
             R.string.system_update_policy_automatic,
-            selectedPolicy == TYPE_INSTALL_AUTOMATIC
-        ) { selectedPolicy = TYPE_INSTALL_AUTOMATIC }
+            policyType == TYPE_INSTALL_AUTOMATIC
+        ) { policyType = TYPE_INSTALL_AUTOMATIC }
         FullWidthRadioButtonItem(
             R.string.system_update_policy_install_windowed,
-            selectedPolicy == TYPE_INSTALL_WINDOWED
-        ) { selectedPolicy = TYPE_INSTALL_WINDOWED }
+            policyType == TYPE_INSTALL_WINDOWED
+        ) { policyType = TYPE_INSTALL_WINDOWED }
         FullWidthRadioButtonItem(
             R.string.system_update_policy_postpone,
-            selectedPolicy == TYPE_POSTPONE
-        ) { selectedPolicy = TYPE_POSTPONE }
-        FullWidthRadioButtonItem(R.string.none, selectedPolicy == null) { selectedPolicy = null }
-        var windowedPolicyStart by remember { mutableStateOf("") }
-        var windowedPolicyEnd by remember { mutableStateOf("") }
-        AnimatedVisibility(selectedPolicy == 2) {
+            policyType == TYPE_POSTPONE
+        ) { policyType = TYPE_POSTPONE }
+        AnimatedVisibility(policyType == TYPE_INSTALL_WINDOWED) {
             Column(Modifier.padding(horizontal = HorizontalPadding)) {
-                Row(Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp), Arrangement.SpaceBetween) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp), Arrangement.SpaceBetween
+                ) {
                     OutlinedTextField(
                         value = windowedPolicyStart,
                         label = { Text(stringResource(R.string.start_time)) },
@@ -1902,47 +1882,41 @@ fun SystemUpdatePolicyScreen(onNavigateUp: () -> Unit) {
                     )
                     OutlinedTextField(
                         value = windowedPolicyEnd,
-                        onValueChange = {windowedPolicyEnd = it },
+                        onValueChange = { windowedPolicyEnd = it },
                         label = { Text(stringResource(R.string.end_time)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { focusMgr.clearFocus() }),
-                        modifier = Modifier
-                            .fillMaxWidth(0.96F)
-                            .padding(bottom = 2.dp)
+                        modifier = Modifier.fillMaxWidth(0.96F)
                     )
                 }
-                Text(stringResource(R.string.minutes_in_one_day), color = colorScheme.onSurfaceVariant, style = typography.bodyMedium)
+                Text(stringResource(R.string.minutes_in_one_day),
+                    color = colorScheme.onSurfaceVariant, style = typography.bodyMedium)
             }
         }
         Button(
             onClick = {
-                val policy =
-                    when(selectedPolicy) {
-                        TYPE_INSTALL_AUTOMATIC-> SystemUpdatePolicy.createAutomaticInstallPolicy()
-                        TYPE_INSTALL_WINDOWED-> SystemUpdatePolicy.createWindowedInstallPolicy(windowedPolicyStart.toInt(), windowedPolicyEnd.toInt())
-                        TYPE_POSTPONE-> SystemUpdatePolicy.createPostponeInstallPolicy()
-                        else -> null
-                    }
-                Privilege.DPM.setSystemUpdatePolicy(Privilege.DAR, policy)
+                setPolicy(SystemUpdatePolicyInfo(
+                    policyType, windowedPolicyStart.toIntOrNull() ?: 0,
+                    windowedPolicyEnd.toIntOrNull() ?: 0
+                ))
                 context.showOperationResultToast(true)
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp, horizontal = HorizontalPadding)
+                .padding(vertical = 4.dp, horizontal = HorizontalPadding),
+            enabled = policyType != TYPE_INSTALL_WINDOWED ||
+                    listOf(windowedPolicyStart, windowedPolicyEnd).map { it.toIntOrNull() }
+                        .all { it != null && it <= 1440 }
         ) {
             Text(stringResource(R.string.apply))
         }
-        if(VERSION.SDK_INT >= 26) {
-            val sysUpdateInfo = Privilege.DPM.getPendingSystemUpdate(Privilege.DAR)
+        if (VERSION.SDK_INT >= 26) {
             Column(Modifier.padding(HorizontalPadding)) {
-                if(sysUpdateInfo != null) {
-                    Text(text = stringResource(R.string.update_received_time, Date(sysUpdateInfo.receivedTime)))
-                    val securityPatchStateText = when(sysUpdateInfo.securityPatchState) {
-                        SystemUpdateInfo.SECURITY_PATCH_STATE_FALSE -> R.string.no
-                        SystemUpdateInfo.SECURITY_PATCH_STATE_TRUE -> R.string.yes
-                        else -> R.string.unknown
-                    }
-                    Text(text = stringResource(R.string.is_security_patch, stringResource(securityPatchStateText)))
+                if (pendingUpdate.exists) {
+                    Text(stringResource(R.string.update_received_time,
+                        parseTimestamp(pendingUpdate.time)))
+                    Text(stringResource(R.string.is_security_patch,
+                        stringResource(pendingUpdate.securityPatch.yesOrNo)))
                 } else {
                     Text(text = stringResource(R.string.no_system_update))
                 }
@@ -1955,23 +1929,11 @@ fun SystemUpdatePolicyScreen(onNavigateUp: () -> Unit) {
 
 @SuppressLint("NewApi")
 @Composable
-fun InstallSystemUpdateScreen(onNavigateUp: () -> Unit) {
-    val context = LocalContext.current
-    val callback = object: InstallSystemUpdateCallback() {
-        override fun onInstallUpdateError(errorCode: Int, errorMessage: String) {
-            super.onInstallUpdateError(errorCode, errorMessage)
-            val errDetail = when(errorCode) {
-                UPDATE_ERROR_BATTERY_LOW -> R.string.battery_low
-                UPDATE_ERROR_UPDATE_FILE_INVALID -> R.string.update_file_invalid
-                UPDATE_ERROR_INCORRECT_OS_VERSION -> R.string.incorrect_os_ver
-                UPDATE_ERROR_FILE_NOT_FOUND -> R.string.file_not_exist
-                else -> R.string.unknown
-            }
-            val errMsg = context.getString(R.string.install_system_update_failed) + context.getString(errDetail)
-            context.popToast(errMsg)
-        }
-    }
+fun InstallSystemUpdateScreen(
+    installSystemUpdate: (Uri, (String) -> Unit) -> Unit, onNavigateUp: () -> Unit
+) {
     var uri by remember { mutableStateOf<Uri?>(null) }
+    var installing by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val getFileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri = it }
     MyScaffold(R.string.install_system_update, onNavigateUp) {
@@ -1985,21 +1947,17 @@ fun InstallSystemUpdateScreen(onNavigateUp: () -> Unit) {
         ) {
             Text(stringResource(R.string.select_ota_package))
         }
-        AnimatedVisibility(uri != null) {
-            Button(
-                onClick = {
-                    val executor = Executors.newCachedThreadPool()
-                    try {
-                        Privilege.DPM.installSystemUpdate(Privilege.DAR, uri!!, executor, callback)
-                        context.popToast(R.string.start_install_system_update)
-                    } catch(e: Exception) {
-                        errorMessage = e.message
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.install_system_update))
-            }
+        Button(
+            onClick = {
+                installing = true
+                installSystemUpdate(uri!!) { message ->
+                    errorMessage = message
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = uri != null && !installing
+        ) {
+            Text(stringResource(R.string.install_system_update))
         }
         Spacer(Modifier.padding(vertical = 10.dp))
         Notes(R.string.auto_reboot_after_install_succeed)

@@ -1,6 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">МДПУ</string>
-    <string name="app_name_expanded">MrRare2 Диспетчер Политик Устройства</string>
     <!--Общие-->
     <string name="disabled">Отключено</string>
     <string name="enabled">Включено</string>
@@ -77,7 +76,6 @@
     <string name="profile_owner">Владелец профиля</string>
     <string name="device_owner">Владелец устройства</string>
     <string name="delegated_admins">Делегированные администраторы</string>
-    <string name="delegated_scope">делегированные возможности</string>
     <string name="manage_application_restrictions">Управление ограничениями для приложений</string>
     <string name="manage_certificates">Управление сертификатами</string>
     <string name="select_keychain_certificates">Выберите сертификат связки ключей</string>
@@ -103,7 +101,6 @@
     <string name="disable_account_management">Отключить управление аккаунтами</string>
     <string name="account_type">Тип аккаунта</string>
     <string name="transfer_ownership">Передача прав владения</string>
-    <string name="target_component_name">Имя целевого компонента</string>
     <string name="lock_screen_info">Информация на экране блокировки</string>
     <string name="support_messages">Сообщение поддержки</string>
     <string name="short_support_msg">Краткое сообщение</string>
@@ -131,7 +128,7 @@
     <string name="backup_service">Служба резервного копирования</string>
     <string name="disable_bt_contact_share">Отключить обмен контактами по Bluetooth</string>
     <string name="common_criteria_mode">Режим общих критериев</string>
-    <string name="disable_usb_signal">Отключить USB-сигнал</string>
+    <string name="enable_usb_signal">Включить USB-сигнал</string>
     <string name="keyguard">Блокировка экрана (Keyguard)</string>
     <string name="lock_now">Заблокировать сейчас</string>
     <string name="evict_credential_encryption_key">Удалить ключ шифрования учетных данных</string>
@@ -214,8 +211,6 @@
     <string name="update_received_time">Время получения обновления: %1$s</string>
     <string name="install_system_update">Установить системное обновление</string>
     <string name="select_ota_package" tools:ignore="TypographyEllipsis">Выберите OTA-пакет...</string>
-    <string name="start_install_system_update">Начать установку системного обновления</string>
-    <string name="install_system_update_failed">Установка системного обновления не удалась: </string>
     <string name="battery_low">Низкий заряд батареи</string>
     <string name="update_file_invalid">Файл обновления недействителен</string>
     <string name="incorrect_os_ver">Неверная версия ОС</string>
@@ -341,10 +336,7 @@
     <string name="profile_max_time_off">Максимальное время отключения</string>
     <string name="profile_max_time_out_desc">Личные приложения будут приостановлены после закрытия рабочего профиля на указанное время. 0 означает отсутствие ограничения.</string>
     <string name="personal_app_suspended_because_timeout">Личное приложение приостановлено по причине: %1$s</string>
-    <string name="cannot_less_than_72_hours">Не может быть меньше 72 часов</string>
     <string name="intent_filter">Фильтр намерений</string>
-    <string name="add_intent_filter_work_to_personal">Добавить (из рабочего в личный)</string>
-    <string name="add_intent_filter_personal_to_work">Добавить (из личного в рабочий)</string>
     <string name="clear_cross_profile_filters">Очистить все фильтры</string>
     <string name="org_id">Идентификатор организации</string>
     <string name="length_6_to_64">Длина должна быть от 6 до 64 символов</string>
@@ -683,7 +675,6 @@
     <string name="info_max_failed_password_other_user">Установка значения больше нуля включает политику, согласно которой этот пользователь будет удален после слишком большого количества неверных паролей разблокировки.</string>
     <string name="info_password_history_length">После установки этого значения пользователь не сможет ввести новый пароль, который совпадает с каким-либо паролем из истории. Обратите внимание, что текущий пароль останется до тех пор, пока пользователь не установит новый, поэтому изменение не вступит в силу немедленно.\nЗначение 0 означает отсутствие ограничений.</string>
     <string name="info_required_strong_auth_timeout">Определить, как долго пользователь сможет использовать вторичную, не строгую аутентификацию для аутентификации, с момента последнего использования строгой аутентификации (пароль, PIN-код или графический ключ). По истечении указанного времени пользователь должен будет использовать строгий метод аутентификации.\nЗначение 0 означает, что администратор не участвует в управлении этим временем ожидания. Минимальное и максимальное время ожидания определяются платформой и обычно составляют 1 час и 72 часа соответственно.</string>
-    <string name="cert_verify_failed">Проверка сертификата не удалась. Сертификат этого приложения не соответствует ожидаемому. Это приложение нельзя использовать.\n\nerror: MrRare2_globalapk_verify_failed</string>
     <string name="show_launcher_icon">Показать в списке приложений</string>
     <string name="info_hiding_launcher_icon">Чтобы снова получить доступ к этому приложению, наберите *#*#672376372645839#*#*</string>
     <string name="languages">Язык</string>

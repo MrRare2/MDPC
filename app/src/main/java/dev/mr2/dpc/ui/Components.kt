@@ -234,6 +234,22 @@ fun SwitchItem(
 }
 
 @Composable
+fun SwitchItem(
+    title: Int, state: Boolean, onCheckedChange: (Boolean) -> Unit, icon: Int? = null
+) {
+    Row(
+        Modifier.fillMaxWidth().padding(25.dp, 5.dp, 15.dp, 5.dp),
+        Arrangement.SpaceBetween, Alignment.CenterVertically
+    ) {
+        Row(Modifier.weight(1F), verticalAlignment = Alignment.CenterVertically) {
+            if (icon != null) Icon(painterResource(icon), null, Modifier.padding(end = 20.dp))
+            Text(stringResource(title), style = typography.titleLarge)
+        }
+        Switch(state, onCheckedChange, Modifier.padding(start = 10.dp))
+    }
+}
+
+@Composable
 fun InfoItem(title: Int, text: Int, withInfo: Boolean = false, onClick: () -> Unit = {}) =
     InfoItem(title, stringResource(text), withInfo, onClick)
 
@@ -243,7 +259,7 @@ fun InfoItem(title: Int, text: String, withInfo: Boolean = false, onClick: () ->
         Modifier.fillMaxWidth().padding(vertical = 6.dp).padding(start = HorizontalPadding, end = 8.dp),
         Arrangement.SpaceBetween, Alignment.CenterVertically
     ) {
-        Column {
+        Column(Modifier.weight(1F)) {
             Text(stringResource(title), style = typography.titleLarge)
             Text(text, Modifier.alpha(0.8F))
         }

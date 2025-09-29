@@ -1,16 +1,28 @@
 package dev.mr2.dpc
 
+import android.accounts.Account
+import android.app.ActivityOptions
 import android.app.Application
 import android.app.PendingIntent
+import android.app.admin.DeviceAdminInfo
+import android.app.admin.DeviceAdminReceiver
+import android.app.admin.DevicePolicyManager
+import android.app.admin.DevicePolicyManager.InstallSystemUpdateCallback
+import android.app.admin.FactoryResetProtectionPolicy
 import android.app.admin.PackagePolicy
+import android.app.admin.SystemUpdateInfo
+import android.app.admin.SystemUpdatePolicy
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build.VERSION
+import android.os.HardwarePropertiesManager
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -19,22 +31,47 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
+import com.rosan.dhizuku.api.Dhizuku
+import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
+import com.topjohnwu.superuser.Shell
 import dev.mr2.dpc.Privilege.DAR
 import dev.mr2.dpc.Privilege.DPM
+import dev.mr2.dpc.dpm.ACTIVATE_DEVICE_OWNER_COMMAND
 import dev.mr2.dpc.dpm.AppStatus
+import dev.mr2.dpc.dpm.CaCertInfo
+import dev.mr2.dpc.dpm.DelegatedAdmin
+import dev.mr2.dpc.dpm.DeviceAdmin
+import dev.mr2.dpc.dpm.FrpPolicyInfo
+import dev.mr2.dpc.dpm.HardwareProperties
+import dev.mr2.dpc.dpm.PendingSystemUpdateInfo
+import dev.mr2.dpc.dpm.SystemOptionsStatus
+import dev.mr2.dpc.dpm.SystemUpdatePolicyInfo
+import dev.mr2.dpc.dpm.CreateWorkProfileOptions
+import dev.mr2.dpc.dpm.IntentFilterDirection
+import dev.mr2.dpc.dpm.IntentFilterOptions
+import dev.mr2.dpc.dpm.activateOrgProfileCommand
+import dev.mr2.dpc.dpm.delegatedScopesList
 import dev.mr2.dpc.dpm.getPackageInstaller
+import dev.mr2.dpc.dpm.handlePrivilegeChange
 import dev.mr2.dpc.dpm.isValidPackageName
 import dev.mr2.dpc.dpm.parsePackageInstallerMessage
 import dev.mr2.dpc.dpm.runtimePermissions
+import dev.mr2.dpc.dpm.temperatureTypes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.security.MessageDigest
+import java.security.cert.CertificateException
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
 import java.util.concurrent.Executors
 
 class MyViewModel(application: Application): AndroidViewModel(application) {
+    val myRepo = getApplication<MyApplication>().myRepo
     val PM = application.packageManager
     val theme = MutableStateFlow(ThemeSettings(SP.themeColor, SP.darkTheme, SP.blackTheme))
     fun changeTheme(newTheme: ThemeSettings) {
@@ -217,31 +254,31 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 val statusExtra = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, 999)
-                if(statusExtra == PackageInstaller.STATUS_PENDING_USER_ACTION) {
+                if (statusExtra == PackageInstaller.STATUS_PENDING_USER_ACTION) {
                     @SuppressWarnings("UnsafeIntentLaunch")
 		    context.startActivity(intent.getParcelableExtra(Intent.EXTRA_INTENT) as Intent?)
                 } else {
                     context.unregisterReceiver(this)
-                    if(statusExtra == PackageInstaller.STATUS_SUCCESS) {
+                    if (statusExtra == PackageInstaller.STATUS_SUCCESS) {
                         onComplete(null)
                     } else {
                         onComplete(parsePackageInstallerMessage(context, intent))
                     }
-	        }
-	    }
-	}
+                }
+            }
+        }
 
-	ContextCompat.registerReceiver(
+        ContextCompat.registerReceiver(
             application, receiver, IntentFilter(AppInstallerViewModel.ACTION), null,
             null, ContextCompat.RECEIVER_EXPORTED
         )
-	val pi = if(VERSION.SDK_INT >= 34) {
+        val pi = if (VERSION.SDK_INT >= 34) {
             PendingIntent.getBroadcast(
                 application, 0, Intent(AppInstallerViewModel.ACTION),
                 PendingIntent.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT or PendingIntent.FLAG_MUTABLE
             ).intentSender
         } else {
-	    PendingIntent.getBroadcast(application, 0, Intent(AppInstallerViewModel.ACTION), PendingIntent.FLAG_MUTABLE).intentSender
+            PendingIntent.getBroadcast(application, 0, Intent(AppInstallerViewModel.ACTION), PendingIntent.FLAG_MUTABLE).intentSender
         }
         application.getPackageInstaller().uninstall(packageName, pi)
     }
@@ -262,7 +299,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     }
     fun setCmPackage(name: String, status: Boolean) {
         cmPackages.update { list ->
-            if (status) list + getAppInfo(name) else list.dropWhile { it.name == name }
+            if (status) list + getAppInfo(name) else list.filter { it.name != name }
         }
     }
     @RequiresApi(34)
@@ -283,7 +320,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     }
     fun setPimPackage(name: String, status: Boolean) {
         pimPackages.update { packages ->
-            if (status) packages + getAppInfo(name) else packages.dropWhile { it.name == name }
+            if (status) packages + getAppInfo(name) else packages.filter { it.name != name }
         }
     }
     fun setPimPolicy(allowAll: Boolean): Boolean {
@@ -303,7 +340,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     }
     fun setPasPackage(name: String, status: Boolean) {
         pasPackages.update { packages ->
-            if (status) packages + getAppInfo(name) else packages.dropWhile { it.name == name }
+            if (status) packages + getAppInfo(name) else packages.filter { it.name != name }
         }
     }
     fun setPasPolicy(allowAll: Boolean): Boolean {
@@ -325,7 +362,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
             DPM.isApplicationHidden(DAR, name),
             DPM.isUninstallBlocked(DAR, name),
             if (VERSION.SDK_INT >= 30) name in DPM.getUserControlDisabledPackages(DAR) else false,
-	    if (VERSION.SDK_INT >= 28) name in DPM.getMeteredDataDisabledPackages(DAR) else false,
+            if (VERSION.SDK_INT >= 28) name in DPM.getMeteredDataDisabledPackages(DAR) else false,
             if (VERSION.SDK_INT >= 28) DPM.getKeepUninstalledPackages(DAR)?.contains(name) == true else false
         )
     }
@@ -376,6 +413,703 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
             true
         } catch (e: IllegalArgumentException) {
             e.printStackTrace()
+            false
+        }
+    }
+
+    fun createWorkProfile(options: CreateWorkProfileOptions): Intent {
+        val intent = Intent(DevicePolicyManager.ACTION_PROVISION_MANAGED_PROFILE)
+        if (VERSION.SDK_INT >= 23) {
+            intent.putExtra(
+                DevicePolicyManager.EXTRA_PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME,
+                MyAdminComponent
+            )
+	} else {
+            intent.putExtra(
+                DevicePolicyManager.EXTRA_PROVISIONING_DEVICE_ADMIN_PACKAGE_NAME,
+                application.packageName
+            )
+        }
+        if (options.migrateAccount && VERSION.SDK_INT >= 22) {
+            intent.putExtra(
+                DevicePolicyManager.EXTRA_PROVISIONING_ACCOUNT_TO_MIGRATE,
+                Account(options.accountName, options.accountType)
+            )
+            if (VERSION.SDK_INT >= 26) {
+                intent.putExtra(
+                    DevicePolicyManager.EXTRA_PROVISIONING_KEEP_ACCOUNT_ON_MIGRATION,
+                    options.keepAccount
+                )
+            }
+        }
+        if (VERSION.SDK_INT >= 24) {
+            intent.putExtra(
+                DevicePolicyManager.EXTRA_PROVISIONING_SKIP_ENCRYPTION,
+                options.skipEncrypt
+            )
+        }
+        if (VERSION.SDK_INT >= 33) {
+            intent.putExtra(DevicePolicyManager.EXTRA_PROVISIONING_ALLOW_OFFLINE, options.offline)
+        }
+        return intent
+    }
+    fun activateOrgProfileByShizuku(callback: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            var succeed = false
+            useShizuku(application) { service ->
+                val result = IUserService.Stub.asInterface(service).execute(activateOrgProfileCommand)
+                succeed = result?.getInt("code", -1) == 0
+                callback(succeed)
+            }
+            if (succeed) Privilege.updateStatus()
+        }
+    }
+    @RequiresApi(30)
+    fun getPersonalAppsSuspendedReason(): Int {
+        return DPM.getPersonalAppsSuspendedReasons(DAR)
+    }
+    @RequiresApi(30)
+    fun setPersonalAppsSuspended(suspended: Boolean) {
+        DPM.setPersonalAppsSuspended(DAR, suspended)
+    }
+    @RequiresApi(30)
+    fun getProfileMaxTimeOff(): Long {
+        return DPM.getManagedProfileMaximumTimeOff(DAR)
+    }
+    @RequiresApi(30)
+    fun setProfileMaxTimeOff(time: Long) {
+        DPM.setManagedProfileMaximumTimeOff(DAR, time)
+    }
+    fun addCrossProfileIntentFilter(options: IntentFilterOptions) {
+        val filter = IntentFilter(options.action)
+        if (options.category.isNotEmpty()) filter.addCategory(options.category)
+	if (options.mimeType.isNotEmpty()) filter.addDataType(options.mimeType)
+        val flags = when (options.direction) {
+            IntentFilterDirection.ToManaged -> DevicePolicyManager.FLAG_PARENT_CAN_ACCESS_MANAGED
+            IntentFilterDirection.ToParent -> DevicePolicyManager.FLAG_MANAGED_CAN_ACCESS_PARENT
+            IntentFilterDirection.Both -> DevicePolicyManager.FLAG_PARENT_CAN_ACCESS_MANAGED or
+	    DevicePolicyManager.FLAG_MANAGED_CAN_ACCESS_PARENT
+        }
+        DPM.addCrossProfileIntentFilter(DAR, filter, flags)
+    }
+
+    // late sync, system parts
+    @RequiresApi(24)
+    fun reboot() {
+        DPM.reboot(DAR)
+    }
+    @RequiresApi(24)
+    fun requestBugReport(): Boolean {
+        return DPM.requestBugreport(DAR)
+    }
+    @RequiresApi(24)
+    fun getOrgName(): String {
+        return try { DPM.getOrganizationName(DAR).toString() }
+        catch (_: SecurityException) { "" }
+    }
+    @RequiresApi(24)
+    fun setOrgName(name: String) {
+        DPM.setOrganizationName(DAR, name)
+    }
+    @RequiresApi(31)
+    fun setOrgId(id: String) {
+        application.showOperationResultToast(
+            try { DPM.setOrganizationId(id); true }
+            catch (_: IllegalStateException) { false }
+        )
+    }
+    @RequiresApi(31)
+    fun getEnrollmentSpecificId(): String {
+        return DPM.enrollmentSpecificId
+    }
+    val systemOptionsStatus = MutableStateFlow(SystemOptionsStatus())
+    fun getSystemOptionsStatus() {
+        val privilege = Privilege.status.value
+        systemOptionsStatus.value = SystemOptionsStatus(
+            cameraDisabled = DPM.getCameraDisabled(null),
+            screenCaptureDisabled = DPM.getScreenCaptureDisabled(null),
+            statusBarDisabled = if (VERSION.SDK_INT >= 34 &&
+                privilege.run { device || (profile && affiliated) })
+                DPM.isStatusBarDisabled else false,
+            autoTimeEnabled = if (VERSION.SDK_INT >= 30 && privilege.run { device || org })
+                DPM.getAutoTimeEnabled(DAR) else false,
+            autoTimeZoneEnabled = if (VERSION.SDK_INT >= 30 && privilege.run { device || org })
+                DPM.getAutoTimeZoneEnabled(DAR) else false,
+            autoTimeRequired = if (VERSION.SDK_INT < 30) DPM.autoTimeRequired else false,
+            masterVolumeMuted = DPM.isMasterVolumeMuted(DAR),
+            backupServiceEnabled = if (VERSION.SDK_INT >= 26) DPM.isBackupServiceEnabled(DAR) else false,
+            btContactSharingDisabled = if (VERSION.SDK_INT >= 23 && privilege.work)
+                DPM.getBluetoothContactSharingDisabled(DAR) else false,
+            commonCriteriaMode = if (VERSION.SDK_INT >= 30) DPM.isCommonCriteriaModeEnabled(DAR) else false,
+            usbSignalEnabled = if (VERSION.SDK_INT >= 31) DPM.isUsbDataSignalingEnabled else false,
+            canDisableUsbSignal = if (VERSION.SDK_INT >= 31) DPM.canUsbDataSignalingBeDisabled() else false
+        )
+    }
+    fun setCameraDisabled(disabled: Boolean) {
+        DPM.setCameraDisabled(DAR, disabled)
+        ShortcutUtils.setShortcut(application, MyShortcut.DisableCamera, !disabled)
+        systemOptionsStatus.update { it.copy(cameraDisabled = DPM.getCameraDisabled(null)) }
+    }
+    fun setScreenCaptureDisabled(disabled: Boolean) {
+        DPM.setScreenCaptureDisabled(DAR, disabled)
+        systemOptionsStatus.update {
+            it.copy(screenCaptureDisabled = DPM.getScreenCaptureDisabled(null))
+        }
+    }
+    @RequiresApi(23)
+    fun setStatusBarDisabled(disabled: Boolean) {
+        val result = DPM.setStatusBarDisabled(DAR, disabled)
+        if (result) systemOptionsStatus.update { it.copy(statusBarDisabled = disabled) }
+    }
+    @RequiresApi(30)
+    fun setAutoTimeEnabled(enabled: Boolean) {
+        DPM.setAutoTimeEnabled(DAR, enabled)
+        systemOptionsStatus.update { it.copy(autoTimeEnabled = DPM.getAutoTimeEnabled(DAR)) }
+    }
+    @RequiresApi(30)
+    fun setAutoTimeZoneEnabled(enabled: Boolean) {
+        DPM.setAutoTimeZoneEnabled(DAR, enabled)
+        systemOptionsStatus.update {
+            it.copy(autoTimeZoneEnabled = DPM.getAutoTimeZoneEnabled(DAR))
+        }
+    }
+    @Suppress("DEPRECATION")
+    fun setAutoTimeRequired(required: Boolean) {
+        DPM.setAutoTimeRequired(DAR, required)
+        systemOptionsStatus.update { it.copy(autoTimeRequired = DPM.autoTimeRequired) }
+    }
+    fun setMasterVolumeMuted(muted: Boolean) {
+        DPM.setMasterVolumeMuted(DAR, muted)
+        ShortcutUtils.setShortcut(application, MyShortcut.Mute, !muted)
+        systemOptionsStatus.update { it.copy(masterVolumeMuted = DPM.isMasterVolumeMuted(DAR)) }
+    }
+    @RequiresApi(26)
+    fun setBackupServiceEnabled(enabled: Boolean) {
+        DPM.setBackupServiceEnabled(DAR, enabled)
+        systemOptionsStatus.update {
+            it.copy(backupServiceEnabled = DPM.isBackupServiceEnabled(DAR))
+        }
+    }
+    @RequiresApi(23)
+    fun setBtContactSharingDisabled(disabled: Boolean) {
+        DPM.setBluetoothContactSharingDisabled(DAR, disabled)
+        systemOptionsStatus.update {
+            it.copy(btContactSharingDisabled = DPM.getBluetoothContactSharingDisabled(DAR))
+        }
+    }
+    @RequiresApi(30)
+    fun setCommonCriteriaModeEnabled(enabled: Boolean) {
+        DPM.setCommonCriteriaModeEnabled(DAR, enabled)
+        systemOptionsStatus.update {
+            it.copy(commonCriteriaMode = DPM.isCommonCriteriaModeEnabled(DAR))
+        }
+    }
+    @RequiresApi(31)
+    fun setUsbSignalEnabled(enabled: Boolean) {
+        DPM.isUsbDataSignalingEnabled = enabled
+        systemOptionsStatus.update { it.copy(usbSignalEnabled = DPM.isUsbDataSignalingEnabled) }
+    }
+    @RequiresApi(23)
+    fun setKeyguardDisabled(disabled: Boolean): Boolean {
+        return DPM.setKeyguardDisabled(DAR, disabled)
+    }
+    fun lockScreen(evictKey: Boolean) {
+        if (VERSION.SDK_INT >= 26 && Privilege.status.value.work) {
+            DPM.lockNow(if (evictKey) DevicePolicyManager.FLAG_EVICT_CREDENTIAL_ENCRYPTION_KEY else 0)
+        } else {
+            DPM.lockNow()
+        }
+    }
+    val hardwareProperties = MutableStateFlow(HardwareProperties())
+    var hpRefreshInterval = 1000L
+    fun setHpRefreshInterval(interval: Float) {
+        hpRefreshInterval = (interval * 1000).toLong()
+    }
+    @RequiresApi(24)
+    suspend fun getHardwareProperties() {
+        val hpm = application.getSystemService(HardwarePropertiesManager::class.java)
+        while (true) {
+            val properties =  HardwareProperties(
+                temperatureTypes.map { (type, _) ->
+                    type to hpm.getDeviceTemperatures(type, HardwarePropertiesManager.TEMPERATURE_CURRENT).toList()
+                }.toMap(),
+                hpm.cpuUsages.map { it.active to it.total },
+                hpm.fanSpeeds.toList()
+            )
+            if (properties.cpuUsages.isEmpty() && properties.fanSpeeds.isEmpty() &&
+                properties.temperatures.isEmpty()) {
+                break
+            }
+            delay(hpRefreshInterval)
+        }
+    }
+    @RequiresApi(28)
+    fun setTime(time: Long): Boolean {
+        return DPM.setTime(DAR, time)
+    }
+    @RequiresApi(28)
+    fun setTimeZone(tz: String): Boolean {
+        return DPM.setTimeZone(DAR, tz)
+    }
+    @RequiresApi(36)
+    fun getAutoTimePolicy(): Int {
+        return DPM.autoTimePolicy
+    }
+    @RequiresApi(36)
+    fun setAutoTimePolicy(policy: Int) {
+        DPM.autoTimePolicy = policy
+    }
+    @RequiresApi(36)
+    fun getAutoTimeZonePolicy(): Int {
+        return DPM.autoTimeZonePolicy
+    }
+    @RequiresApi(36)
+    fun setAutoTimeZonePolicy(policy: Int) {
+        DPM.autoTimeZonePolicy = policy
+    }
+    @RequiresApi(35)
+    fun getContentProtectionPolicy(): Int {
+        return DPM.getContentProtectionPolicy(DAR)
+    }
+    @RequiresApi(35)
+    fun setContentProtectionPolicy(policy: Int) {
+        DPM.setContentProtectionPolicy(DAR, policy)
+    }
+    @RequiresApi(23)
+    fun getPermissionPolicy(): Int {
+        return DPM.getPermissionPolicy(DAR)
+    }
+    @RequiresApi(23)
+    fun setPermissionPolicy(policy: Int) {
+        DPM.setPermissionPolicy(DAR, policy)
+    }
+    @RequiresApi(34)
+    fun getMtePolicy(): Int {
+        return DPM.mtePolicy
+    }
+    @RequiresApi(34)
+    fun setMtePolicy(policy: Int): Boolean {
+        return try {
+            DPM.mtePolicy = policy
+            true
+        } catch (_: UnsupportedOperationException) {
+            false
+        }
+    }
+    @RequiresApi(31)
+    fun getNsAppPolicy(): Int {
+        return DPM.nearbyAppStreamingPolicy
+    }
+    @RequiresApi(31)
+    fun setNsAppPolicy(policy: Int) {
+        DPM.nearbyAppStreamingPolicy = policy
+    }
+    @RequiresApi(31)
+    fun getNsNotificationPolicy(): Int {
+        return DPM.nearbyNotificationStreamingPolicy
+    }
+    @RequiresApi(31)
+    fun setNsNotificationPolicy(policy: Int) {
+        DPM.nearbyNotificationStreamingPolicy = policy
+    }
+    val lockTaskPackages = MutableStateFlow(emptyList<AppInfo>())
+    @RequiresApi(26)
+    fun getLockTaskPackages() {
+        lockTaskPackages.value = DPM.getLockTaskPackages(DAR).map { getAppInfo(it) }
+    }
+    @RequiresApi(26)
+    fun setLockTaskPackage(name: String, status: Boolean) {
+        DPM.setLockTaskPackages(DAR,
+            lockTaskPackages.value.map { it.name }
+                .run { if (status) plus(name) else minus(name) }
+                .toTypedArray()
+        )
+        getLockTaskPackages()
+    }
+    @RequiresApi(28)
+    fun startLockTaskMode(packageName: String, activity: String): Int {
+        if (!NotificationUtils.checkPermission(application)) return 0
+        if (!DPM.isLockTaskPermitted(packageName)) return 1
+        val options = ActivityOptions.makeBasic().setLockTaskEnabled(true)
+        val intent = if(activity.isNotEmpty()) {
+            Intent().setComponent(ComponentName(packageName, activity))
+        } else PM.getLaunchIntentForPackage(packageName)
+        if (intent != null) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            application.startActivity(intent, options.toBundle())
+            return 0
+        } else {
+            return 2
+        }
+    }
+    @RequiresApi(28)
+    fun getLockTaskFeatures(): Int {
+        return DPM.getLockTaskFeatures(DAR)
+    }
+    @RequiresApi(28)
+    fun setLockTaskFeatures(flags: Int): String? {
+        try {
+            DPM.setLockTaskFeatures(DAR, flags)
+            return null
+        } catch (e: IllegalArgumentException) {
+            return e.message
+        }
+    }
+    val installedCaCerts = MutableStateFlow(emptyList<CaCertInfo>())
+    fun getCaCerts() {
+        viewModelScope.launch {
+            installedCaCerts.value = DPM.getInstalledCaCerts(DAR).mapNotNull { parseCaCert(it) }
+        }
+    }
+    fun parseCaCert(uri: Uri): CaCertInfo? {
+        return try {
+            application.contentResolver.openInputStream(uri)?.use {
+                parseCaCert(it.readBytes())
+            }
+        } catch(e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+    fun parseCaCert(bytes: ByteArray): CaCertInfo? {
+        val hash = MessageDigest.getInstance("SHA-256").digest(bytes).toHexString()
+        return try {
+            val factory = CertificateFactory.getInstance("X.509")
+            val cert = factory.generateCertificate(bytes.inputStream()) as X509Certificate
+            CaCertInfo(
+                hash, cert.serialNumber.toString(16),
+                cert.issuerX500Principal.name, cert.subjectX500Principal.name,
+                parseDate(cert.notBefore), parseDate(cert.notAfter), bytes
+            )
+        } catch (e: CertificateException) {
+            e.printStackTrace()
+            null
+        }
+    }
+    fun installCaCert(cert: CaCertInfo): Boolean {
+        val result =  DPM.installCaCert(DAR, cert.bytes)
+        if (result) getCaCerts()
+        return result
+    }
+    fun uninstallCaCert(cert: CaCertInfo) {
+        DPM.uninstallCaCert(DAR, cert.bytes)
+        getCaCerts()
+    }
+    fun uninstallAllCaCerts() {
+        DPM.uninstallAllUserCaCerts(DAR)
+        getCaCerts()
+    }
+    fun exportCaCert(uri: Uri, cert: CaCertInfo) {
+        application.contentResolver.openOutputStream(uri)?.use {
+            it.write(cert.bytes)
+        }
+    }
+    val mdAccountTypes = MutableStateFlow(emptyList<String>())
+    fun getMdAccountTypes() {
+        mdAccountTypes.value = DPM.accountTypesWithManagementDisabled?.toList() ?: emptyList()
+    }
+    fun setMdAccountType(type: String, disabled: Boolean) {
+        DPM.setAccountManagementDisabled(DAR, type, disabled)
+        getMdAccountTypes()
+    }
+    @RequiresApi(30)
+    fun getFrpPolicy(): FrpPolicyInfo {
+        return try {
+            val policy = DPM.getFactoryResetProtectionPolicy(DAR)
+            FrpPolicyInfo(
+                true, policy != null, policy?.isFactoryResetProtectionEnabled ?: false,
+                policy?.factoryResetProtectionAccounts ?: emptyList()
+            )
+        } catch (_: UnsupportedOperationException) {
+            FrpPolicyInfo(false, false, false, emptyList())
+        }
+    }
+    @RequiresApi(30)
+    fun setFrpPolicy(info: FrpPolicyInfo) {
+        val policy = if (info.usePolicy) {
+            FactoryResetProtectionPolicy.Builder()
+                .setFactoryResetProtectionEnabled(info.enabled)
+                .setFactoryResetProtectionAccounts(info.accounts)
+                .build()
+        } else null
+        DPM.setFactoryResetProtectionPolicy(DAR, policy)
+    }
+    fun wipeData(wipeDevice: Boolean, flags: Int, reason: String) {
+        if (wipeDevice && VERSION.SDK_INT >= 34) {
+            DPM.wipeDevice(flags)
+        } else {
+            if(VERSION.SDK_INT >= 28 && reason.isNotEmpty()) {
+                DPM.wipeData(flags, reason)
+            } else {
+                DPM.wipeData(flags)
+            }
+        }
+    }
+    @RequiresApi(23)
+    fun getSystemUpdatePolicy(): SystemUpdatePolicyInfo {
+        val policy = DPM.systemUpdatePolicy
+        return SystemUpdatePolicyInfo(
+            policy?.policyType ?: -1, policy?.installWindowStart ?: 0, policy?.installWindowEnd ?: 0
+        )
+    }
+    @RequiresApi(23)
+    fun setSystemUpdatePolicy(info: SystemUpdatePolicyInfo) {
+        val policy = when (info.type) {
+            SystemUpdatePolicy.TYPE_INSTALL_AUTOMATIC -> SystemUpdatePolicy.createAutomaticInstallPolicy()
+            SystemUpdatePolicy.TYPE_INSTALL_WINDOWED ->
+                SystemUpdatePolicy.createWindowedInstallPolicy(info.start, info.end)
+            SystemUpdatePolicy.TYPE_POSTPONE -> SystemUpdatePolicy.createPostponeInstallPolicy()
+            else -> null
+        }
+        DPM.setSystemUpdatePolicy(DAR, policy)
+    }
+    @RequiresApi(26)
+    fun getPendingSystemUpdate(): PendingSystemUpdateInfo {
+        val update = DPM.getPendingSystemUpdate(DAR)
+        return PendingSystemUpdateInfo(update != null, update?.receivedTime ?: 0,
+            update?.securityPatchState == SystemUpdateInfo.SECURITY_PATCH_STATE_TRUE)
+    }
+    @RequiresApi(29)
+    fun installSystemUpdate(uri: Uri, callback: (String) -> Unit) {
+        val callback = object: InstallSystemUpdateCallback() {
+            override fun onInstallUpdateError(errorCode: Int, errorMessage: String) {
+                super.onInstallUpdateError(errorCode, errorMessage)
+                val errDetail = when(errorCode) {
+                    UPDATE_ERROR_BATTERY_LOW -> R.string.battery_low
+                    UPDATE_ERROR_UPDATE_FILE_INVALID -> R.string.update_file_invalid
+                    UPDATE_ERROR_INCORRECT_OS_VERSION -> R.string.incorrect_os_ver
+                    UPDATE_ERROR_FILE_NOT_FOUND -> R.string.file_not_exist
+                    else -> R.string.unknown_error
+                }
+                callback(application.getString(errDetail) + "\n$errorMessage")
+            }
+        }
+        DPM.installSystemUpdate(DAR, uri, application.mainExecutor, callback)
+    }
+
+    // late sync permissions
+    @RequiresApi(24)
+    fun isCreatingWorkProfileAllowed(): Boolean {
+        return DPM.isProvisioningAllowed(DevicePolicyManager.ACTION_PROVISION_MANAGED_PROFILE)
+    }
+    fun activateDoByShizuku(callback: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            useShizuku(application) { service ->
+                try {
+                    val result = IUserService.Stub.asInterface(service)
+                        .execute(ACTIVATE_DEVICE_OWNER_COMMAND)
+                    if (result == null || result.getInt("code", -1) != 0) {
+                        callback(false, null)
+                    } else {
+                        Privilege.updateStatus()
+                        handlePrivilegeChange(application)
+                        callback(
+                            true, result.getString("output") + "\n" + result.getString("error")
+                        )
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    callback(false, null)
+                }
+            }
+        }
+    }
+    fun activateDoByRoot(callback: (Boolean, String?) -> Unit) {
+        Shell.getShell { shell ->
+            if(shell.isRoot) {
+                val result = Shell.cmd(ACTIVATE_DEVICE_OWNER_COMMAND).exec()
+                val output = result.out.joinToString("\n") + "\n" + result.err.joinToString("\n")
+                if (result.isSuccess) {
+                    Privilege.updateStatus()
+                    handlePrivilegeChange(application)
+                }
+                callback(result.isSuccess, output)
+            } else {
+                callback(false, application.getString(R.string.permission_denied))
+            }
+        }
+    }
+    @RequiresApi(28)
+    fun activateDoByDhizuku(callback: (Boolean, String?) -> Unit) {
+        DPM.transferOwnership(DAR, MyAdminComponent, null)
+        SP.dhizuku = false
+        Privilege.initialize(application)
+        handlePrivilegeChange(application)
+        callback(true, null)
+    }
+    fun activateDhizukuMode(callback: (Boolean, String?) -> Unit) {
+        fun onSucceed() {
+            SP.dhizuku = true
+            Privilege.initialize(application)
+            handlePrivilegeChange(application)
+            callback(true, null)
+        }
+        if (Dhizuku.init(application)) {
+            if (Dhizuku.isPermissionGranted()) {
+                onSucceed()
+            } else {
+                Dhizuku.requestPermission(object : DhizukuRequestPermissionListener() {
+                    override fun onRequestPermission(grantResult: Int) {
+                        if(grantResult == PackageManager.PERMISSION_GRANTED) onSucceed()
+                    }
+                })
+            }
+        } else {
+            callback(false, application.getString(R.string.failed_to_init_dhizuku))
+        }
+    }
+    fun clearDeviceOwner() {
+        DPM.clearDeviceOwnerApp(application.packageName)
+    }
+    @RequiresApi(24)
+    fun clearProfileOwner() {
+        DPM.clearProfileOwner(MyAdminComponent)
+    }
+    fun deactivateDhizukuMode() {
+        SP.dhizuku = false
+        Privilege.initialize(application)
+    }
+    val dhizukuClients = MutableStateFlow(emptyList<Pair<DhizukuClientInfo, AppInfo>>())
+    fun getDhizukuClients() {
+        viewModelScope.launch {
+            dhizukuClients.value = myRepo.getDhizukuClients().mapNotNull {
+                val packageName = PM.getNameForUid(it.uid)
+                if (packageName == null) {
+                    myRepo.deleteDhizukuClient(it)
+                    null
+                } else {
+                    it to getAppInfo(packageName)
+                }
+            }
+        }
+    }
+    fun getDhizukuServerEnabled(): Boolean {
+        return SP.dhizukuServer
+    }
+    fun setDhizukuServerEnabled(status: Boolean) {
+        SP.dhizukuServer = status
+    }
+    fun updateDhizukuClient(info: DhizukuClientInfo) {
+        myRepo.setDhizukuClient(info)
+        dhizukuClients.update { list ->
+            val ml = list.toMutableList()
+            val index = ml.indexOfFirst { it.first.uid == info.uid }
+            ml[index] = info to ml[index].second
+            ml
+        }
+    }
+    @RequiresApi(24)
+    fun getLockScreenInfo(): String {
+        return DPM.deviceOwnerLockScreenInfo?.toString() ?: ""
+    }
+    @RequiresApi(24)
+    fun setLockScreenInfo(text: String) {
+        DPM.setDeviceOwnerLockScreenInfo(DAR, text)
+    }
+    val delegatedAdmins = MutableStateFlow(emptyList<DelegatedAdmin>())
+    @RequiresApi(26)
+    fun getDelegatedAdmins() {
+        val list = mutableListOf<DelegatedAdmin>()
+        delegatedScopesList.forEach { scope ->
+            DPM.getDelegatePackages(DAR, scope.id)?.forEach { pkg ->
+                val index = list.indexOfFirst { it.app.name == pkg }
+                if (index == -1) {
+                    list += DelegatedAdmin(getAppInfo(pkg), listOf(scope.id))
+                } else {
+                    list[index] = DelegatedAdmin(list[index].app, list[index].scopes + scope.id)
+                }
+            }
+        }
+        delegatedAdmins.value = list
+    }
+    @RequiresApi(26)
+    fun setDelegatedAdmin(name: String, scopes: List<String>) {
+        DPM.setDelegatedScopes(DAR, name, scopes)
+        getDelegatedAdmins()
+    }
+    @RequiresApi(34)
+    fun getDeviceFinanced(): Boolean {
+        return DPM.isDeviceFinanced
+    }
+    @RequiresApi(33)
+    fun getDpmRh(): String? {
+        return DPM.devicePolicyManagementRoleHolderPackage
+    }
+    fun getStorageEncryptionStatus(): Int {
+        return DPM.storageEncryptionStatus
+    }
+    @RequiresApi(28)
+    fun getDeviceIdAttestationSupported(): Boolean {
+        return DPM.isDeviceIdAttestationSupported
+    }
+    @RequiresApi(30)
+    fun getUniqueDeviceAttestationSupported(): Boolean {
+        return DPM.isUniqueDeviceAttestationSupported
+    }
+    fun getActiveAdmins(): String {
+        return DPM.activeAdmins?.joinToString("\n") {
+            it.flattenToShortString()
+        } ?: application.getString(R.string.none)
+    }
+    @RequiresApi(24)
+    fun getShortSupportMessage(): String {
+        return DPM.getShortSupportMessage(DAR)?.toString() ?: ""
+    }
+    @RequiresApi(24)
+    fun getLongSupportMessage(): String {
+        return DPM.getLongSupportMessage(DAR)?.toString() ?: ""
+    }
+    @RequiresApi(24)
+    fun setShortSupportMessage(text: String?) {
+        DPM.setShortSupportMessage(DAR, text)
+    }
+    @RequiresApi(24)
+    fun setLongSupportMessage(text: String?) {
+        DPM.setLongSupportMessage(DAR, text)
+    }
+    val deviceAdminReceivers = MutableStateFlow(emptyList<DeviceAdmin>())
+    fun getDeviceAdminReceivers() {
+        viewModelScope.launch {
+            deviceAdminReceivers.value = PM.queryBroadcastReceivers(
+                Intent(DeviceAdminReceiver.ACTION_DEVICE_ADMIN_ENABLED),
+                PackageManager.GET_META_DATA
+            ).mapNotNull {
+                try {
+                    DeviceAdminInfo(application, it)
+                } catch(_: Exception) {
+                    null
+                }
+            }.filter {
+                it.isVisible && it.packageName != "dev.mr2.dpc" &&
+                        it.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0
+            }.map {
+                DeviceAdmin(getAppInfo(it.packageName), it.component)
+            }
+        }
+    }
+    @RequiresApi(28)
+    fun transferOwnership(component: ComponentName) {
+        DPM.transferOwnership(DAR, component, null)
+        Privilege.updateStatus()
+    }
+
+    // late sync user restrictions
+    val userRestrictions = MutableStateFlow(emptyMap<String, Boolean>())
+    @RequiresApi(24)
+    fun getUserRestrictions() {
+        val bundle = DPM.getUserRestrictions(DAR)
+        userRestrictions.value = bundle.keySet().associateWith { bundle.getBoolean(it) }
+    }
+    fun setUserRestriction(name: String, state: Boolean): Boolean {
+        return try {
+            if (state) {
+                DPM.addUserRestriction(DAR, name)
+            } else {
+                DPM.clearUserRestriction(DAR, name)
+            }
+            userRestrictions.update { it.plus(name to state) }
+            true
+        } catch (_: SecurityException) {
             false
         }
     }

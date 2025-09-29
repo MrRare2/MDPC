@@ -79,7 +79,6 @@
     <string name="profile_owner">Profile owner</string>
     <string name="device_owner">Device owner</string>
     <string name="delegated_admins">Delegated admins</string>
-    <string name="delegated_scope">delegated scope</string>
     <string name="manage_application_restrictions">Manage application restrictions</string>
     <string name="manage_certificates">Manage certificates</string>
     <string name="select_keychain_certificates">Select KeyChain certificate</string>
@@ -105,7 +104,6 @@
     <string name="disable_account_management">Disable account management</string>
     <string name="account_type">Account type</string>
     <string name="transfer_ownership">Transfer Ownership</string>
-    <string name="target_component_name">Target component name</string>
     <string name="lock_screen_info">Lock screen info</string>
     <string name="support_messages">Support Messages</string>
     <string name="short_support_msg">Short message</string>
@@ -145,7 +143,7 @@
     <string name="backup_service">Backup service</string>
     <string name="disable_bt_contact_share">Disable bluetooth contact sharing</string>
     <string name="common_criteria_mode">Common criteria mode</string>
-    <string name="disable_usb_signal">Disable USB signal</string>
+    <string name="enable_usb_signal">Enable USB signal</string>
     <string name="keyguard">Keyguard</string>
     <string name="lock_now">Lock screen now</string>
     <string name="lock_screen">Lock screen</string>
@@ -250,8 +248,6 @@
 
     <string name="install_system_update">Install system update</string>
     <string name="select_ota_package" tools:ignore="TypographyEllipsis">Select OTA package...</string>
-    <string name="start_install_system_update">Start installing system update</string>
-    <string name="install_system_update_failed">"Install system update failed: "</string>
     <string name="battery_low">Battery is low</string>
     <string name="update_file_invalid">Update file is invalid</string>
     <string name="incorrect_os_ver">Incorrect OS version</string>
@@ -375,10 +371,11 @@
     <string name="profile_max_time_off">Max time off</string>
     <string name="profile_max_time_out_desc">Personal apps will be suspended after the work profile is closed for this amount of time. 0 means no limit. </string>
     <string name="personal_app_suspended_because_timeout">Personal app suspended because of this: %1$s</string>
-    <string name="cannot_less_than_72_hours">Cannot less than 72 hours</string>
     <string name="intent_filter">Intent filter</string>
-    <string name="add_intent_filter_work_to_personal">Add(work to personal)</string>
-    <string name="add_intent_filter_personal_to_work">Add(personal to work)</string>
+    <string name="direction">Direction</string>
+    <string name="both_direction">Both direction</string>
+    <string name="work_to_personal">Work to personal</string>
+    <string name="personal_to_work">Personal to work</string>
     <string name="clear_cross_profile_filters">Clear all filters</string>
     <string name="org_id">Organization ID</string>
     <string name="length_6_to_64">The length should be between 6~64 characters</string>
@@ -738,7 +735,6 @@
     <string name="activate_method">Activate method</string>
     <string name="adb_command">ADB command</string>
     <string name="dpm_warning">This app uses Device owner or Profile owner privileges. These privileges are extremely dangerous, please use them with caution. If used improperly, they may result in severe losses. The developers will not be responsible for this.</string>
-    <string name="cert_verify_failed">Certificate verification failed. The certificate of this application does not match the intended one. This application cannot be used.\n\nerror: MrRare2_globalapk_verify_failed</string>
     <string name="languages">Language</string>
     <string name="da_info">Apply as device owner.</string>
     <string name="api_shared_response">Shared API reply</string>

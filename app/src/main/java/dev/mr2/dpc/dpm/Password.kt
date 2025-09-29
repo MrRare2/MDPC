@@ -92,33 +92,33 @@ fun PasswordScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
     var dialog by remember { mutableIntStateOf(0) }
     MyScaffold(R.string.password_and_keyguard, onNavigateUp, 0.dp) {
         FunctionItem(R.string.password_info, icon = R.drawable.info_fill0) { onNavigate(PasswordInfo) }
-        if(SP.displayDangerousFeatures) {
-            if(VERSION.SDK_INT >= 26) {
+        if (SP.displayDangerousFeatures) {
+            if (VERSION.SDK_INT >= 26) {
                 FunctionItem(R.string.reset_password_token, icon = R.drawable.key_vertical_fill0) { onNavigate(ResetPasswordToken) }
             }
             FunctionItem(R.string.reset_password, icon = R.drawable.lock_reset_fill0) { onNavigate(ResetPassword) }
         }
-        if(VERSION.SDK_INT >= 31) {
+        if (VERSION.SDK_INT >= 31) {
             FunctionItem(R.string.required_password_complexity, icon = R.drawable.password_fill0) { onNavigate(RequiredPasswordComplexity) }
         }
         FunctionItem(R.string.disable_keyguard_features, icon = R.drawable.screen_lock_portrait_fill0) { onNavigate(KeyguardDisabledFeatures) }
-        if(privilege.device) {
+        if (privilege.device) {
             FunctionItem(R.string.max_time_to_lock, icon = R.drawable.schedule_fill0) { dialog = 1 }
             FunctionItem(R.string.pwd_expiration_timeout, icon = R.drawable.lock_clock_fill0) { dialog = 3 }
             FunctionItem(R.string.max_pwd_fail, icon = R.drawable.no_encryption_fill0) { dialog = 4 }
         }
-        if(VERSION.SDK_INT >= 26) {
+        if (VERSION.SDK_INT >= 26) {
             FunctionItem(R.string.required_strong_auth_timeout, icon = R.drawable.fingerprint_off_fill0) { dialog = 2 }
         }
         FunctionItem(R.string.pwd_history, icon = R.drawable.history_fill0) { dialog = 5 }
-        if(VERSION.SDK_INT < 31) {
+        if (VERSION.SDK_INT < 31) {
             FunctionItem(R.string.required_password_quality, icon = R.drawable.password_fill0) { onNavigate(RequiredPasswordQuality) }
         }
     }
-    if(dialog != 0) {
+    if (dialog != 0) {
         var input by remember { mutableStateOf("") }
         LaunchedEffect(Unit) {
-            input = when(dialog) {
+            input = when (dialog) {
                 1 -> Privilege.DPM.getMaximumTimeToLock(Privilege.DAR).toString()
                 2 -> Privilege.DPM.getRequiredStrongAuthTimeout(Privilege.DAR).toString()
                 3 -> Privilege.DPM.getPasswordExpirationTimeout(Privilege.DAR).toString()
@@ -130,7 +130,7 @@ fun PasswordScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
         AlertDialog(
             title = {
                 Text(stringResource(
-                    when(dialog) {
+                    when (dialog) {
                         1 -> R.string.max_time_to_lock
                         2 -> R.string.required_strong_auth_timeout
                         3 -> R.string.pwd_expiration_timeout
@@ -148,7 +148,7 @@ fun PasswordScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
                         value = input,
                         label = {
                             Text(stringResource(
-                                when(dialog) {
+                                when (dialog) {
                                     1,2,3 -> R.string.time_unit_ms
                                     4 -> R.string.max_pwd_fail_textfield
                                     5 -> R.string.length
@@ -163,7 +163,7 @@ fun PasswordScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
                         modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
                     )
                     Text(stringResource(
-                        when(dialog) {
+                        when (dialog) {
                             1 -> R.string.info_screen_timeout
                             2 -> R.string.info_required_strong_auth_timeout
                             3 -> R.string.info_password_expiration_timeout
@@ -177,7 +177,7 @@ fun PasswordScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
             confirmButton = {
                 TextButton(
                     onClick = {
-                        when(dialog) {
+                        when (dialog) {
                             1 -> Privilege.DPM.setMaximumTimeToLock(Privilege.DAR, input.toLong())
                             2 -> Privilege.DPM.setRequiredStrongAuthTimeout(Privilege.DAR, input.toLong())
                             3 -> Privilege.DPM.setPasswordExpirationTimeout(Privilege.DAR, input.toLong())
@@ -210,7 +210,7 @@ fun PasswordInfoScreen(onNavigateUp: () -> Unit) {
     var dialog by remember { mutableIntStateOf(0) } // 0:none, 1:password complexity
     MyScaffold(R.string.password_info, onNavigateUp, 0.dp) {
         if(VERSION.SDK_INT >= 29) {
-            val text = when(Privilege.DPM.passwordComplexity) {
+            val text = when (Privilege.DPM.passwordComplexity) {
                 PASSWORD_COMPLEXITY_NONE -> R.string.none
                 PASSWORD_COMPLEXITY_LOW -> R.string.low
                 PASSWORD_COMPLEXITY_MEDIUM -> R.string.medium

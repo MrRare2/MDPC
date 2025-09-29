@@ -74,7 +74,6 @@
     <string name="profile_owner">Profile owner</string>
     <string name="device_owner">Device owner</string>
     <string name="delegated_admins">委托管理员</string>
-    <string name="delegated_scope">委托作用域</string>
     <string name="manage_application_restrictions">管理应用限制</string>
     <string name="manage_certificates">管理证书</string>
     <string name="select_keychain_certificates">选择密钥链证书</string>
@@ -99,7 +98,6 @@
     <string name="disable_account_management">禁用账号管理</string>
     <string name="account_type">账号类型</string>
     <string name="transfer_ownership">转移所有权</string>
-    <string name="target_component_name">目标组件名</string>
     <string name="lock_screen_info">锁屏提示信息</string>
     <string name="support_messages">提供支持的消息</string>
     <string name="short_support_msg">提供支持的短消息</string>
@@ -136,7 +134,7 @@
     <string name="backup_service">备份服务</string>
     <string name="disable_bt_contact_share">禁止蓝牙分享联系人</string>
     <string name="common_criteria_mode">通用标准模式</string>
-    <string name="disable_usb_signal">禁用USB信号</string>
+    <string name="enable_usb_signal">启用USB信号</string>
     <string name="keyguard">锁屏</string>
     <string name="lock_now">立即锁屏</string>
     <string name="lock_screen">锁屏</string>
@@ -222,8 +220,6 @@
     <string name="update_received_time">系统更新接收时间: %1$s</string>
     <string name="install_system_update">安装系统更新</string>
     <string name="select_ota_package" tools:ignore="TypographyEllipsis">选择OTA包...</string>
-    <string name="start_install_system_update">开始安装系统更新</string>
-    <string name="install_system_update_failed">安装系统更新失败：</string>
     <string name="battery_low">电量低</string>
     <string name="update_file_invalid">OTA包无效</string>
     <string name="incorrect_os_ver">系统版本错误</string>
@@ -344,10 +340,11 @@
     <string name="profile_max_time_off">资料关闭时间</string>
     <string name="profile_max_time_out_desc">工作资料处于关闭状态的时间达到该限制后会挂起个人应用，0为无限制</string>
     <string name="personal_app_suspended_because_timeout">个人应用已经因此挂起：%1$s</string>
-    <string name="cannot_less_than_72_hours">不能少于72小时</string>
     <string name="intent_filter">Intent过滤器</string>
-    <string name="add_intent_filter_work_to_personal">添加（工作到个人）</string>
-    <string name="add_intent_filter_personal_to_work">添加（个人到工作）</string>
+    <string name="direction">方向</string>
+    <string name="both_direction">双向</string>
+    <string name="work_to_personal">工作到个人</string>
+    <string name="personal_to_work">个人到工作</string>
     <string name="clear_cross_profile_filters">清除所有过滤器</string>
     <string name="org_id">组织ID</string>
     <string name="length_6_to_64">长度应在6~64个字符之间</string>
@@ -703,7 +700,6 @@
     <string name="activate_method">激活方法</string>
     <string name="adb_command">ADB命令</string>
     <string name="dpm_warning">此应用使用Device owner或Profile owner特权。这些特权十分危险，请谨慎使用。如果操作不当，可能会造成严重损失。开发者将不会对此负责。</string>
-    <string name="cert_verify_failed">证书验证失败。此应用程序的证书与预期不符。此应用程序无法使用。\n\nerror: MrRare2_globalapk_verify_failed</string>
     <string name="languages">语言</string>
     <string name="show_launcher_icon">在应用列表中显示</string>
     <string name="info_hiding_launcher_icon">要再次访问此应用，请拨打 *#*#672376372645839#*#*</string>

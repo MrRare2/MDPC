@@ -50,8 +50,8 @@ fun uriToStream(
             operation(it)
         }
     }
-    catch(_: FileNotFoundException) { context.popToast(R.string.file_not_exist) }
-    catch(_: IOException) { context.popToast(R.string.io_exception) }
+    catch (_: FileNotFoundException) { context.popToast(R.string.file_not_exist) }
+    catch (_: IOException) { context.popToast(R.string.io_exception) }
 }
 
 fun writeClipBoard(context: Context, string: String):Boolean{
@@ -77,7 +77,7 @@ fun formatFileSize(bytes: Long): String {
 }
 
 val Boolean.yesOrNo
-    @StringRes get() = if(this) R.string.yes else R.string.no
+    @StringRes get() = if (this) R.string.yes else R.string.no
 
 @RequiresApi(26)
 fun parseTimestamp(timestamp: Long): String {
@@ -95,7 +95,7 @@ fun formatDate(pattern: String, value: Long): String
     = SimpleDateFormat(pattern, Locale.getDefault()).format(Date(value))
 
 fun Context.showOperationResultToast(success: Boolean) {
-    popToast(if(success) R.string.success else R.string.failed)
+    popToast(if (success) R.string.success else R.string.failed)
 }
 
 const val APK_MIME = "application/vnd.android.package-archive"
@@ -116,7 +116,7 @@ fun exportLogs(context: Context, uri: Uri) {
     context.contentResolver.openOutputStream(uri)?.use { output ->
         val proc = Runtime.getRuntime().exec("logcat -d")
         proc.inputStream.copyTo(output)
-        if(Build.VERSION.SDK_INT >= 26) proc.waitFor(2L, TimeUnit.SECONDS)
+        if (Build.VERSION.SDK_INT >= 26) proc.waitFor(2L, TimeUnit.SECONDS)
         else proc.waitFor()
         context.showOperationResultToast(proc.exitValue() == 0)
     }

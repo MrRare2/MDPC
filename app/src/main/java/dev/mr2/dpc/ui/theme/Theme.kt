@@ -25,30 +25,30 @@ fun MDPCTheme(
     val context = LocalContext.current
     val colorScheme = when {
         theme.themeColor == 0 && VERSION.SDK_INT >= 31 -> {
-            if(darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
         darkTheme -> when (theme.themeColor) {
-	    1 -> blueDarkScheme
-	    2 -> redDarkScheme
-	    3 -> orangeDarkScheme
-	    4 -> yellowDarkScheme
-	    5 -> pinkDarkScheme
-	    6 -> purpleDarkScheme
-	    7 -> greenDarkScheme
-	    else -> blueDarkScheme
-	}
+	        1 -> blueDarkScheme
+	        2 -> redDarkScheme
+	        3 -> orangeDarkScheme
+	        4 -> yellowDarkScheme
+	        5 -> pinkDarkScheme
+	        6 -> purpleDarkScheme
+	        7 -> greenDarkScheme
+	        else -> blueDarkScheme
+	    }
         else -> when (theme.themeColor) {
-	    1 -> blueLightScheme
-	    2 -> redLightScheme
-	    3 -> orangeLightScheme
-	    4 -> yellowLightScheme
-	    5 -> pinkLightScheme
-	    6 -> purpleLightScheme
-	    7 -> greenLightScheme
-	    else -> blueLightScheme
+	        1 -> blueLightScheme
+	        2 -> redLightScheme
+	        3 -> orangeLightScheme
+	        4 -> yellowLightScheme
+	        5 -> pinkLightScheme
+	        6 -> purpleLightScheme
+	        7 -> greenLightScheme
+	        else -> blueLightScheme
         }
     }.let {
-        if(darkTheme && theme.blackTheme) it.copy(background = Color.Black, surface = Color.Black) else it
+        if (darkTheme && theme.blackTheme) it.copy(background = Color.Black, surface = Color.Black) else it
     }
     val view = LocalView.current
     SideEffect {

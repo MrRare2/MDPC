@@ -79,7 +79,6 @@
     <string name="profile_owner">プロファイル所有者</string>
     <string name="device_owner">デバイス所有者</string>
     <string name="delegated_admins">委任された管理者</string>
-    <string name="delegated_scope">委任されたスコープ</string>
     <string name="manage_application_restrictions">アプリ制限の管理</string>
     <string name="manage_certificates">証明書の管理</string>
     <string name="select_keychain_certificates">KeyChain 証明書の選択</string>
@@ -106,7 +105,6 @@
     <string name="disable_account_management">アカウント管理を無効化</string>
     <string name="account_type">アカウント種別</string>
     <string name="transfer_ownership">所有権の移転</string>
-    <string name="target_component_name">対象コンポーネント名</string>
     <string name="lock_screen_info">ロック画面情報</string>
     <string name="support_messages">サポートメッセージ</string>
     <string name="short_support_msg">短いメッセージ</string>
@@ -146,7 +144,7 @@
     <string name="backup_service">バックアップサービス</string>
     <string name="disable_bt_contact_share">Bluetooth 連絡先共有を無効化</string>
     <string name="common_criteria_mode">Common Criteria モード</string>
-    <string name="disable_usb_signal">USB シグナルを無効にする</string>
+    <string name="enable_usb_signal">USB シグナルを有効にする</string>
     <string name="keyguard">キーガード</string>
     <string name="lock_now">今すぐロック</string>
     <string name="lock_screen">ロック画面</string>
@@ -233,8 +231,6 @@
 
     <string name="install_system_update">システム更新をインストール</string>
     <string name="select_ota_package" tools:ignore="TypographyEllipsis">OTA パッケージを選択...</string>
-    <string name="start_install_system_update">システム更新のインストールを開始します</string>
-    <string name="install_system_update_failed">"システム更新のインストールに失敗しました: "</string>
     <string name="battery_low">バッテリー残量が少ないです</string>
     <string name="update_file_invalid">更新ファイルが無効です</string>
     <string name="incorrect_os_ver">OS バージョンが不正です</string>
@@ -358,10 +354,11 @@
     <string name="profile_max_time_off">最大オフ時間</string>
     <string name="profile_max_time_out_desc">ワークプロファイルが閉じられていると、個人アプリはこの時間後に一時停止されます。0 は制限なしを意味します。 </string>
     <string name="personal_app_suspended_because_timeout">この理由で個人アプリが停止されました: %1$s</string>
-    <string name="cannot_less_than_72_hours">72時間未満にはできません</string>
     <string name="intent_filter">インテントフィルタ</string>
-    <string name="add_intent_filter_work_to_personal">追加（ワーク→個人）</string>
-    <string name="add_intent_filter_personal_to_work">追加（個人→ワーク）</string>
+    <string name="direction">方向</string>
+    <string name="both_direction">双方向</string>
+    <string name="work_to_personal">仕事から個人へ</string>
+    <string name="personal_to_work">個人から仕事へ</string>
     <string name="clear_cross_profile_filters">すべてのフィルタをクリア</string>
     <string name="org_id">組織 ID</string>
     <string name="length_6_to_64">長さは 6〜64 文字にしてください</string>
@@ -722,7 +719,6 @@
     <string name="activate_method">有効化方法</string>
     <string name="adb_command">ADB コマンド</string>
     <string name="dpm_warning">このアプリはデバイス所有者またはプロファイル所有者の権限を使用します。これらの権限は非常に危険であり、慎重に使用してください。不適切に使用すると重大な損失を招く可能性があります。開発者はその責任を負いません。</string>
-    <string name="cert_verify_failed">証明書の確認に失敗しました。このアプリケーションの証明書は意図されたものと一致しません。このアプリケーションは使用できません。\n\nerror: MrRare2_globalapk_verify_failed</string>
     <string name="languages">言語</string>
     <string name="da_info">デバイス所有者として申請する</string>
     <string name="api_shared_response">共有APIレスポンス</string>

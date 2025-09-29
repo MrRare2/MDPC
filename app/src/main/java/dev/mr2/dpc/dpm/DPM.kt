@@ -72,7 +72,7 @@ fun binderWrapperPackageInstaller(appContext: Context): PackageInstaller? {
 }
 
 fun Context.getPackageInstaller(): PackageInstaller {
-    if(SP.dhizuku) {
+    if (SP.dhizuku) {
         if (!dhizukuPermissionGranted()) {
             dhizukuErrorStatus.value = 2
             return this.packageManager.packageInstaller

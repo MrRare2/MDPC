@@ -30,6 +30,7 @@ object Privilege {
                 if (dhizukuDpm != null) {
                     DPM = dhizukuDpm
                     DAR = Dhizuku.getOwnerComponent()
+		    updateStatus()
                     return
                 }
             }
@@ -40,6 +41,7 @@ object Privilege {
 	WM = context.getSystemService(Context.WIFI_SERVICE) as WifiManager
 	PIM = context.packageManager.packageInstaller
         DAR = MyAdminComponent
+	updateStatus()
     }
     lateinit var DPM: DevicePolicyManager
         private set
