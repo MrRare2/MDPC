@@ -629,7 +629,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     suspend fun getHardwareProperties() {
         val hpm = application.getSystemService(HardwarePropertiesManager::class.java)
         while (true) {
-            val properties =  HardwareProperties(
+            val properties = HardwareProperties(
                 temperatureTypes.map { (type, _) ->
                     type to hpm.getDeviceTemperatures(type, HardwarePropertiesManager.TEMPERATURE_CURRENT).toList()
                 }.toMap(),
