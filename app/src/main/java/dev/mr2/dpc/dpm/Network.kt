@@ -53,6 +53,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
@@ -130,9 +131,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mr2.dpc.HorizontalPadding
 import dev.mr2.dpc.Privilege
 import dev.mr2.dpc.R
-import dev.mr2.dpc.formatDate
 import dev.mr2.dpc.formatFileSize
-import dev.mr2.dpc.humanReadableDate
+import dev.mr2.dpc.formatTime
 import dev.mr2.dpc.popToast
 import dev.mr2.dpc.showOperationResultToast
 import dev.mr2.dpc.ui.CheckBoxItem
@@ -157,9 +157,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import java.net.InetAddress
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import kotlin.reflect.jvm.jvmErasure
 
 @Serializable object Network
@@ -1036,14 +1033,14 @@ fun NetworkStatsScreen(
             }
         }
         OutlinedTextField(
-            value = startTime.let { if (it == -1L) "" else it.humanReadableDate }, onValueChange = {}, readOnly = true,
+            value = startTime.let { if (it == -1L) "" else formatTime(it)}, onValueChange = {}, readOnly = true,
             label = { Text(stringResource(R.string.start_time)) },
             interactionSource = startTimeTextFieldInteractionSource,
             isError = startTime >= endTime,
             modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
         )
         OutlinedTextField(
-            value = endTime.humanReadableDate, onValueChange = {}, readOnly = true,
+            value = formatTime(endTime), onValueChange = {}, readOnly = true,
             label = { Text(stringResource(R.string.end_time)) },
             interactionSource = endTimeTextFieldInteractionSource,
             isError = startTime >= endTime,
@@ -1110,18 +1107,18 @@ fun NetworkStatsScreen(
         if (VERSION.SDK_INT >= 24 && (target == NetworkStatsTarget.UidTag || target == NetworkStatsTarget.UidTagState))
             ExposedDropdownMenuBox(
             activeTextField == NetworkStatsActiveTextField.Tag,
-            { activeTextField = if(it) NetworkStatsActiveTextField.Tag else NetworkStatsActiveTextField.None }
+            { activeTextField = if (it) NetworkStatsActiveTextField.Tag else NetworkStatsActiveTextField.None }
         ) {
             var tagText by rememberSaveable { mutableStateOf(context.getString(R.string.all)) }
             var readOnly by rememberSaveable { mutableStateOf(true) }
-            if(!readOnly && tagText.toIntOrNull() != null) tag = tagText.toInt()
+            if (!readOnly && tagText.toIntOrNull() != null) tag = tagText.toInt()
             OutlinedTextField(
                 value = tagText, onValueChange = { if(!readOnly) tagText = it }, readOnly = readOnly,
                 label = { Text(stringResource(R.string.uid)) },
                 trailingIcon = { ExpandExposedTextFieldIcon(activeTextField == NetworkStatsActiveTextField.Tag) },
                 isError = !readOnly && tagText.toIntOrNull() == null,
                 modifier = Modifier
-                    .menuAnchor(if(readOnly) MenuAnchorType.PrimaryNotEditable else MenuAnchorType.PrimaryEditable)
+                    .menuAnchor(if (readOnly) MenuAnchorType.PrimaryNotEditable else MenuAnchorType.PrimaryEditable)
                     .fillMaxWidth().padding(bottom = 4.dp)
             )
             ExposedDropdownMenu(
@@ -1146,10 +1143,10 @@ fun NetworkStatsScreen(
                 )
             }
         }
-        if(VERSION.SDK_INT >= 28 && target == NetworkStatsTarget.UidTagState)
+        if (VERSION.SDK_INT >= 28 && target == NetworkStatsTarget.UidTagState)
             ExposedDropdownMenuBox(
             activeTextField == NetworkStatsActiveTextField.State,
-            { activeTextField = if(it) NetworkStatsActiveTextField.State else NetworkStatsActiveTextField.None }
+            { activeTextField = if (it) NetworkStatsActiveTextField.State else NetworkStatsActiveTextField.None }
         ) {
             val textMap = mapOf(
                 NetworkStats.Bucket.STATE_ALL to R.string.all,
@@ -1183,7 +1180,7 @@ fun NetworkStatsScreen(
                 coroutine.launch(Dispatchers.IO) {
                     val buckets = try {
                         @Suppress("NewApi") if(queryType == 1) {
-                            if(target == NetworkStatsTarget.Device)
+                            if (target == NetworkStatsTarget.Device)
                                 listOf(nsm.querySummaryForDevice(networkType.type, subscriberId, startTime, endTime))
                             else listOf(nsm.querySummaryForUser(networkType.type, subscriberId, startTime, endTime))
                         } else {
@@ -1211,9 +1208,9 @@ fun NetworkStatsScreen(
                             NetworkStatsViewer.Data(
                                 it.rxBytes, it.rxPackets, it.txBytes, it.txPackets,
                                 it.uid, it.state, it.startTimeStamp, it.endTimeStamp,
-                                if(VERSION.SDK_INT >= 24) it.tag else null,
-                                if(VERSION.SDK_INT >= 24) it.roaming else null,
-                                if(VERSION.SDK_INT >= 26) it.metered else null
+                                if (VERSION.SDK_INT >= 24) it.tag else null,
+                                if (VERSION.SDK_INT >= 24) it.roaming else null,
+                                if (VERSION.SDK_INT >= 26) it.metered else null
                             )
                         }
                         withContext(Dispatchers.Main) {
@@ -1240,7 +1237,7 @@ fun NetworkStatsScreen(
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            if(activeTextField == NetworkStatsActiveTextField.StartTime) startTime = datePickerState.selectedDateMillis!!
+                            if (activeTextField == NetworkStatsActiveTextField.StartTime) startTime = datePickerState.selectedDateMillis!!
                             else endTime = datePickerState.selectedDateMillis!!
                             activeTextField = NetworkStatsActiveTextField.None
                         },
@@ -1286,7 +1283,7 @@ fun NetworkStatsViewerScreen(nsv: NetworkStatsViewer, onNavigateUp: () -> Unit) 
     index = ps.currentPage
     val coroutine = rememberCoroutineScope()
     MySmallTitleScaffold(R.string.network_stats, onNavigateUp, 0.dp) {
-        if(size > 1) Row(
+        if (size > 1) Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp)
         ) {
@@ -1315,18 +1312,9 @@ fun NetworkStatsViewerScreen(nsv: NetworkStatsViewer, onNavigateUp: () -> Unit) 
         HorizontalPager(ps, Modifier.padding(top = 8.dp)) { page ->
             val data = nsv.stats[page]
             Column(Modifier.fillMaxWidth().padding(horizontal = HorizontalPadding)) {
-                Row(Modifier.align(Alignment.CenterHorizontally).padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    SimpleDateFormat("", Locale.getDefault()).format(Date(data.startTime))
-                    Text(
-                        formatDate("yyyy/MM/dd", data.startTime) + "\n" + formatDate("HH:mm:ss", data.startTime),
-                        textAlign = TextAlign.Center
-                    )
-                    Text("~", Modifier.padding(horizontal = 8.dp))
-                    Text(
-                        formatDate("yyyy/MM/dd", data.endTime) + "\n" + formatDate("HH:mm:ss", data.endTime),
-                        textAlign = TextAlign.Center
-                    )
-                }
+                Text(formatTime(data.startTime) + "\n~\n" + formatTime(data.endTime),
+                    Modifier.align(Alignment.CenterHorizontally), textAlign = TextAlign.Center)
+                Spacer(Modifier.height(5.dp))
                 val txBytes = data.txBytes
                 Text(stringResource(R.string.transmitted), style = typography.titleLarge)
                 Column(modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)) {

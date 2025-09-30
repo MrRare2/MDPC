@@ -151,6 +151,7 @@
     <string name="manually_input">Ручной ввод</string>
     <string name="date">Дата</string>
     <string name="time">Время</string>
+    <string name="use_current_timezone">Использовать текущий часовой пояс</string>
     <string name="change_timezone">Изменить часовой пояс</string>
     <string name="timezone_id">Идентификатор часового пояса</string>
     <string name="disable_auto_time_zone_before_set">Автоматический часовой пояс должен быть отключен перед установкой пользовательского часового пояса.</string>
@@ -475,23 +476,22 @@
     <string name="serial_number">Серийный номер</string>
     <string name="secondary_users">Вторичные пользователи</string> 
     <string name="no_secondary_users">Нет вторичных пользователей</string>
-    <string name="logout">Logout</string> <!--TODO-->
+    <string name="logout">Выйти</string>
     <string name="start_in_background">Запустить в фоновом режиме</string>
     <string name="user_operation_switch">Переключиться</string>
+    <string name="limit_reached">Достигнут предел</string>
+<string name="delete_user_confirmation">Вы уверены, что хотите удалить пользователя %1$s?</string>
     <string name="create_user">Создать пользователя</string>
     <string name="username">Имя пользователя</string>
     <string name="create_user_skip_wizard">Пропустить мастер настройки</string>
     <string name="create_user_ephemeral_user">Временный пользователь</string>
     <string name="create_user_enable_all_system_app">Включить все системные приложения</string>
-    <string name="serial_number_of_new_user_is">Серийный номер этого пользователя: %1$d</string>
     <string name="affiliation_id">Аффилированный идентификатор</string>
     <string name="change_user_icon">Изменить значок пользователя</string>
-    <string name="select_an_image">Select an image</string> <!--TODO-->
+    <string name="select_an_image">Выберите изображение</string>
     <string name="fail_managed_profile">Ошибка: управляемый профиль</string>
     <string name="fail_current_user">Ошибка: текущий пользователь</string>
     <string name="user_session_msg">Сообщение о сеансе пользователя</string>
-
-
 
     <!--Пароль и блокировка экрана-->
     <string name="password_and_keyguard">Пароль и блокировка экрана</string>
@@ -627,7 +627,7 @@
 
     <string name="info_device_id_attestation">Указывает, поддерживает ли устройство проверку идентификаторов устройств в дополнение к проверке ключей.</string>
     <string name="info_unique_device_attestation">Да, если реализация StrongBox Keymaster на устройстве была обеспечена индивидуальным сертификатом аттестации и может использовать его для подписи записей аттестации (индивидуальный сертификат аттестации могут использовать только Keymaster с уровнем безопасности StrongBox).</string>
-    <string name="info_org_id">Устанавливает идентификатор предприятия (Enterprise ID). Это необходимо для создания идентификатора устройства, специфичного для регистрации.</string>
+    <string name="info_org_id">Устанавливает идентификатор предприятия (Enterprise ID). Это необходимо для создания идентификатора устройства, специфичного для регистрации. ID можно установить только один раз.</string>
     <string name="info_enrollment_specific_id">Идентификатор останется неизменным, даже если рабочий профиль будет удален и создан заново (для той же организации), или если устройство будет сброшено до заводских настроек и перерегистрировано</string>
     <string name="info_lock_screen_info">Отобразить краткое сообщение на экране блокировки. Переопределяет любую информацию о владельце, установленную пользователем вручную, и предотвращает ее дальнейшее изменение.</string>
     <string name="info_short_support_message">Это будет отображено пользователю на экранах настроек, функциональность которых была отключена администратором. Если длина сообщения превышает 200 символов, оно может быть обрезано.</string>

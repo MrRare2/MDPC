@@ -168,6 +168,7 @@
     <string name="manually_input">手動で入力</string>
     <string name="date">日付</string>
     <string name="time">時刻</string>
+    <string name="use_current_timezone">現在のタイムゾーンを使用</string>
     <string name="change_timezone">タイムゾーンを変更</string>
     <string name="timezone_id">タイムゾーン ID</string>
     <string name="disable_auto_time_zone_before_set">カスタムタイムゾーンを設定する前に自動タイムゾーンを無効にしてください。 </string>
@@ -500,12 +501,13 @@
     <string name="logout">ログアウト</string>
     <string name="start_in_background">バックグラウンドで開始</string>
     <string name="user_operation_switch">切替</string>
+    <string name="limit_reached">制限に達しました</string>
+    <string name="delete_user_confirmation">ユーザー%1$sを削除してもよろしいですか？</string>
     <string name="create_user">ユーザーを作成</string>
     <string name="username">ユーザー名</string>
     <string name="create_user_skip_wizard">ウィザードをスキップ</string>
     <string name="create_user_ephemeral_user">一時ユーザーを作成</string>
     <string name="create_user_enable_all_system_app">すべてのシステムアプリを有効化して作成</string>
-    <string name="serial_number_of_new_user_is">このユーザーのシリアル番号: %1$d</string>
     <string name="affiliation_id">関連付け ID</string>
     <string name="change_user_icon">ユーザーアイコンを変更</string>
     <string name="select_an_image">画像を選択</string>
@@ -664,7 +666,7 @@
     <!-- Info texts: 説明文（ユーザー向けヘルプ） -->
     <string name="info_device_id_attestation">デバイスが識別子の証明をサポートするかどうかを示します（キー証明に加えて）。</string>
     <string name="info_unique_device_attestation">StrongBox Keymaster 実装が個別証明書を持っており、個別の証明書で署名できる場合は「はい」と表示されます（StrongBox セキュリティレベルの Keymaster のみ個別証明書を使用できます）。</string>
-    <string name="info_org_id">Enterprise ID を設定します。これはデバイスの登録固有 ID を生成するために必要です。</string>
+    <string name="info_org_id">Enterprise ID を設定します。これはデバイスの登録固有 ID を生成するために必要です。IDは一度しか設定できません。</string>
     <string name="info_enrollment_specific_id">この識別子はワークプロファイルが削除されて再作成されても（同じ組織 ID の場合）、またはデバイスが初期化されて再登録されても一貫します。</string>
     <string name="info_lock_screen_info">ロック画面に短いメッセージを表示します。\nユーザーが手動で設定した所有者情報を上書きし、ユーザーがそれを変更できなくします。</string>
     <string name="info_short_support_message">このメッセージは管理者によって機能が無効にされた設定画面でユーザーに表示されます。200文字を超えると切り詰められることがあります</string>

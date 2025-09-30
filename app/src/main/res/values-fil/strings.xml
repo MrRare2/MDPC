@@ -166,6 +166,7 @@
     <string name="manually_input">Manual na input</string>
     <string name="date">Petsa</string>
     <string name="time">Oras</string>
+    <string name="use_current_timezone">Gamitin ang kasalukuyang timezone</string>
     <string name="change_timezone">Palitan ang timezone</string>
     <string name="timezone_id">Timezone ID</string>
     <string name="disable_auto_time_zone_before_set">Dapat na naka-off ang "Awtomatikong pag-set sa timezone" upang mapalitan ang timezone.</string>

@@ -160,6 +160,7 @@
     <string name="manually_input">Manuel Giriş</string>
     <string name="date">Tarih</string>
     <string name="time">Saat</string>
+    <string name="use_current_timezone">Geçerli saat dilimini kullan</string>
     <string name="change_timezone">Saat Dilimini Değiştir</string>
     <string name="timezone_id">Saat Dilimi Kimliği</string>
     <string name="disable_auto_time_zone_before_set">Özel bir saat dilimi ayarlamadan önce otomatik saat dilimi devre dışı bırakılmalıdır.</string>
@@ -502,6 +503,8 @@
     <string name="logout">Oturumu Kapat</string>
     <string name="start_in_background">Arka Planda Başlat</string>
     <string name="user_operation_switch">Değiştir</string>
+    <string name="limit_reached">Limitine ulaşıldı</string>
+    <string name="delete_user_confirmation">Kullanıcı %1$s’i silmek istediğinizden emin misiniz?</string>
     <string name="create_user">Kullanıcı Oluştur</string>
     <string name="username">Kullanıcı Adı</string>
     <string name="create_user_skip_wizard">Sihirbazı Atla</string>
@@ -664,7 +667,7 @@
 
     <string name="info_device_id_attestation">Cihazın, anahtar doğrulamasına ek olarak cihaz kimlik doğrulamalarını destekleyip desteklemediğini belirtir.</string>
     <string name="info_unique_device_attestation">Evet, eğer cihazdaki StrongBox Keymaster uygulaması bireysel bir doğrulama sertifikasıyla sağlanmışsa ve bunu kullanarak doğrulama kayıtlarını imzalayabiliyorsa (yalnızca StrongBox güvenlik seviyesine sahip Keymaster bireysel doğrulama sertifikası kullanabilir).</string>
-    <string name="info_org_id">Kurumsal Kimliği ayarlar. Bu, cihaz için kayıt özel bir kimlik oluşturmak için bir gerekliliktir.</string>
+    <string name="info_org_id">Kurumsal Kimliği ayarlar. Bu, cihaz için kayıt özel bir kimlik oluşturmak için bir gerekliliktir. ID yalnızca bir kez ayarlanabilir.</string>
     <string name="info_enrollment_specific_id">Kimlik, iş profili kaldırılsa ve aynı Kurum Kimliği ile yeniden oluşturulsa veya cihaz fabrika ayarlarına sıfırlanıp yeniden kaydedilse bile tutarlı kalır.</string>
     <string name="info_lock_screen_info">Kilit ekranında kısa bir mesaj gösterir.\nKullanıcı tarafından manuel olarak ayarlanan herhangi bir sahip bilgisini geçersiz kılar ve kullanıcının bunu daha fazla değiştirmesini engeller.</string>
     <string name="info_short_support_message">Bu, yönetici tarafından devre dışı bırakılan işlevlerin bulunduğu ayar ekranlarında kullanıcıya gösterilecektir. Mesaj 200 karakterden uzunsa kesilebilir.</string>

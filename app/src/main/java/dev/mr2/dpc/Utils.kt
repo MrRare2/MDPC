@@ -58,7 +58,7 @@ fun writeClipBoard(context: Context, string: String):Boolean{
     val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     try {
         clipboardManager.setPrimaryClip(ClipData.newPlainText("", string))
-    } catch(_:Exception) {
+    } catch (_:Exception) {
         return false
     }
     return true
@@ -79,20 +79,12 @@ fun formatFileSize(bytes: Long): String {
 val Boolean.yesOrNo
     @StringRes get() = if (this) R.string.yes else R.string.no
 
-@RequiresApi(26)
-fun parseTimestamp(timestamp: Long): String {
-    val instant = Instant.ofEpochMilli(timestamp)
-    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault())
-    return formatter.format(instant)
+fun formatTime(ms: Long): String {
+    return SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault()).format(Date(ms))
 }
-
-fun parseDate(date: Date): String = SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault()).format(date)
-
-val Long.humanReadableDate: String
-    get() = SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(Date(this))
-
-fun formatDate(pattern: String, value: Long): String
-    = SimpleDateFormat(pattern, Locale.getDefault()).format(Date(value))
+fun formatDate(date: Date): String {
+    return SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault()).format(date)
+}
 
 fun Context.showOperationResultToast(success: Boolean) {
     popToast(if (success) R.string.success else R.string.failed)
@@ -129,7 +121,6 @@ fun <T> NavHostController.navigate(route: T, args: Bundle) {
 val HorizontalPadding = 16.dp
 
 val MyAdminComponent = ComponentName.unflattenFromString("dev.mr2.dpc/.Receiver")!!
-
 
 @OptIn(ExperimentalStdlibApi::class)
 fun getPackageSignature(info: PackageInfo): String? {
