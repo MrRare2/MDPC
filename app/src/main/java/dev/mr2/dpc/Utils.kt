@@ -196,11 +196,11 @@ fun Context.reply(name: String, data: Any, forceSplitReply: Boolean = false): In
 
 var Context.isLauncherVisible: Boolean
     get() {
-        val componentName = ComponentName(this, "dev.mr2.dpc.LauncherAlias")
+        val componentName = ComponentName(this, "dev.mr2.dpc.LauncherActivity")
         return packageManager.getComponentEnabledSetting(componentName) != PackageManager.COMPONENT_ENABLED_STATE_DISABLED
     }
     set(value) {
-        val componentName = ComponentName(this, "dev.mr2.dpc.LauncherAlias")
+        val componentName = ComponentName(this, "dev.mr2.dpc.LauncherActivity")
         packageManager.setComponentEnabledSetting(
             componentName,
             if (value) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,

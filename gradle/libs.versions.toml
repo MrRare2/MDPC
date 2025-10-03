@@ -1,9 +1,9 @@
 [versions]
 agp = "8.13.0"
-kotlin = "2.2.10"
+kotlin = "2.2.20"
 
-navigation-compose = "2.9.4"
-composeBom = "2025.09.00"
+navigation-compose = "2.9.5"
+composeBom = "2025.09.01"
 accompanist-drawablepainter = "0.37.3"
 accompanist-permissions = "0.37.3"
 shizuku = "13.1.5"
@@ -15,13 +15,14 @@ libsu = "6.0.0"
 serialization = "1.9.0"
 jbcrypt = "0.4"
 androidx-appcompat = "1.7.1"
+material3 = "1.5.0-alpha04"
 
 [libraries]
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose" }
-androidx-material3 = { module = "androidx.compose.material3:material3" }
+androidx-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 androidx-fragment = { group = "androidx.fragment", name = "fragment", version.ref = "fragment" }
 
@@ -40,6 +41,8 @@ serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization
 jbcrypt = { module = "org.mindrot:jbcrypt", version.ref = "jbcrypt" }
 
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidx-appcompat" }
+
+androidx-compose-materialicons = { group = "androidx.compose.material", name = "material-icons-extended", version = "1.7.8" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

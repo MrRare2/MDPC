@@ -141,7 +141,7 @@ fun WorkModesScreen(
                     }
                 },
                 navigationIcon = {
-                    if(params.canNavigateUp) NavIcon(onNavigateUp)
+                    if (params.canNavigateUp) NavIcon(onNavigateUp)
                 },
                 actions = {
                     var expanded by remember { mutableStateOf(false) }
@@ -269,7 +269,7 @@ fun WorkModesScreen(
             },
             onDismissRequest = { dialog = 0 }
         )
-        if (dialog == 2) CircularProgressDialog {  }
+        if (dialog == 2) CircularProgressDialog(onDismiss = { dialog = 0 })
         if (dialog == 3) AlertDialog(
             title = { Text(stringResource(if(operationSucceed) R.string.succeeded else R.string.failed)) },
             text = {
@@ -293,7 +293,7 @@ fun WorkModesScreen(
             confirmButton = {
                 var time by remember { mutableIntStateOf(3) }
                 LaunchedEffect(Unit) {
-                    for (i in (0..2).reversed()) {
+                    for (i in (0..15).reversed()) {
                         delay(1000)
                         time = i
                     }
@@ -777,6 +777,7 @@ fun TransferOwnershipScreen(
                 Text(stringResource(R.string.transfer))
             }
             Notes(R.string.info_transfer_ownership, HorizontalPadding)
+            Spacer(Modifier.height(40.dp))
         }
     }
     if (dialog) AlertDialog(

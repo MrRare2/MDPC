@@ -169,25 +169,25 @@ fun SettingsOptionsScreen(onNavigateUp: () -> Unit) {
             R.string.shortcuts, icon = R.drawable.open_in_new,
             getState = { SP.shortcuts }, onCheckedChange = {
                 SP.shortcuts = it
-		ShortcutUtils.setAllShortcuts(context)
+		        ShortcutUtils.setAllShortcuts(context)
             }
         )
-	SwitchItem(
-	    R.string.show_launcher_icon, icon = R.drawable.visibility_fill0,
-	    getState = { context.isLauncherVisible }, onCheckedChange = {
-		if (!it) dialog = 1 else context.isLauncherVisible = true
-	    }
-	)
+	    SwitchItem(
+	        R.string.show_launcher_icon, icon = R.drawable.visibility_fill0,
+	        getState = { context.isLauncherVisible }, onCheckedChange = {
+                if (!it) dialog = 1 else context.isLauncherVisible = true
+	        }
+	    )
 
-	if (dialog == 1) {
+	    if (dialog == 1) {
             AlertDialog(
                 onDismissRequest = { dialog = 0 },
                 title = { Text(stringResource(R.string.warning)) },
                 text = { Text(stringResource(R.string.info_hiding_launcher_icon)) },
                 dismissButton = {
                     TextButton(onClick = { dialog = 0 }) {
-                        Text(stringResource(R.string.cancel))
-                    }
+                    Text(stringResource(R.string.cancel))
+                   }
                 },
                 confirmButton = {
                     TextButton(onClick = {

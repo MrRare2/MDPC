@@ -20,28 +20,28 @@ object Privilege {
             Dhizuku.init(context)
             val hasPermission = try {
                 Dhizuku.isPermissionGranted()
-            } catch(_: Exception) {
+            } catch (_: Exception) {
                 false
             }
             if (hasPermission) {
                 val dhizukuDpm = binderWrapperDevicePolicyManager(context)
-		val dhizukuPm = binderWrapperPackageInstaller(context)
-		if (dhizukuPm != null) PIM = dhizukuPm
+                val dhizukuPm = binderWrapperPackageInstaller(context)
+                if (dhizukuPm != null) PIM = dhizukuPm
                 if (dhizukuDpm != null) {
                     DPM = dhizukuDpm
                     DAR = Dhizuku.getOwnerComponent()
-		    updateStatus()
+                    updateStatus()
                     return
                 }
             }
             dhizukuErrorStatus.value = 2
         }
         DPM = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-	HWM = context.getSystemService(Context.HARDWARE_PROPERTIES_SERVICE) as HardwarePropertiesManager
-	WM = context.getSystemService(Context.WIFI_SERVICE) as WifiManager
-	PIM = context.packageManager.packageInstaller
+        HWM = context.getSystemService(Context.HARDWARE_PROPERTIES_SERVICE) as HardwarePropertiesManager
+        WM = context.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        PIM = context.packageManager.packageInstaller
         DAR = MyAdminComponent
-	updateStatus()
+        updateStatus()
     }
     lateinit var DPM: DevicePolicyManager
         private set

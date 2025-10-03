@@ -575,15 +575,6 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
                     vm::setUserRestriction, ::navigateUp)
             }
 
-        /* composable<Users> { UsersScreen(::navigateUp, ::navigate) }
-        composable<UserInfo> { UserInfoScreen(::navigateUp) }
-        composable<UsersOptions> { UsersOptionsScreen(::navigateUp) }
-        composable<UserOperation> { UserOperationScreen(::navigateUp) }
-        composable<CreateUser> { CreateUserScreen(::navigateUp) }
-        composable<ChangeUsername> { ChangeUsernameScreen(::navigateUp) }
-        composable<UserSessionMessage> { UserSessionMessageScreen(::navigateUp) }
-        composable<AffiliationId> { AffiliationIdScreen(::navigateUp) } */
-
         composable<Users> { UsersScreen(vm, ::navigateUp, ::navigate) }
         composable<UserInfo> { UserInfoScreen(vm::getUserInformation, ::navigateUp) }
         composable<UsersOptions> {
@@ -625,11 +616,9 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
     }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (
-                (event == Lifecycle.Event.ON_CREATE && !SP.lockPasswordHash.isNullOrEmpty()) ||
-                (event == Lifecycle.Event.ON_RESUME && SP.lockWhenLeaving)
-            ) {
-                onLock()
+            if (event == Lifecycle.Event.ON_CREATE && !SP.lockPasswordHash.isNullOrEmpty()) onLock()
+            if (event == Lifecycle.Event.ON_RESUME) {
+                if (SP.lockWhenLeaving) onLock()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)

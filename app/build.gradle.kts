@@ -250,5 +250,6 @@ dependencies {
     implementation(libs.libsu)
     implementation(libs.serialization)
     implementation(libs.jbcrypt)
+    implementation(libs.androidx.compose.materialicons)
     implementation(kotlin("reflect"))
 }

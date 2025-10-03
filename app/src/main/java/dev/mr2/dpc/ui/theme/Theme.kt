@@ -15,7 +15,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import dev.mr2.dpc.ThemeSettings
+// experminetwl thing
 
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.MotionScheme
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MDPCTheme(
     theme: ThemeSettings,
@@ -55,8 +61,9 @@ fun MDPCTheme(
         val window = (context as Activity).window
         WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
     }
-    MaterialTheme(
+    MaterialExpressiveTheme(
         colorScheme = colorScheme,
-        content = content
+        content = content,
+        motionScheme = MotionScheme.expressive()
     )
 }

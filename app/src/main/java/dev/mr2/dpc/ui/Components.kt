@@ -74,10 +74,10 @@ fun FunctionItem(
             .fillMaxWidth()
             .clickable(onClick = operation)
             .padding(start = 25.dp, end = 15.dp)
-            .padding(vertical = 12.dp + (if(desc != "") 0 else 3).dp),
+            .padding(vertical = 12.dp + (if (desc != "") 0 else 3).dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if(icon != null) Icon(
+        if (icon != null) Icon(
             painter = painterResource(icon), contentDescription = null,
             modifier = Modifier.padding(top = 1.dp, end = 20.dp).offset(x = (-2).dp)
         )
@@ -85,9 +85,9 @@ fun FunctionItem(
             Text(
                 text = stringResource(title),
                 style = typography.titleLarge,
-                modifier = Modifier.padding(bottom = if(CJK) 2.dp else 0.dp)
+                modifier = Modifier.padding(bottom = if (CJK) 2.dp else 0.dp)
             )
-            if(desc != null) { Text(text = desc, color = colorScheme.onBackground.copy(alpha = 0.8F)) }
+            if (desc != null) { Text(text = desc, color = colorScheme.onBackground.copy(alpha = 0.8F)) }
         }
     }
 }
@@ -120,7 +120,7 @@ fun RadioButtonItem(
         .clickable(onClick = operation)
     ) {
         RadioButton(selected = selected, onClick = operation)
-        Text(text = text, modifier = Modifier.padding(bottom = if(CJK) { 2 } else { 0 }.dp))
+        Text(text = text, modifier = Modifier.padding(bottom = if (CJK) { 2 } else { 0 }.dp))
     }
 }
 
@@ -142,7 +142,7 @@ fun FullWidthRadioButtonItem(
         modifier = Modifier.fillMaxWidth().clickable(onClick = operation)
     ) {
         RadioButton(selected = selected, onClick = operation, modifier = Modifier.padding(horizontal = 4.dp))
-        Text(text = text, modifier = Modifier.padding(bottom = if(CJK) { 2 } else { 0 }.dp))
+        Text(text = text, modifier = Modifier.padding(bottom = if (CJK) { 2 } else { 0 }.dp))
     }
 }
 
@@ -161,7 +161,7 @@ fun CheckBoxItem(
             checked = checked,
             onCheckedChange = operation
         )
-        Text(text = stringResource(text), modifier = Modifier.padding(bottom = if(CJK) { 2 } else { 0 }.dp))
+        Text(text = stringResource(text), modifier = Modifier.padding(bottom = if (CJK) { 2 } else { 0 }.dp))
     }
 }
 
@@ -176,7 +176,7 @@ fun FullWidthCheckBoxItem(
         modifier = Modifier.fillMaxWidth().clickable { operation(!checked) }
     ) {
         Checkbox(checked = checked, onCheckedChange = operation, modifier = Modifier.padding(horizontal = 4.dp))
-        Text(text = stringResource(text), modifier = Modifier.padding(bottom = if(CJK) { 2 } else { 0 }.dp))
+        Text(text = stringResource(text), modifier = Modifier.padding(bottom = if (CJK) { 2 } else { 0 }.dp))
     }
 }
 
@@ -210,20 +210,20 @@ fun SwitchItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(enabled = onClickBlank != null, onClick = onClickBlank?:{})
-            .padding(start = if(padding) 25.dp else 0.dp, end = if(padding) 15.dp else 0.dp, top = 5.dp, bottom = 5.dp)
+            .padding(start = if (padding) 25.dp else 0.dp, end = if (padding) 15.dp else 0.dp, top = 5.dp, bottom = 5.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.align(Alignment.CenterStart)
         ) {
-            if(icon != null) Icon(
+            if (icon != null) Icon(
                 painter = painterResource(icon),
                 contentDescription = null,
                 modifier = Modifier.padding(end = 20.dp).offset(x = (-2).dp)
             )
-            Column(modifier = Modifier.padding(end = 60.dp, bottom = if(CJK) 2.dp else 0.dp)) {
+            Column(modifier = Modifier.padding(end = 60.dp, bottom = if (CJK) 2.dp else 0.dp)) {
                 Text(text = stringResource(title), style = typography.titleLarge)
-                if(desc != null) Text(text = desc, color = colorScheme.onBackground.copy(alpha = 0.8F))
+                if (desc != null) Text(text = desc, color = colorScheme.onBackground.copy(alpha = 0.8F))
             }
         }
         Switch(
@@ -263,7 +263,7 @@ fun InfoItem(title: Int, text: String, withInfo: Boolean = false, onClick: () ->
             Text(stringResource(title), style = typography.titleLarge)
             Text(text, Modifier.alpha(0.8F))
         }
-        if(withInfo) IconButton(onClick) { Icon(Icons.Outlined.Info, null) }
+        if (withInfo) IconButton(onClick) { Icon(Icons.Outlined.Info, null) }
     }
 }
 
@@ -384,7 +384,7 @@ fun MySmallTitleScaffold(
 
 @Composable
 fun ExpandExposedTextFieldIcon(active: Boolean) {
-    val degrees by animateFloatAsState(if(active) 180F else 0F)
+    val degrees by animateFloatAsState(if (active) 180F else 0F)
     Icon(
         imageVector = Icons.Default.ArrowDropDown, contentDescription = null,
         modifier = Modifier.rotate(degrees)
@@ -393,7 +393,7 @@ fun ExpandExposedTextFieldIcon(active: Boolean) {
 
 @Composable
 fun ErrorDialog(message: String?, onDismiss: () -> Unit) {
-    if(!message.isNullOrEmpty()) AlertDialog(
+    if (!message.isNullOrEmpty()) AlertDialog(
         title = { Text(stringResource(R.string.error)) },
         text = { Text(message) },
         confirmButton = {

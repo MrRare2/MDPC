@@ -228,6 +228,8 @@ fun WifiScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit, onNavigateTo
     val coroutine = rememberCoroutineScope()
     val pagerState = rememberPagerState { 3 }
     var tabIndex by rememberSaveable { mutableIntStateOf(0) }
+    val wm = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+
     tabIndex = pagerState.currentPage
     Scaffold(
         topBar = {
@@ -259,7 +261,6 @@ fun WifiScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit, onNavigateTo
             }
             HorizontalPager(state = pagerState, verticalAlignment = Alignment.Top) { page ->
                 if (page == 0) {
-                    val wm = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
                     val privilege by Privilege.status.collectAsStateWithLifecycle()
                     @Suppress("DEPRECATION") Column(
                         modifier = Modifier.fillMaxSize().padding(top = 12.dp)

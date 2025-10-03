@@ -1481,7 +1481,7 @@ fun CaCertScreen(
                         }
                     }
                 },
-                onDismissRequest = {}
+                onDismissRequest = { dialog = 0 }
             )
         }
         if (dialog == 3) {
