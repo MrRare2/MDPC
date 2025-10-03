@@ -1664,7 +1664,7 @@ fun WifiAuthKeypairScreen(onNavigateUp: () -> Unit) {
         Spacer(Modifier.padding(vertical = 5.dp))
         val isExist = try {
             Privilege.DPM.isKeyPairGrantedToWifiAuth(keyPair)
-        } catch(e: java.lang.IllegalArgumentException) {
+        } catch (e: java.lang.IllegalArgumentException) {
             e.printStackTrace()
             false
         }

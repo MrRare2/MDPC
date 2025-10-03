@@ -329,7 +329,7 @@ fun PermissionsManagerScreen(
             ) {
                 Icon(painterResource(it.icon), null, Modifier.padding(horizontal = 12.dp))
                 Column {
-                    val state = when(permissions[it.permission]) {
+                    val state = when (permissions[it.permission]) {
                         PERMISSION_GRANT_STATE_DEFAULT -> R.string.default_stringres
                         PERMISSION_GRANT_STATE_GRANTED -> R.string.granted
                         PERMISSION_GRANT_STATE_DENIED -> R.string.denied
@@ -344,9 +344,9 @@ fun PermissionsManagerScreen(
             Spacer(Modifier.padding(vertical = 30.dp))
         }
     }
-    if(selectedPermission != null) {
+    if (selectedPermission != null) {
         fun changeState(state: Int) {
-	    val result = setPackagePermission(packageName, selectedPermission!!.permission, state)
+	        val result = setPackagePermission(packageName, selectedPermission!!.permission, state)
             if (result) selectedPermission = null
         }
         @Composable
@@ -356,13 +356,13 @@ fun PermissionsManagerScreen(
                 Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
-                    .background(if(selected) colorScheme.primaryContainer else Color.Transparent)
+                    .background(if (selected) colorScheme.primaryContainer else Color.Transparent)
                     .clickable { changeState(status) }
                     .padding(vertical = 16.dp, horizontal = 12.dp),
                 Arrangement.SpaceBetween, Alignment.CenterVertically,
             ) {
-                Text(stringResource(label), color = if(selected) colorScheme.primary else Color.Unspecified)
-                if(selected) Icon(Icons.Outlined.CheckCircle, null, tint = colorScheme.primary)
+                Text(stringResource(label), color = if (selected) colorScheme.primary else Color.Unspecified)
+                if (selected) Icon(Icons.Outlined.CheckCircle, null, tint = colorScheme.primary)
             }
         }
         AlertDialog(
@@ -373,7 +373,7 @@ fun PermissionsManagerScreen(
                 Column {
                     Text(selectedPermission!!.permission)
                     Spacer(Modifier.padding(vertical = 4.dp))
-                    if(!(VERSION.SDK_INT >= 31 && selectedPermission!!.profileOwnerRestricted && privilege.profile)) {
+                    if (!(VERSION.SDK_INT >= 31 && selectedPermission!!.profileOwnerRestricted && privilege.profile)) {
                         GrantPermissionItem(R.string.granted, PERMISSION_GRANT_STATE_GRANTED)
                     }
                     GrantPermissionItem(R.string.denied, PERMISSION_GRANT_STATE_DENIED)

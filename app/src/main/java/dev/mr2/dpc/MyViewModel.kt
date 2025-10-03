@@ -1122,7 +1122,8 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
             }
             userRestrictions.update { it.plus(name to state) }
             true
-        } catch (_: SecurityException) {
+        } catch (e: Exception) {
+            e.printStackTrace()
             false
         }
     }

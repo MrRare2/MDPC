@@ -28,8 +28,9 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
@@ -403,11 +404,12 @@ fun ErrorDialog(message: String?, onDismiss: () -> Unit) {
     )
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CircularProgressDialog(onDismiss: () -> Unit) {
     Dialog(onDismiss) {
         Card {
-            CircularProgressIndicator(Modifier.padding(16.dp))
+            CircularWavyProgressIndicator(Modifier.padding(8.dp))
         }
     }
 }
