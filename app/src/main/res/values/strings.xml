@@ -215,6 +215,7 @@
     <string name="ltf_keyguard">Allow keyguard</string>
     <string name="ltf_block_activity_start_in_task">Block activity start in task</string>
     <string name="ca_cert">CA certificate</string>
+    <string name="uninstall_ca_cert">Uninstall CA certificate?</string>
     <string name="no_ca_cert">No user CA certificate installed</string>
     <string name="parse_cert_failed">Failed to parse certificate</string>
     <string name="export">Export</string>

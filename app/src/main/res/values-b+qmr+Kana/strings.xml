@@ -500,7 +500,6 @@
     <string name="create_user_skip_wizard">ウィザードをスキップ</string>
     <string name="create_user_ephemeral_user">一時ユーザーを作成</string>
     <string name="create_user_enable_all_system_app">すべてのシステムアプリを有効化して作成</string>
-    <string name="serial_number_of_new_user_is">このユーザーのシリアル番号: %1$d</string>
     <string name="affiliation_id">関連付け ID</string>
     <string name="change_user_icon">ユーザーアイコンを変更</string>
     <string name="select_an_image">画像を選択</string>

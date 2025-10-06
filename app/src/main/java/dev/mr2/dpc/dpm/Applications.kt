@@ -707,6 +707,7 @@ fun SetDefaultDialerScreen(
     chosenPackage: Channel<String>, onChoosePackage: () -> Unit,
     onSet: (String) -> Unit, onNavigateUp: () -> Unit
 ) {
+    val context = LocalContext.current
     var packageName by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
         packageName = chosenPackage.receive()
@@ -718,6 +719,7 @@ fun SetDefaultDialerScreen(
         Button(
             {
                 onSet(packageName)
+                context.showOperationResultToast(true)
             },
             Modifier.fillMaxWidth(),
             packageName.isValidPackageName

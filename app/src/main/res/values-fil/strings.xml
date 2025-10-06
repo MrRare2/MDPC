@@ -518,7 +518,6 @@
     <string name="create_user_skip_wizard">I-skip ang wizard</string>
     <string name="create_user_ephemeral_user">Ephemeral user</string>
     <string name="create_user_enable_all_system_app">Ilagay lahat ng mga system app</string>
-    <string name="serial_number_of_new_user_is">Serial number ng user na ito: %1$d</string>
     <string name="affiliation_id">Affiliation ID</string>
     <string name="change_user_icon">Palitan ang user icon</string>
     <string name="select_an_image">Pumili ng imahe</string>

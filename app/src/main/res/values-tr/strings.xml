@@ -510,7 +510,6 @@
     <string name="create_user_skip_wizard">Sihirbazı Atla</string>
     <string name="create_user_ephemeral_user">Geçici Kullanıcı</string>
     <string name="create_user_enable_all_system_app">Tüm Sistem Uygulamalarını Etkinleştir</string>
-    <string name="serial_number_of_new_user_is">Bu kullanıcının seri numarası: %1$d</string>
     <string name="affiliation_id">Bağlılık Kimliği</string>
     <string name="change_user_icon">Kullanıcı Simgesini Değiştir</string>
     <string name="select_an_image">Bir görüntü seç</string>

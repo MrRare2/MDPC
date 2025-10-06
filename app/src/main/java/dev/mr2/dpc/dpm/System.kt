@@ -1437,8 +1437,7 @@ fun CaCertScreen(
                         ) {
                             TextButton(
                                 onClick = {
-                                    uninstallCert(cert)
-                                    dialog = 0
+                                    dialog = 3
                                 },
                                 modifier = Modifier.fillMaxWidth(0.49F),
                                 colors = ButtonDefaults.textButtonColors(contentColor = colorScheme.error)
@@ -1464,6 +1463,28 @@ fun CaCertScreen(
                         }) {
                             Text(stringResource(R.string.install))
                         }
+                    } else if (dialog == 3) {
+                        AlertDialog(
+                            text = {
+                                Text(stringResource(R.string.uninstall_ca_cert))
+                            },
+                            confirmButton = {
+                                TextButton({
+                                    uninstallCert(cert)
+                                    dialog = 0 
+                                }) {
+                                    Text(stringResource(R.string.confirm))
+                                }
+                            },
+                            dismissButton = {
+                                TextButton({
+                                    dialog = 0
+                                }) {
+                                    Text(stringResource(R.string.cancel))
+                                }
+                            },
+                            onDismissRequest = { dialog = 0 }
+                        )
                     } else {
                         TextButton({
                             dialog = 0

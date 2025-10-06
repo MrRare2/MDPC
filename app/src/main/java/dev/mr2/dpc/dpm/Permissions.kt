@@ -473,7 +473,8 @@ fun LockScreenInfoScreen(
                 setText(infoText)
                 context.showOperationResultToast(true)
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !infoText.isEmpty()
         ) {
             Text(text = stringResource(R.string.apply))
         }
