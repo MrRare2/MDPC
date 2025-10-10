@@ -11,7 +11,7 @@ class TelCodeReceiver : BroadcastReceiver() {
 	        component = ComponentName("dev.mr2.dpc", "dev.mr2.dpc.MainActivity")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
-        context.reply("TEL_CODE_ACITVATED", true)?.also(context::sendBroadcast)
+        context.reply("TEL_CODE_ACTIVATED", true)?.also(context::sendBroadcast)
         context.startActivity(launchIntent)
     }
 }

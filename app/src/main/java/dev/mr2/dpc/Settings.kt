@@ -1,5 +1,7 @@
 package dev.mr2.dpc
 
+import android.app.Activity
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Build.VERSION
@@ -59,6 +61,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.rememberCoroutineScope
@@ -82,7 +85,6 @@ import java.util.Locale
 import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.system.exitProcess
 
 @Serializable object Settings
 
@@ -92,7 +94,7 @@ fun SettingsScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
     val context = LocalContext.current
     val privilege by Privilege.status.collectAsStateWithLifecycle()
     val exportLogsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) {
-        if(it != null) exportLogs(context, it)
+        if (it != null) exportLogs(context, it)
     }
     val sb = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     var dropdown by remember { mutableStateOf(false) }
@@ -123,7 +125,7 @@ fun SettingsScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
                             )
                             DropdownMenuItem(
                                 { Text(stringResource(R.string.exit)) },
-                                { exitProcess(0) },
+                                { (context as? Activity)?.finishAffinity() },
                                 leadingIcon = { Icon(Icons.Default.Close, null) }
                             )
                         }
@@ -147,7 +149,7 @@ fun SettingsScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
                 FunctionItem(title = R.string.api, icon = R.drawable.code_fill0) { onNavigate(ApiSettings) }
             if (privilege.device && !privilege.dhizuku)
                 FunctionItem(R.string.notifications, icon = R.drawable.notifications_fill0) { onNavigate(Notifications) }
-	    FunctionItem(R.string.languages, icon = R.drawable.language_fill0) { onNavigate(LanguageScreen) }
+	        FunctionItem(R.string.languages, icon = R.drawable.language_fill0) { onNavigate(LanguageScreen) }
             FunctionItem(title = R.string.about, icon = R.drawable.info_fill0) { onNavigate(About) }
         }
     }
@@ -220,82 +222,82 @@ fun AppearanceScreen(onNavigateUp: () -> Unit, currentTheme: ThemeSettings, onTh
         else -> R.string.follow_system
     }
     val colorSchemeTextID = when (theme.themeColor) {
-	1 -> R.string.color_blue
-	2 -> R.string.color_red
-	3 -> R.string.color_orange
-	4 -> R.string.color_yellow
-	5 -> R.string.color_pink
-	6 -> R.string.color_purple
-	7 -> R.string.color_green
-	else -> R.string.material_you_color
+	    1 -> R.string.color_blue
+	    2 -> R.string.color_red
+	    3 -> R.string.color_orange
+	    4 -> R.string.color_yellow
+	    5 -> R.string.color_pink
+	    6 -> R.string.color_purple
+	    7 -> R.string.color_green
+	    else -> R.string.material_you_color
     }
     MyScaffold(R.string.appearance, onNavigateUp, 0.dp) {
-	Box {
-	    FunctionItem(R.string.color_scheme, stringResource(colorSchemeTextID)) { colorSelectorMenu = true }
-	    DropdownMenu(
-		expanded = colorSelectorMenu, onDismissRequest = { colorSelectorMenu = false },
-		offset = DpOffset(x = 25.dp, y = 0.dp)
-	    ) {
-		if (VERSION.SDK_INT >= 31) {
-		    DropdownMenuItem(
-			text = { Text(stringResource(R.string.material_you_color)) },
-			onClick = {
-			    update(theme.copy(themeColor = 0))
-			    colorSelectorMenu = false
-			}
-		    )
-	        }
-		DropdownMenuItem(
-		    text = { Text(stringResource(R.string.color_blue)) },
-		    onClick = {
-			update(theme.copy(themeColor = 1))
-			colorSelectorMenu = false
-		    }
-		)
-		DropdownMenuItem(
+        Box {
+            FunctionItem(R.string.color_scheme, stringResource(colorSchemeTextID)) { colorSelectorMenu = true }
+            DropdownMenu(
+                expanded = colorSelectorMenu, onDismissRequest = { colorSelectorMenu = false },
+                offset = DpOffset(x = 25.dp, y = 0.dp)
+            ) {
+                if (VERSION.SDK_INT >= 31) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.material_you_color)) },
+                        onClick = {
+                            update(theme.copy(themeColor = 0))
+                            colorSelectorMenu = false
+                        }
+                    )
+                }
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.color_blue)) },
+                    onClick = {
+                        update(theme.copy(themeColor = 1))
+                        colorSelectorMenu = false
+                    }
+                )
+                DropdownMenuItem(
                     text = { Text(stringResource(R.string.color_red)) },
                     onClick = {
                         update(theme.copy(themeColor = 2))
-			colorSelectorMenu = false
+                        colorSelectorMenu = false
                     }
                 )
-		DropdownMenuItem(
+                DropdownMenuItem(
                     text = { Text(stringResource(R.string.color_orange)) },
                     onClick = {
                         update(theme.copy(themeColor = 3))
                         colorSelectorMenu = false
                     }
                 )
-		DropdownMenuItem(
+                DropdownMenuItem(
                     text = { Text(stringResource(R.string.color_yellow)) },
                     onClick = {
                         update(theme.copy(themeColor = 4))
                         colorSelectorMenu = false
                     }
                 )
-		DropdownMenuItem(
+                DropdownMenuItem(
                     text = { Text(stringResource(R.string.color_pink)) },
                     onClick = {
                         update(theme.copy(themeColor = 5))
                         colorSelectorMenu = false
                     }
                 )
-		DropdownMenuItem(
+                DropdownMenuItem(
                     text = { Text(stringResource(R.string.color_purple)) },
                     onClick = {
                         update(theme.copy(themeColor = 6))
                         colorSelectorMenu = false
                     }
                 )
-		DropdownMenuItem(
+                DropdownMenuItem(
                     text = { Text(stringResource(R.string.color_green)) },
                     onClick = {
                         update(theme.copy(themeColor = 7))
                         colorSelectorMenu = false
                     }
                 )
-	    }
-	}
+            }
+        }
         Box {
             FunctionItem(R.string.dark_theme, stringResource(darkThemeTextID)) { darkThemeMenu = true }
             DropdownMenu(
@@ -352,11 +354,12 @@ fun AppLockSettingsScreen(onNavigateUp: () -> Unit) = MyScaffold(R.string.app_lo
         .widthIn(max = 300.dp)
         .align(Alignment.CenterHorizontally)) {
         OutlinedTextField(
-	    password, { password = it }, Modifier
+	        password, { password = it }, Modifier
                 .fillMaxWidth()
                 .padding(vertical = 4.dp),
             label = { Text(stringResource(R.string.password)) },
             supportingText = { Text(stringResource(if (alreadySet) R.string.leave_empty_to_remain_unchanged else R.string.minimum_length_4)) },
+            visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions { fr.requestFocus() }
         )
@@ -365,6 +368,7 @@ fun AppLockSettingsScreen(onNavigateUp: () -> Unit) = MyScaffold(R.string.app_lo
                 .fillMaxWidth()
                 .focusRequester(fr),
             label = { Text(stringResource(R.string.confirm_password)) },
+            visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions { fm.clearFocus() }
         )
@@ -382,18 +386,18 @@ fun AppLockSettingsScreen(onNavigateUp: () -> Unit) = MyScaffold(R.string.app_lo
         }
         Button(
             onClick = {
-		scope.launch {
+		        scope.launch {
                     fm.clearFocus()
                     if(password.isNotEmpty()) SP.lockPasswordHash = hashPassword(password)
                     SP.biometricsUnlock = allowBiometrics
                     SP.lockWhenLeaving = lockWhenLeaving
                     onNavigateUp()
-	        }
+	            }
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = isInputLegal && confirmPassword == password
         ) {
-            Text(stringResource(if(alreadySet) R.string.update else R.string.set))
+            Text(stringResource(if (alreadySet) R.string.update else R.string.set))
         }
         if (alreadySet) FilledTonalButton(
             onClick = {
@@ -417,17 +421,20 @@ fun ApiSettings(onNavigateUp: () -> Unit) {
     val context = LocalContext.current
     MyScaffold(R.string.api, onNavigateUp) {
         var enabled by remember { mutableStateOf(SP.isApiEnabled) }
+        var dialog by remember { mutableStateOf(0) }
         SwitchItem(R.string.enable, state = enabled, onCheckedChange = {
-            enabled = it
-            SP.isApiEnabled = it
-            if(!it) SP.sharedPrefs.edit { remove("api.key") }
+            if (!it) dialog = 1
+            else {
+                enabled = true
+                SP.isApiEnabled = true
+            }
         }, padding = false)
         if (enabled) {
             var key by remember { mutableStateOf("") }
 	    var sharedReplyEnabled by remember { mutableStateOf(SP.sharedApiReply) }
 	    SwitchItem(R.string.api_shared_response, state = sharedReplyEnabled, onCheckedChange = {
-		sharedReplyEnabled = it
-		SP.sharedApiReply = it
+		    sharedReplyEnabled = it
+		    SP.sharedApiReply = it
 	    }, padding = false)
             OutlinedTextField(
                 value = key, onValueChange = { key = it }, label = { Text(stringResource(R.string.api_key)) },
@@ -458,7 +465,28 @@ fun ApiSettings(onNavigateUp: () -> Unit) {
             ) {
                 Text(stringResource(R.string.apply))
             }
-            if(SP.apiKey != null) Notes(R.string.api_key_exist)
+            if (SP.apiKey != null) Notes(R.string.api_key_exist)
+            when (dialog) {
+                1 -> AlertDialog(
+                    onDismissRequest = { dialog = 0 },
+                    title = { Text(stringResource(R.string.warning)) },
+                    text = { Text(stringResource(R.string.info_api_disable)) },
+                    dismissButton = {
+                        TextButton(onClick = { dialog = 0 }) { Text(stringResource(R.string.cancel)) }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            dialog = 0
+                            enabled = false
+                            SP.isApiEnabled = false
+                            SP.apiKey = null
+                        }) {
+                            Text(stringResource(R.string.confirm))
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }
@@ -491,23 +519,20 @@ fun LanguageScreen(onNavigateUp: () -> Unit) {
     val languages = BuiltInLocales.toLanguages(context)
     var selectedLanguage by remember { mutableStateOf(SP.language) }
     var selectedRegion by remember { mutableStateOf(SP.languageRegion) }
+    var dialog by remember { mutableStateOf(0) }
 
     MyScaffold(R.string.languages, onNavigateUp, 0.dp) {
-	FullWidthRadioButtonItem(
+	    FullWidthRadioButtonItem(
             stringResource(R.string.follow_system),
-	    selectedLanguage.isNullOrEmpty() || selectedLanguage == "default"
+	        selectedLanguage.isNullOrEmpty() || selectedLanguage == "default"
         ) {
             selectedLanguage = "default"
-	    selectedRegion = "default"
+	        selectedRegion = "default"
         }
 
-	languages.forEach { lang ->
-	    val display = buildString {
-                append(lang.name)
-                append(" [${lang.lang}]")
-            }
-            FullWidthRadioButtonItem(
-                display,
+	    languages.forEach { lang ->
+	        FullWidthRadioButtonItem(
+                "${lang.name} [${lang.lang}]",
                 selectedLanguage == lang.lang && selectedRegion == lang.region,
             ) {
                 selectedLanguage = lang.lang
@@ -515,19 +540,40 @@ fun LanguageScreen(onNavigateUp: () -> Unit) {
             }
         }
 
-	Button(
+	    Button(
             onClick = {
                 SP.language = selectedLanguage
                 SP.languageRegion = selectedRegion
-		if (SP.language != "default") context.setLocale(SP.language ?: "", SP.languageRegion ?: "") else context.resetLocale()
-		activity?.recreate()
-		activity?.window?.decorView?.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
+		        if (SP.language != "default") context.setLocale(SP.language ?: "", SP.languageRegion ?: "") else context.resetLocale()
+                dialog = 1
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 4.dp, horizontal = HorizontalPadding)
         ) {
             Text(stringResource(R.string.apply))
+        }
+
+        when (dialog) {
+            1 -> AlertDialog(
+                onDismissRequest = { dialog = 0 },
+                title = { Text(stringResource(R.string.warning)) },
+                text = { Text(stringResource(R.string.info_language_reload)) },
+                dismissButton = {
+                    TextButton(onClick = { dialog = 0 }) { Text(stringResource(R.string.no)) }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        dialog = 0
+                        context.startActivity(Intent().apply {
+                            component = ComponentName("dev.mr2.dpc", "dev.mr2.dpc.MainActivity")
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        })
+                        activity?.finish()
+                    }) { Text(stringResource(R.string.yes)) }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
@@ -544,7 +590,7 @@ fun AboutScreen(onNavigateUp: () -> Unit) {
         Text(text = stringResource(R.string.app_name)+" v$verName ($verCode)", modifier = Modifier.padding(start = 16.dp))
         Spacer(Modifier.padding(vertical = 5.dp))
         FunctionItem(R.string.project_homepage, "GitHub", R.drawable.open_in_new) { shareLink(context, "https://github.com/BinTianqi/OwnDroid") }
-	FunctionItem(R.string.project_fork_homepage, "GitHub", R.drawable.open_in_new) { shareLink(context, "https://github.com/MrRare2/MDPC") }
+        FunctionItem(R.string.project_fork_homepage, "GitHub", R.drawable.open_in_new) { shareLink(context, "https://github.com/MrRare2/MDPC") }
     }
 }
 

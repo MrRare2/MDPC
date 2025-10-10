@@ -277,6 +277,10 @@
     <string name="host">Host</string>
     <string name="add_network_result_invalid_configuration">Invalid configuration</string>
     <string name="min_wifi_security_level">Minimum Wi-Fi security level</string>
+    <string name="wifi_security_psk" translatable="false">PSK</string>
+    <string name="wifi_mode_dhcp" translatable="false">DHCP</string>
+    <string name="http" translatable="false">HTTP</string>
+    <string name="unchanged">Unchanged</string>
     <string name="wifi_security_open">Open</string>
     <string name="lockdown_admin_configured_network">Lockdown admin configured network</string>
     <string name="wifi_ssid_policy">Wi-Fi SSID policy</string>
@@ -302,6 +306,7 @@
     <string name="choose_an_app" tools:ignore="TypographyEllipsis">Choose an app...</string>
     <string name="input">Input</string>
     <string name="query">Query</string>
+    <string name="no_data">No data</string>
     <string name="transmitted">Transmitted</string>
     <string name="received">Received</string>
     <string name="state">State</string>
@@ -313,6 +318,7 @@
     <string name="dns_provide_hostname">Provide hostname</string>
     <string name="host_not_serving_dns_tls">Host not serving</string>
     <string name="set_to_opportunistic">Set to opportunistic</string>
+    <string name="automatic">Automatic</string>
     <string name="dns_hostname">DNS hostname</string>
     <string name="invalid_hostname">Invalid hostname</string>
     <string name="security_exception">Security Exception</string>
@@ -551,8 +557,9 @@
     <string name="unified_password">Unified password</string>
     <string name="reset_password_token">Reset password token</string>
     <string name="token">Token</string>
-    <string name="token_must_longer_than_32_byte">The token must be longer than 32-byte</string>
-    <string name="token_already_activated">Token already activated</string>
+    <string name="token_must_longer_than_32_byte">The token must be longer than 32 byte</string>
+    <string name="activate_reset_password_token">Activate reset password token</string>
+    <string name="token_activated">Token activated</string>
     <string name="clear">Clear</string>
     <string name="set">Set</string>
     <string name="please_set_a_token">Please set a token</string>
@@ -732,6 +739,7 @@
     <string name="info_password_history_length">After setting this, the user will not be able to enter a new password that is the same as any password in the history. Note that the current password will remain until the user has set a new one, so the change does not take place immediately.\nA value of 0 means there is no restriction.</string>
     <string name="info_required_strong_auth_timeout">Determine for how long the user will be able to use secondary, non strong auth for authentication, since last strong method authentication (password, pin or pattern) was used. After the returned timeout the user is required to use strong authentication method.\nA value of 0 means the admin is not participating in controlling the timeout. The minimum and maximum timeouts are platform-defined and are typically 1 hour and 72 hours, respectively.</string>
     <string name="info_deactivate">MDPC will lost its privilege</string>
+    <string name="info_api_disable">Disabling will remove the existing API key.</string>
 
     <string name="choose_work_mode">Choose a work mode</string>
     <string name="recommended">Recommended</string>
@@ -744,6 +752,7 @@
     <string name="show_launcher_icon">Show from app list</string>
     <string name="info_hiding_launcher_icon">Dial *#*#672376372645839#*#* to access this app again</string>
     <string name="color_scheme">Color scheme</string>
+    <string name="info_language_reload">Language switch applies on app restart. Restart app?</string>
 
     <!-- languages -->
     <string name="lang_en">English</string>

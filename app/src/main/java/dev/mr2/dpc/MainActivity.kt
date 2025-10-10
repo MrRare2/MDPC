@@ -65,8 +65,6 @@ import dev.mr2.dpc.dpm.AddApnSetting
 import dev.mr2.dpc.dpm.AddApnSettingScreen
 import dev.mr2.dpc.dpm.AddDelegatedAdmin
 import dev.mr2.dpc.dpm.AddDelegatedAdminScreen
-import dev.mr2.dpc.dpm.AddNetwork
-import dev.mr2.dpc.dpm.AddNetworkScreen
 import dev.mr2.dpc.dpm.AddPreferentialNetworkServiceConfig
 import dev.mr2.dpc.dpm.AddPreferentialNetworkServiceConfigScreen
 import dev.mr2.dpc.dpm.AffiliationId
@@ -167,6 +165,7 @@ import dev.mr2.dpc.dpm.PermittedAccessibilityServices
 import dev.mr2.dpc.dpm.PermittedAsAndImPackages
 import dev.mr2.dpc.dpm.PermittedInputMethods
 import dev.mr2.dpc.dpm.PreferentialNetworkService
+import dev.mr2.dpc.dpm.PreferentialNetworkServiceInfo
 import dev.mr2.dpc.dpm.PreferentialNetworkServiceScreen
 import dev.mr2.dpc.dpm.PrivateDns
 import dev.mr2.dpc.dpm.PrivateDnsScreen
@@ -181,7 +180,6 @@ import dev.mr2.dpc.dpm.ResetPassword
 import dev.mr2.dpc.dpm.ResetPasswordScreen
 import dev.mr2.dpc.dpm.ResetPasswordToken
 import dev.mr2.dpc.dpm.ResetPasswordTokenScreen
-import dev.mr2.dpc.dpm.Restriction
 import dev.mr2.dpc.dpm.SecurityLogging
 import dev.mr2.dpc.dpm.SecurityLoggingScreen
 import dev.mr2.dpc.dpm.SetDefaultDialer
@@ -201,6 +199,8 @@ import dev.mr2.dpc.dpm.TransferOwnership
 import dev.mr2.dpc.dpm.TransferOwnershipScreen
 import dev.mr2.dpc.dpm.UninstallApp
 import dev.mr2.dpc.dpm.UninstallAppScreen
+import dev.mr2.dpc.dpm.UpdateNetwork
+import dev.mr2.dpc.dpm.UpdateNetworkScreen
 import dev.mr2.dpc.dpm.UserInfo
 import dev.mr2.dpc.dpm.UserInfoScreen
 import dev.mr2.dpc.dpm.UserOperation
@@ -218,8 +218,6 @@ import dev.mr2.dpc.dpm.UsersOptions
 import dev.mr2.dpc.dpm.UsersOptionsScreen
 import dev.mr2.dpc.dpm.UsersScreen
 import dev.mr2.dpc.dpm.WiFi
-import dev.mr2.dpc.dpm.WifiAuthKeypair
-import dev.mr2.dpc.dpm.WifiAuthKeypairScreen
 import dev.mr2.dpc.dpm.WifiScreen
 import dev.mr2.dpc.dpm.WifiSecurityLevel
 import dev.mr2.dpc.dpm.WifiSecurityLevelScreen
@@ -392,7 +390,7 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
             NearbyStreamingPolicyScreen(vm::getNsAppPolicy, vm::setNsAppPolicy,
                 vm::getNsNotificationPolicy, vm::setNsNotificationPolicy, ::navigateUp)
         }
-	composable<LockTaskMode> {
+        composable<LockTaskMode> {
             LockTaskModeScreen(vm.chosenPackage, ::choosePackage, vm.lockTaskPackages,
                 vm::getLockTaskPackages, vm::setLockTaskPackage, vm::startLockTaskMode,
                 vm:: getLockTaskFeatures, vm::setLockTaskFeatures, ::navigateUp)
@@ -419,28 +417,63 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
         composable<WipeData> { WipeDataScreen(vm::wipeData, ::navigateUp) }
 
         composable<Network> { NetworkScreen(::navigateUp, ::navigate) }
-        composable<WiFi> { WifiScreen(::navigateUp, ::navigate) { navController.navigate(AddNetwork, it)} }
-        composable<NetworkOptions> { NetworkOptionsScreen(::navigateUp) }
-        composable<AddNetwork> { AddNetworkScreen(it.arguments!!, ::navigateUp) }
-        composable<WifiSecurityLevel> { WifiSecurityLevelScreen(::navigateUp) }
-        composable<WifiSsidPolicyScreen> { WifiSsidPolicyScreen(::navigateUp) }
-	composable<QueryNetworkStats> {
-            NetworkStatsScreen(vm.chosenPackage, ::choosePackage, ::navigateUp, ::navigate)
+        
+        composable<WiFi> {
+            WifiScreen(vm, ::navigateUp, ::navigate) { navController.navigate(UpdateNetwork(it)) }
         }
-        composable<NetworkStatsViewer>(mapOf(serializableNavTypePair<List<NetworkStatsViewer.Data>>())) {
-            NetworkStatsViewerScreen(it.toRoute(), ::navigateUp)
+        composable<NetworkOptions> {
+            NetworkOptionsScreen(vm::getLanEnabled, vm::setLanEnabled, ::navigateUp)
         }
-        composable<PrivateDns> { PrivateDnsScreen(::navigateUp) }
-	composable<AlwaysOnVpnPackage> {
-            AlwaysOnVpnPackageScreen(vm.chosenPackage, ::choosePackage, ::navigateUp)
+        composable<UpdateNetwork> {
+            val info = vm.configuredNetworks.collectAsStateWithLifecycle().value[
+                (it.toRoute() as UpdateNetwork).index
+            ]
+            UpdateNetworkScreen(info, vm::setWifi, ::navigateUp)
         }
-        composable<RecommendedGlobalProxy> { RecommendedGlobalProxyScreen(::navigateUp) }
+        composable<WifiSecurityLevel> {
+            WifiSecurityLevelScreen(vm::getMinimumWifiSecurityLevel,
+                vm::setMinimumWifiSecurityLevel, ::navigateUp)
+        }
+        composable<WifiSsidPolicyScreen> {
+            WifiSsidPolicyScreen(vm::getSsidPolicy, vm::setSsidPolicy, ::navigateUp)
+        }
+        composable<QueryNetworkStats> {
+            NetworkStatsScreen(vm.chosenPackage, ::choosePackage, vm::getPackageUid,
+                vm::queryNetworkStats, ::navigateUp) { navController.navigate(NetworkStatsViewer) }
+        }
+        composable<NetworkStatsViewer> {
+            NetworkStatsViewerScreen(vm.networkStatsData, vm::clearNetworkStats, ::navigateUp)
+        }
+        composable<PrivateDns> {
+            PrivateDnsScreen(vm::getPrivateDns, vm::setPrivateDns, ::navigateUp)
+        }
+        composable<AlwaysOnVpnPackage> {
+            AlwaysOnVpnPackageScreen(vm::getAlwaysOnVpnPackage, vm::getAlwaysOnVpnLockdown,
+                vm::setAlwaysOnVpn, vm.chosenPackage, ::choosePackage, ::navigateUp)
+        }
+        composable<RecommendedGlobalProxy> {
+            RecommendedGlobalProxyScreen(vm::setRecommendedGlobalProxy, ::navigateUp)
+        }
         composable<NetworkLogging> { NetworkLoggingScreen(::navigateUp) }
-        composable<WifiAuthKeypair> { WifiAuthKeypairScreen(::navigateUp) }
-        composable<PreferentialNetworkService> { PreferentialNetworkServiceScreen(::navigateUp, ::navigate) }
-        composable<AddPreferentialNetworkServiceConfig> { AddPreferentialNetworkServiceConfigScreen(it.toRoute(), ::navigateUp) }
-        composable<OverrideApn> { OverrideApnScreen(::navigateUp) { navController.navigate(AddApnSetting, it) } }
-        composable<AddApnSetting> { AddApnSettingScreen(it.arguments?.getParcelable("setting"), ::navigateUp) }
+        //composable<WifiAuthKeypair> { WifiAuthKeypairScreen(::navigateUp) }
+        composable<PreferentialNetworkService> {
+            PreferentialNetworkServiceScreen(vm::getPnsEnabled, vm::setPnsEnabled, vm.pnsConfigs,
+                vm::getPnsConfigs, ::navigateUp, ::navigate)
+        }
+        composable<AddPreferentialNetworkServiceConfig> {
+            val info = vm.pnsConfigs.collectAsStateWithLifecycle().value.getOrNull(
+                it.toRoute<AddPreferentialNetworkServiceConfig>().index
+            ) ?: PreferentialNetworkServiceInfo()
+            AddPreferentialNetworkServiceConfigScreen(info, vm::setPnsConfig, ::navigateUp)
+        }
+        composable<OverrideApn> {
+            OverrideApnScreen(vm.apnConfigs, vm::getApnConfigs, vm::getApnEnabled,
+                vm::setApnEnabled, ::navigateUp) { navController.navigate(AddApnSetting(it)) }
+        }
+        composable<AddApnSetting> {
+            val origin = vm.apnConfigs.collectAsStateWithLifecycle().value.getOrNull((it.toRoute() as AddApnSetting).index)
+            AddApnSettingScreen(vm::setApnConfig, vm::removeApnConfig, origin, ::navigateUp)
+        }
 
         composable<WorkProfile> { WorkProfileScreen(::navigateUp, ::navigate) }
 
@@ -570,7 +603,7 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
             composable<UserRestrictionEditor> {
                 UserRestrictionEditorScreen(vm.userRestrictions, vm::setUserRestriction, ::navigateUp)
             }
-            composable<UserRestrictionOptions>(mapOf(serializableNavTypePair<List<Restriction>>())) {
+            composable<UserRestrictionOptions> {
                 UserRestrictionOptionsScreen(it.toRoute(), vm.userRestrictions,
                     vm::setUserRestriction, ::navigateUp)
             }
@@ -594,13 +627,24 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
                 ::navigateUp)
         }
 
-        composable<Password> { PasswordScreen(::navigateUp, ::navigate) }
-        composable<PasswordInfo> { PasswordInfoScreen(::navigateUp) }
-        composable<ResetPasswordToken> { ResetPasswordTokenScreen(::navigateUp) }
-        composable<ResetPassword> { ResetPasswordScreen(::navigateUp) }
-        composable<RequiredPasswordComplexity> { RequiredPasswordComplexityScreen(::navigateUp) }
-        composable<KeyguardDisabledFeatures> { KeyguardDisabledFeaturesScreen(::navigateUp) }
-        composable<RequiredPasswordQuality> { RequiredPasswordQualityScreen(::navigateUp) }
+        composable<Password> { PasswordScreen(vm, ::navigateUp, ::navigate) }
+        composable<PasswordInfo> {
+            PasswordInfoScreen(vm::getPasswordComplexity, vm::isPasswordComplexitySufficient,
+                vm::isUsingUnifiedPassword, ::navigateUp)
+        }
+        composable<ResetPasswordToken> {
+            ResetPasswordTokenScreen(vm::getRpTokenState, vm::setRpToken,
+                vm::createActivateRpTokenIntent, vm::clearRpToken, ::navigateUp)
+        }
+        composable<ResetPassword> { ResetPasswordScreen(vm::resetPassword, ::navigateUp) }
+        composable<RequiredPasswordComplexity> {
+            RequiredPasswordComplexityScreen(vm::getRequiredPasswordComplexity,
+                vm::setRequiredPasswordComplexity, ::navigateUp)
+        }
+        composable<KeyguardDisabledFeatures> {
+            KeyguardDisabledFeaturesScreen(vm::getKeyguardDisableConfig,
+                vm::setKeyguardDisableConfig, ::navigateUp)
+        }
 
         composable<Settings> { SettingsScreen(::navigateUp, ::navigate) }
         composable<SettingsOptions> { SettingsOptionsScreen(::navigateUp) }

@@ -34,7 +34,7 @@
     <string name="custom">カスタム</string>
     <string name="unknown">フメイ</string>
     <string name="reset">リセット</string>
-    <string name="time_unit_ms">トキマ（ms）</string>
+    <string name="time_unit_ms">トキマ（ミリ-ビョウ）</string>
     <string name="length">オサ</string>
     <string name="none">ナシ</string>
     <string name="no_logs">ログ　ナシ</string>

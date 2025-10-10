@@ -36,6 +36,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -50,14 +51,14 @@ fun AppLockDialog(onSucceed: () -> Unit, onDismiss: () -> Unit) = Dialog(onDismi
     var isError by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     fun unlock() {
-	scope.launch {
-	    val ok = verifyPassword(input, SP.lockPasswordHash)
-	    if (ok) {
-		fm.clearFocus()
-		onSucceed()
-	    } else {
-		isError = true
-	    }
+	    scope.launch {
+	        val ok = verifyPassword(input, SP.lockPasswordHash)
+	        if (ok) {
+		        fm.clearFocus()
+		        onSucceed()
+	        } else {
+		        isError = true
+	        }
         }
     }
     LaunchedEffect(Unit) {
@@ -70,18 +71,19 @@ fun AppLockDialog(onSucceed: () -> Unit, onDismiss: () -> Unit) = Dialog(onDismi
                 OutlinedTextField(
                     input, { input = it; isError = false }, Modifier.width(200.dp),
                     label = { Text(stringResource(R.string.password)) }, isError = isError,
+                    visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password, imeAction = if(input.length >= 4) ImeAction.Go else ImeAction.Done
+                        keyboardType = KeyboardType.Password, imeAction = if (input.length >= 4) ImeAction.Go else ImeAction.Done
                     ),
                     keyboardActions = KeyboardActions({ fm.clearFocus() }, { unlock() })
                 )
-                if(Build.VERSION.SDK_INT >= 28 && SP.biometricsUnlock) {
+                if (Build.VERSION.SDK_INT >= 28 && SP.biometricsUnlock) {
                     FilledTonalIconButton({ startBiometricsUnlock(context, onSucceed) }, Modifier.padding(start = 4.dp)) {
                         Icon(painterResource(R.drawable.fingerprint_fill0), null)
                     }
                 }
             }
-            Button(::unlock, Modifier.align(Alignment.End).padding(top = 8.dp), input.length >= 4) {
+            Button(::unlock, Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp), input.length >= 4) {
                 Text(stringResource(R.string.unlock))
             }
         }
@@ -97,7 +99,7 @@ fun startBiometricsUnlock(context: Context, onSucceed: () -> Unit) {
         }
         override fun onAuthenticationError(errorCode: Int, errString: CharSequence?) {
             super.onAuthenticationError(errorCode, errString)
-            if(errorCode != BiometricPrompt.BIOMETRIC_ERROR_CANCELED) context.showOperationResultToast(false)
+            if (errorCode != BiometricPrompt.BIOMETRIC_ERROR_CANCELED) context.showOperationResultToast(false)
         }
     }
     val cancel = CancellationSignal()

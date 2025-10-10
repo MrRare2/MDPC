@@ -518,7 +518,8 @@
     <string name="reset_password_token">密码重置令牌</string>
     <string name="token">令牌</string>
     <string name="token_must_longer_than_32_byte">令牌必须大于32字节</string>
-    <string name="token_already_activated">令牌已经激活</string>
+    <string name="activate_reset_password_token">激活密码重置令牌</string>
+    <string name="token_activated">令牌已激活</string>
     <string name="clear">清除</string>
     <string name="set">设置</string>
     <string name="please_set_a_token">请先设置令牌</string>
@@ -704,7 +705,8 @@
     <string name="dpm_warning">此应用使用Device owner或Profile owner特权。这些特权十分危险，请谨慎使用。如果操作不当，可能会造成严重损失。开发者将不会对此负责。</string>
     <string name="languages">语言</string>
     <string name="show_launcher_icon">在应用列表中显示</string>
-    <string name="info_hiding_launcher_icon">要再次访问此应用，请拨打 *#*#672376372645839#*#*</string>
+    <string name="info_hiding_launcher_icon">要再次访问此应用，请拨打*#*#672376372645839#*#*</string>
+    <string name="info_language_reload">语言切换将在应用重启后生效。是否重启应用？</string>
     <string name="color_scheme">配色方案</string>
     <string name="color_blue">初音蓝</string>
     <string name="color_red">重音红</string>
