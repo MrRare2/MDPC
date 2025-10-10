@@ -21,10 +21,10 @@ android {
             storePassword = (project.findProperty("storePassword") as String?) ?: "testkey"
             keyPassword = (project.findProperty("keyPassword") as String?) ?: "testkey"
             keyAlias = (project.findProperty("keyAlias") as String?) ?: "testkey"
-	    enableV1Signing = true
-	    enableV2Signing = true
-	    enableV3Signing = true
-	    enableV4Signing = true
+	        enableV1Signing = true
+	        enableV2Signing = true
+	        enableV3Signing = true
+	        enableV4Signing = true
         }
     }
     namespace = "dev.mr2.dpc"
@@ -37,8 +37,8 @@ android {
         applicationId = "dev.mr2.dpc"
         minSdk = 21
         targetSdk = 36
-        versionCode = 4003
-        versionName = "7.1.3"
+        versionCode = 4004
+        versionName = "7.1.4"
         multiDexEnabled = false
     }
 
@@ -173,7 +173,7 @@ abstract class GenerateLocalesTask : DefaultTask() {
             w.appendLine("    val LANGUAGES = listOf(")
             unique.forEachIndexed { idx, li ->
                 var langResName = "${li.lang}"
-		if (!li.region.isEmpty()) langResName += "_${li.region}"
+		        if (!li.region.isEmpty()) langResName += "_${li.region}"
                 val comma = if (idx < unique.size - 1) "," else ""
                 w.appendLine("        LanguageRes(\"${li.lang}\", \"${li.region}\", R.string.lang_${langResName})$comma")
             }
@@ -202,12 +202,12 @@ afterEvaluate {
             doFirst {
                 commandLine(
                     "apksigner", "sign",
-		    "--ks", "${project.findProperty("storeFile") ?: "testkey.jks"}",
-		    "--ks-key-alias", project.findProperty("keyAlias") ?: "testkey",
-        "--ks-pass", "pass:${project.findProperty("storePassword") ?: "testkey"}",
-        "--key-pass", "pass:${project.findProperty("keyPassword") ?: "testkey"}",
-		    "--force-stamp-overwrite",
-		    "--stamp-signer",
+                    "--ks", "${project.findProperty("storeFile") ?: "testkey.jks"}",
+                    "--ks-key-alias", project.findProperty("keyAlias") ?: "testkey",
+                    "--ks-pass", "pass:${project.findProperty("storePassword") ?: "testkey"}",
+                    "--key-pass", "pass:${project.findProperty("keyPassword") ?: "testkey"}",
+                    "--force-stamp-overwrite",
+                    "--stamp-signer",
                     "--ks", stampFile,
                     "--ks-key-alias", stampAlias,
                     "--ks-pass", "pass:$stampStorePass",

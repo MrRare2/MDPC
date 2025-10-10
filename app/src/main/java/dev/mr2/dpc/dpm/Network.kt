@@ -660,7 +660,7 @@ private fun AddNetworkScreen(
                 label = { Text(stringResource(R.string.password)) },
                 trailingIcon = {
                     IconButton(onClick = { hidePassword = !hidePassword }) {
-                        Icon(painter = painterResource(if (hidePassword) R.drawable.visibility_fill0 else R.drawable.visibility_off_fill0), contentDescription = "Show password")
+                        Icon(painter = painterResource(if (hidePassword) R.drawable.visibility_fill0 else R.drawable.visibility_off_fill0), contentDescription = "Show/hide password")
                     }
                 }
             )

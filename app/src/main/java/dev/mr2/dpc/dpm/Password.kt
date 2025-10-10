@@ -30,6 +30,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedTextField
@@ -45,10 +47,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mr2.dpc.HorizontalPadding
@@ -240,6 +244,7 @@ fun ResetPasswordTokenScreen(
     val context = LocalContext.current
     var token by remember { mutableStateOf("") }
     var state by remember { mutableStateOf(getState()) }
+    var hidePassword by remember { mutableStateOf(true) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == Activity.RESULT_OK) {
             context.popToast(R.string.token_activated)
@@ -295,6 +300,8 @@ fun ResetPasswordScreen(resetPassword: (String, String, Int) -> Boolean, onNavig
     var token by remember { mutableStateOf("") }
     var flags by remember { mutableIntStateOf(0) }
     var confirmPassword by remember { mutableStateOf("") }
+    var hidePassword by remember { mutableStateOf(true) }
+    var hideConfirmPassword by remember { mutableStateOf(true) }
     MyScaffold(R.string.reset_password, onNavigateUp) {
         if (VERSION.SDK_INT >= 26) {
             OutlinedTextField(
@@ -308,14 +315,24 @@ fun ResetPasswordScreen(resetPassword: (String, String, Int) -> Boolean, onNavig
             label = { Text(stringResource(R.string.password)) },
             isError = password.length in 1..3,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
-            visualTransformation = PasswordVisualTransformation()
+            visualTransformation = if (hidePassword) PasswordVisualTransformation() else VisualTransformation.None,
+            trailingIcon = {
+                IconButton(onClick = { hidePassword = !hidePassword }) {
+                    Icon(painter = painterResource(if (hidePassword) R.drawable.visibility_fill0 else R.drawable.visibility_off_fill0), contentDescription = "Show/hide password")
+                }
+            }
         )
         OutlinedTextField(
             confirmPassword, { confirmPassword = it }, Modifier.fillMaxWidth(),
             label = { Text(stringResource(R.string.confirm_password)) },
             isError = confirmPassword != password,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-            visualTransformation = PasswordVisualTransformation()
+            visualTransformation = if (hideConfirmPassword) PasswordVisualTransformation() else VisualTransformation.None,
+            trailingIcon = {
+                IconButton(onClick = { hideConfirmPassword = !hideConfirmPassword }) {
+                    Icon(painter = painterResource(if (hideConfirmPassword) R.drawable.visibility_fill0 else R.drawable.visibility_off_fill0), contentDescription = "Show/hide password")
+                }
+            }
         )
         Spacer(Modifier.padding(vertical = 5.dp))
         if (VERSION.SDK_INT >= 23) {

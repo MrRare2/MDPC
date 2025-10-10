@@ -1684,7 +1684,8 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     }
     @RequiresApi(26)
     fun setRpToken(token: String): Boolean {
-        return DPM.setResetPasswordToken(DAR, token.encodeToByteArray())
+        return try { DPM.setResetPasswordToken(DAR, token.encodeToByteArray()) }
+        catch (_: SecurityException) { false }
     }
     @RequiresApi(26)
     fun clearRpToken(): Boolean {
