@@ -8,7 +8,7 @@
     <string name="success">Успешно</string>
     <string name="failure">Ошибка</string>
     <string name="failed">Ошибка</string>
-    <string name="succeeded">Succeeded</string> <!--TODO-->
+    <string name="succeeded">Удалось</string>
     <string name="add">Добавить</string>
     <string name="remove">Удалить</string>
     <string name="install">Установить</string>
@@ -177,11 +177,11 @@
     <string name="ltf_keyguard">Разрешить блокировку экрана</string>
     <string name="ltf_block_activity_start_in_task">Блокировать запуск активности в задаче</string>
     <string name="ca_cert">CA-сертификат</string>
-    <!--TODO: 4 strings-->
-    <string name="no_ca_cert">No user CA certificate installed</string>
-    <string name="parse_cert_failed">Failed to parse certificate</string>
-    <string name="export">Export</string>
-    <string name="select_ca_cert">Select a CA certificate</string>
+    <!-- TODO -->
+    <string name="no_ca_cert">Сертификат CA пользователя не установлен</string>
+    <string name="parse_cert_failed">Не удалось проанализировать сертификат CA</string>
+    <string name="export">Экспорт </string>
+    <string name="select_ca_cert">Выберите сертификат CA</string>
     <string name="uninstall_all_user_ca_cert">Удалить все пользовательские CA-сертификаты</string>
     <string name="security_logging">Журнал безопасности</string> 
     <string name="pre_reboot_security_logs">Журналы безопасности перед перезагрузкой</string>
@@ -194,7 +194,7 @@
     <string name="wipe_work_profile_warning">Ваш рабочий профиль будет УДАЛЕН</string>
     <string name="encryption_status">Статус шифрования</string>
     <string name="frp_policy">Политика FRP</string>
-    <string name="frp_not_supported">Your device does not support FRP</string> <!--TODO-->
+    <string name="frp_not_supported">Ваше устройство не поддерживает FRP</string> <!--TODO-->
     <string name="enable_frp">Включить FRP</string>
     <string name="account_list_is">Список аккаунтов: </string>
 
@@ -285,7 +285,7 @@
     <string name="export_logs">Экспортировать журналы</string>
     <string name="wifi_auth_keypair">Пара ключей Wi-Fi</string>
     <string name="preferential_network_service">Предпочтительная сетевая служба</string>
-    <string name="add_config">Add config</string> <!--TODO-->
+    <string name="add_config">Добавить конфигурацию</string> <!--TODO-->
     <string name="network_id">Идентификатор сети</string>
     <string name="allow_fallback_to_default_connection">Разрешить переход на соединение по умолчанию</string>
     <string name="block_non_matching_networks">Блокировать несоответствующие сети</string>
@@ -484,9 +484,9 @@
     <string name="required_strong_auth_timeout">Время ожидания строгой аутентификации</string>
     <string name="pwd_history">Длина истории паролей</string>
     <!--TODO: 3 strings-->
-    <string name="low">Low</string>
-    <string name="medium">Medium</string>
-    <string name="high">High</string>
+    <string name="low">Низкий</string>
+    <string name="medium">Средний</string>
+    <string name="high">Высокий</string>
     <string name="current_password_complexity">Текущая сложность пароля</string>
     <string name="password_sufficient">Сложность пароля достаточна</string>
     <string name="unified_password">Единый пароль</string>
@@ -534,7 +534,7 @@
     <string name="dark_theme">Тёмная тема</string> 
     <string name="follow_system">Следовать за системой</string> 
     <string name="black_theme">Чёрная тема</string>
-    <string name="notifications">Notifications</string> <!--TODO-->
+    <string name="notifications">Уведомления</string> <!--TODO-->
     <string name="about">О приложении</string>
     <string name="project_homepage">Домашняя страница проекта</string> 
     <string name="project_fork_homepage">Домашняя страница форка</string>
@@ -658,6 +658,8 @@
     <string name="show_launcher_icon">Показать в списке приложений</string>
     <string name="info_hiding_launcher_icon">Чтобы снова получить доступ к этому приложению, наберите *#*#672376372645839#*#*</string>
     <string name="languages">Язык</string>
+    <string name="user_restriction_tip">Длительное нажатие на элемент для создания ярлыка</string>
+    <string name="second_char">с</string>
     <string name="color_scheme">Цветовая схема</string>
     <string name="color_blue">Мику голубой</string>
     <string name="color_red">Тето красный</string>

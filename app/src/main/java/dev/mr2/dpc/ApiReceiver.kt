@@ -28,15 +28,16 @@ import com.rosan.dhizuku.api.Dhizuku
 import com.rosan.dhizuku.api.DhizukuBinderWrapper
 import java.io.File
 import java.io.FileInputStream
-import java.util.UUID;
+import java.util.UUID
 
 class ApiReceiver: BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val requestKey = intent.getStringExtra("key")
         var log = "MDPC API request received action: ${intent.action}"
-        if (!SP.isApiEnabled) return
-        val key = SP.apiKey
-        if (!key.isNullOrEmpty() && key != requestKey) {
+        if (SP.apiKeyHash.isNullOrEmpty()) return
+        val key = SP.apiKeyHash
+        val action = intent.action?.removePrefix("dev.mr2.dpc.api.")
+        if (!key.isNullOrEmpty() && (requestKey?.hash() != key) && action?.startsWith("SPECIAL") != true) {
 	        log += "\nUnauthorized"
 	        Log.d(TAG, log)
 	        return
@@ -81,7 +82,7 @@ class ApiReceiver: BroadcastReceiver() {
         val notifOngoing = intent.getBooleanExtra("notifOngoing", false)
         try {
             @SuppressWarnings("NewApi")
-            val reply = when (intent.action?.removePrefix("dev.mr2.dpc.api.")) {
+            val reply = when (action) {
                 "SYSTEM_DISABLE_CAMERA" -> dpm.setCameraDisabled(receiver, true)
                 "SYSTEM_ENABLE_CAMERA" -> dpm.setCameraDisabled(receiver, false) 
                 "SYSTEM_DISABLE_SCRCAP" -> dpm.setScreenCaptureDisabled(receiver, true)
@@ -428,7 +429,7 @@ class ApiReceiver: BroadcastReceiver() {
                     nm.cancel(notifId, 6458376)
                     context.sendBroadcast(replyIntent)
                 }
-                else -> log += "\nInvalid action"
+                else -> log += "\nInvalid action -> ${action}"
             }
             context.sendBroadcast(reply as? Intent ?: context.reply("NULL", ""))
         } catch (e: Exception) {
@@ -483,9 +484,8 @@ class ApiReceiver: BroadcastReceiver() {
     }
 
     private fun getMessageReplyIntent(intent: Intent, buttonAction: String, notificationId: String): Intent {
-        return Intent("dev.mr2.dpc.api.SPECIAL_aNOTIF_REPLY").apply {
+        return Intent("dev.mr2.dpc.api.SPECIAL_NOTIF_REPLY").apply {
             setComponent(ComponentName("dev.mr2.dpc", "dev.mr2.dpc.ApiReceiver"))
-            putExtra("key", SP.apiKey)
             putExtra("action", buttonAction)
             putExtra("notifId", notificationId)
         }

@@ -58,7 +58,7 @@ import dev.mr2.dpc.HorizontalPadding
 import dev.mr2.dpc.MyViewModel
 import dev.mr2.dpc.Privilege
 import dev.mr2.dpc.R
-import dev.mr2.dpc.formatTime
+import dev.mr2.dpc.formatDate
 import dev.mr2.dpc.popToast
 import dev.mr2.dpc.showOperationResultToast
 import dev.mr2.dpc.ui.CircularProgressDialog
@@ -205,7 +205,7 @@ fun UserInfoScreen(getInfo: () -> UserInformation, onNavigateUp: () -> Unit) {
         if (VERSION.SDK_INT >= 23) InfoItem(R.string.system_user, info.system.yesOrNo)
         if (VERSION.SDK_INT >= 34) InfoItem(R.string.admin_user, info.admin.yesOrNo)
         if (VERSION.SDK_INT >= 25) InfoItem(R.string.demo_user, info.demo.yesOrNo)
-        if (info.time != 0L) InfoItem(R.string.creation_time, formatTime(info.time))
+        if (info.time != 0L) InfoItem(R.string.creation_time, formatDate(info.time))
 
         if (VERSION.SDK_INT >= 28) {
             InfoItem(R.string.logout_enabled, info.logout.yesOrNo)

@@ -113,7 +113,7 @@ import dev.mr2.dpc.Privilege
 import dev.mr2.dpc.R
 import dev.mr2.dpc.SP
 import dev.mr2.dpc.formatFileSize
-import dev.mr2.dpc.formatTime
+import dev.mr2.dpc.formatDate
 import dev.mr2.dpc.popToast
 import dev.mr2.dpc.showOperationResultToast
 import dev.mr2.dpc.ui.CheckBoxItem
@@ -577,7 +577,7 @@ fun ChangeTimeScreen(setTime: (Long, Boolean) -> Boolean, onNavigateUp: () -> Un
                 ) {
                     if (page == 0) {
                         OutlinedTextField(
-                            value = datePickerState.selectedDateMillis?.let { formatTime(it) } ?: "",
+                            value = datePickerState.selectedDateMillis?.let { formatDate(it) } ?: "",
                             onValueChange = {}, readOnly = true,
                             label = { Text(stringResource(R.string.date)) },
                             interactionSource = dateInteractionSource,
@@ -1424,9 +1424,9 @@ fun CaCertScreen(
                         Text("Issuer", style = typography.labelLarge)
                         SelectionContainer { Text(cert.issuer) }
                         Text("Issued on", style = typography.labelLarge)
-                        SelectionContainer { Text(formatTime(cert.issuedTime)) }
+                        SelectionContainer { Text(formatDate(cert.issuedTime)) }
                         Text("Expires on", style = typography.labelLarge)
-                        SelectionContainer { Text(formatTime(cert.expiresTime)) }
+                        SelectionContainer { Text(formatDate(cert.expiresTime)) }
                         Text("SHA-256 fingerprint", style = typography.labelLarge)
                         SelectionContainer { Text(cert.hash) }
                         if (dialog == 2) Row(
@@ -1822,14 +1822,14 @@ fun WipeDataScreen(
             },
             onDismissRequest = { dialog = 0 },
             confirmButton = {
-                var timer by remember { mutableIntStateOf(6) }
+                var timer by remember { mutableIntStateOf(11) }
                 LaunchedEffect(Unit) {
                     while (timer > 0) {
                         timer -= 1
                         delay(1000)
                     }
                 }
-                val timerText = if (timer > 0) "(${timer}s)" else ""
+                val timerText = if (timer > 0) "(${timer}${stringResource(R.string.second_char)})" else ""
                 TextButton(
                     onClick = {
                         wipeData(dialog == 2, flag, reason)
@@ -1939,7 +1939,7 @@ fun SystemUpdatePolicyScreen(
             Column(Modifier.padding(HorizontalPadding)) {
                 if (pendingUpdate.exists) {
                     Text(stringResource(R.string.update_received_time,
-                        formatTime(pendingUpdate.time)))
+                        formatDate(pendingUpdate.time)))
                     Text(stringResource(R.string.is_security_patch,
                         stringResource(pendingUpdate.securityPatch.yesOrNo)))
                 } else {

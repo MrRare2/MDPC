@@ -129,22 +129,20 @@ fun RadioButtonItem(
 fun FullWidthRadioButtonItem(
     text: Int,
     selected: Boolean,
-    enabled: Boolean = true,
     operation: () -> Unit,
-) = FullWidthRadioButtonItem(stringResource(text), selected, enabled, operation)
+) = FullWidthRadioButtonItem(stringResource(text), selected, operation)
 
 @Composable
 fun FullWidthRadioButtonItem(
     text: String,
     selected: Boolean,
-    enabled: Boolean = true,
     operation: () -> Unit
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().clickable(onClick = operation, enabled = enabled)
+        modifier = Modifier.fillMaxWidth().clickable(onClick = operation)
     ) {
-        RadioButton(selected = selected, onClick = operation, modifier = Modifier.padding(horizontal = 4.dp), enabled = enabled)
+        RadioButton(selected = selected, onClick = operation, modifier = Modifier.padding(horizontal = 4.dp))
         Text(text = text, modifier = Modifier.padding(bottom = if (CJK) { 2 } else { 0 }.dp))
     }
 }

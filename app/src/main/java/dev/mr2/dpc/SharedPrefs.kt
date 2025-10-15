@@ -13,8 +13,7 @@ class SharedPrefs(context: Context) {
     var dhizuku by BooleanSharedPref("dhizuku_mode")
     var isDefaultAffiliationIdSet by BooleanSharedPref("default_affiliation_id_set")
     var displayDangerousFeatures by BooleanSharedPref("display_dangerous_features")
-    var isApiEnabled by BooleanSharedPref("api.enabled")
-    var apiKey by StringSharedPref("api.key")
+    var apiKeyHash by StringSharedPref("api_key_hash")
     var themeColor by IntSharedPref("theme.color", if (Build.VERSION.SDK_INT >= 31) 0 else 1)
     /** -1: follow system, 0: off, 1: on */
     var darkTheme by IntSharedPref("theme.dark", -1)
@@ -28,6 +27,8 @@ class SharedPrefs(context: Context) {
     var language by StringSharedPref("language.lang")
     var languageRegion by StringSharedPref("language.region")
     var sharedApiReply by BooleanSharedPref("api.sharedreply", false)
+    var notifications by StringSharedPref("notifications")
+    var shortcutKey by StringSharedPref("shortcut_key")
 }
 
 private class BooleanSharedPref(val key: String, val defValue: Boolean = false): ReadWriteProperty<SharedPrefs, Boolean> {

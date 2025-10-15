@@ -37,8 +37,8 @@ android {
         applicationId = "dev.mr2.dpc"
         minSdk = 21
         targetSdk = 36
-        versionCode = 4004
-        versionName = "7.1.4"
+        versionCode = 4005
+        versionName = "7.1.5"
         multiDexEnabled = false
     }
 
@@ -251,5 +251,6 @@ dependencies {
     implementation(libs.serialization)
     implementation(libs.jbcrypt)
     implementation(libs.androidx.compose.materialicons)
+    implementation(libs.androidx.biometric)
     implementation(kotlin("reflect"))
 }

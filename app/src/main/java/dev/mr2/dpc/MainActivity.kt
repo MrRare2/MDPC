@@ -1,10 +1,12 @@
 package dev.mr2.dpc
 
+import android.Manifest
 import android.content.Context
 import android.os.Build.VERSION
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -259,9 +261,15 @@ class MainActivity : FragmentActivity() {
         CJK = locale.language in setOf("zh", "ja", "ko")
 
         val vm by viewModels<MyViewModel>()
-	setContent {
-	    var appLockDialog by rememberSaveable { mutableStateOf(false) }
-	    val theme by vm.theme.collectAsStateWithLifecycle()
+
+        if (VERSION.SDK_INT >= 33) {
+            val launcher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+            launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+	    setContent {
+	        var appLockDialog by rememberSaveable { mutableStateOf(false) }
+	        val theme by vm.theme.collectAsStateWithLifecycle()
 
             MDPCTheme(theme) {
                 Home(vm) { appLockDialog = true }
@@ -598,14 +606,16 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
             }
 
             composable<UserRestriction> {
-	            UserRestrictionScreen(vm::getUserRestrictions, ::navigateUp, ::navigate)
+	            UserRestrictionScreen(vm::getUserRestrictions, vm::getShortcutsEnabled, ::navigateUp, ::navigate)
             }
             composable<UserRestrictionEditor> {
                 UserRestrictionEditorScreen(vm.userRestrictions, vm::setUserRestriction, ::navigateUp)
             }
             composable<UserRestrictionOptions> {
                 UserRestrictionOptionsScreen(it.toRoute(), vm.userRestrictions,
-                    vm::setUserRestriction, ::navigateUp)
+                    vm::setUserRestriction, vm::createUserRestrictionShortcut,
+                    vm::getShortcutsEnabled,
+                    ::navigateUp)
             }
 
         composable<Users> { UsersScreen(vm, ::navigateUp, ::navigate) }
@@ -647,15 +657,25 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
         }
 
         composable<Settings> { SettingsScreen(::navigateUp, ::navigate) }
-        composable<SettingsOptions> { SettingsOptionsScreen(::navigateUp) }
-        composable<Appearance> {
-            val theme by vm.theme.collectAsStateWithLifecycle()
-            AppearanceScreen(::navigateUp, theme, vm::changeTheme)
+        composable<SettingsOptions> {
+            SettingsOptionsScreen(vm::getDisplayDangerousFeatures, vm::getShortcutsEnabled, vm::getLauncherVisible,
+                vm::setDisplayDangerousFeatures, vm::setShortcutsEnabled, vm::setLauncherVisible, ::navigateUp)
         }
-        composable<AppLockSettings> { AppLockSettingsScreen(::navigateUp) }
-        composable<ApiSettings> { ApiSettings(::navigateUp) }
-        composable<Notifications> { NotificationsScreen(::navigateUp) }
-        composable<LanguageScreen> { LanguageScreen(::navigateUp) }
+        composable<Appearance> {
+            AppearanceScreen(::navigateUp, vm.theme, vm::changeTheme)
+        }
+        composable<AppLockSettings> {
+            AppLockSettingsScreen(vm::getAppLockConfig, vm::setAppLockConfig, ::navigateUp)
+        }
+        composable<ApiSettings> {
+            ApiSettings(vm::getApiEnabled, vm::getApiSrEnabled, vm::setApiKey, vm::setApiSrEnabled, ::navigateUp)
+        }
+        composable<Notifications> {
+            NotificationsScreen(vm::getEnabledNotifications, vm::setNotificationEnabled, ::navigateUp)
+        }
+        composable<LanguageScreen> {
+            LanguageScreen(vm::getLanguage, vm::getLanguageRegion, vm::setLanguage, ::navigateUp)
+        }
         composable<About> { AboutScreen(::navigateUp) }
     }
     DisposableEffect(lifecycleOwner) {

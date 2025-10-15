@@ -8,7 +8,7 @@ accompanist-drawablepainter = "0.37.3"
 accompanist-permissions = "0.37.3"
 shizuku = "13.1.5"
 fragment = "1.8.9"
-dhizuku = "2.5.3"
+dhizuku = "2.5.4"
 dhizuku-server = "0.0.5"
 hiddenApiBypass = "6.1"
 libsu = "6.0.0"
@@ -16,6 +16,7 @@ serialization = "1.9.0"
 jbcrypt = "0.4"
 androidx-appcompat = "1.7.1"
 material3 = "1.5.0-alpha04"
+androidx-biometric = "1.4.0-alpha04"
 
 [libraries]
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
@@ -43,6 +44,8 @@ jbcrypt = { module = "org.mindrot:jbcrypt", version.ref = "jbcrypt" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidx-appcompat" }
 
 androidx-compose-materialicons = { group = "androidx.compose.material", name = "material-icons-extended", version = "1.7.8" }
+
+androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "androidx-biometric" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

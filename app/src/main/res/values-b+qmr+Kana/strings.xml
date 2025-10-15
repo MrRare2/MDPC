@@ -717,6 +717,7 @@
     <string name="api_shared_response">トモアル　API　コタエル</string>	
     <string name="show_launcher_icon">アプリリスト　ニ　オモジメ</string>
     <string name="info_hiding_launcher_icon">エトノ　アプリ　ニ　フタタビ　アクセス　ニ　ハ *#*#672376372645839#*#* ダイヤル　ポジャル</string>
+    <string name="second_char">セ</string>
     <string name="lang_en">エイゴ</string>
     <string name="lang_ja">ニホンゴ</string>
     <string name="lang_ru">ルソゴ</string>

@@ -28,13 +28,14 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.security.MessageDigest
+import java.security.SecureRandom
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.typeOf
 import android.content.pm.PackageManager
-import java.util.*
 import dev.mr2.dpc.SP
+import kotlin.io.encoding.Base64
 
 var CJK = true
 
@@ -77,8 +78,8 @@ fun formatFileSize(bytes: Long): String {
 val Boolean.yesOrNo
     @StringRes get() = if (this) R.string.yes else R.string.no
 
-fun formatTime(ms: Long): String {
-    return SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault()).format(Date(ms))
+fun formatDate(ms: Long): String {
+    return formatDate(Date(ms))
 }
 fun formatDate(date: Date): String {
     return SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault()).format(date)
@@ -101,6 +102,12 @@ fun exportLogs(context: Context, uri: Uri) {
 }
 
 val HorizontalPadding = 16.dp
+
+@OptIn(ExperimentalStdlibApi::class)
+fun String.hash(): String {
+    val md = MessageDigest.getInstance("SHA-512")
+    return md.digest(this.encodeToByteArray()).toHexString()
+}
 
 val MyAdminComponent = ComponentName.unflattenFromString("dev.mr2.dpc/.Receiver")!!
 
@@ -189,3 +196,9 @@ var Context.isLauncherVisible: Boolean
             PackageManager.DONT_KILL_APP
         )
     }
+
+fun generateBase64Key(length: Int): String {
+    val ba = ByteArray(length)
+    SecureRandom().nextBytes(ba)
+    return Base64.withPadding(Base64.PaddingOption.ABSENT).encode(ba)
+}

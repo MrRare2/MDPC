@@ -707,6 +707,10 @@
     <string name="show_launcher_icon">在应用列表中显示</string>
     <string name="info_hiding_launcher_icon">要再次访问此应用，请拨打*#*#672376372645839#*#*</string>
     <string name="info_language_reload">语言切换将在应用重启后生效。是否重启应用？</string>
+    <string name="user_restriction_tip">长按一个条目以创建快捷方式</string>
+    <string name="api_shared_response">共享API响应</string>
+    <string name="project_fork_homepage">分叉主页</string>
+    <string name="second_char">秒</string>
     <string name="color_scheme">配色方案</string>
     <string name="color_blue">初音蓝</string>
     <string name="color_red">重音红</string>

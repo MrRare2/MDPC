@@ -117,9 +117,9 @@ class DhizukuActivity : ComponentActivity() {
                         Text("$label\n($packageName)")
                     },
                     confirmButton = {
-                        var time by remember { mutableIntStateOf(3) }
+                        var time by remember { mutableIntStateOf(5) }
                         LaunchedEffect(Unit) {
-                            for (i in 2 downTo 0) {
+                            for (i in 4 downTo 0) {
                                 delay(1000)
                                 time = i
                             }
@@ -131,7 +131,7 @@ class DhizukuActivity : ComponentActivity() {
                                 appLockDialog = true
                             }
                         }, enabled = time == 0) {
-                            val append = if (time > 0) " (${time}s)" else ""
+                            val append = if (time > 0) " (${time}${stringResource(R.string.second_char)})" else ""
                             Text(stringResource(R.string.allow) + append)
                         }
                     },

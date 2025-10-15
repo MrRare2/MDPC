@@ -60,6 +60,7 @@ import dev.mr2.dpc.MyViewModel
 import dev.mr2.dpc.Privilege
 import dev.mr2.dpc.R
 import dev.mr2.dpc.SP
+import dev.mr2.dpc.generateBase64Key
 import dev.mr2.dpc.popToast
 import dev.mr2.dpc.showOperationResultToast
 import dev.mr2.dpc.ui.CheckBoxItem
@@ -255,7 +256,12 @@ fun ResetPasswordTokenScreen(
         OutlinedTextField(
             token, { token = it }, Modifier.fillMaxWidth(),
             label = { Text(stringResource(R.string.token)) },
-            supportingText = { Text("${token.length}/32") }
+            supportingText = { Text("${token.length}/32") },
+            trailingIcon = {
+                IconButton({ token = generateBase64Key(24) }) {
+                    Icon(painterResource(R.drawable.casino_fill0), null)
+                }
+            }
         )
         Button(
             onClick = {
@@ -270,7 +276,12 @@ fun ResetPasswordTokenScreen(
         }
         if (state.set && !state.active) Button(
             onClick = {
-                getIntent()?.let { launcher.launch(it) }
+                val intent = getIntent()
+                if (intent == null) {
+                    context.showOperationResultToast(false)
+                } else {
+                    launcher.launch(intent)
+                }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -318,7 +329,7 @@ fun ResetPasswordScreen(resetPassword: (String, String, Int) -> Boolean, onNavig
             visualTransformation = if (hidePassword) PasswordVisualTransformation() else VisualTransformation.None,
             trailingIcon = {
                 IconButton(onClick = { hidePassword = !hidePassword }) {
-                    Icon(painter = painterResource(if (hidePassword) R.drawable.visibility_fill0 else R.drawable.visibility_off_fill0), contentDescription = "Show/hide password")
+                    Icon(painter = painterResource(if (hidePassword) R.drawable.visibility_fill0 else R.drawable.visibility_off_fill0), null)
                 }
             }
         )
@@ -330,7 +341,7 @@ fun ResetPasswordScreen(resetPassword: (String, String, Int) -> Boolean, onNavig
             visualTransformation = if (hideConfirmPassword) PasswordVisualTransformation() else VisualTransformation.None,
             trailingIcon = {
                 IconButton(onClick = { hideConfirmPassword = !hideConfirmPassword }) {
-                    Icon(painter = painterResource(if (hideConfirmPassword) R.drawable.visibility_fill0 else R.drawable.visibility_off_fill0), contentDescription = "Show/hide password")
+                    Icon(painter = painterResource(if (hideConfirmPassword) R.drawable.visibility_fill0 else R.drawable.visibility_off_fill0), null)
                 }
             }
         )

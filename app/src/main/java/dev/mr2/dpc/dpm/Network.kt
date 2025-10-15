@@ -70,7 +70,6 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -117,7 +116,7 @@ import dev.mr2.dpc.MyViewModel
 import dev.mr2.dpc.Privilege
 import dev.mr2.dpc.R
 import dev.mr2.dpc.formatFileSize
-import dev.mr2.dpc.formatTime
+import dev.mr2.dpc.formatDate
 import dev.mr2.dpc.popToast
 import dev.mr2.dpc.showOperationResultToast
 import dev.mr2.dpc.ui.ErrorDialog
@@ -513,7 +512,7 @@ fun UpdateNetworkScreen(info: WifiInfo, setNetwork: (WifiInfo) -> Boolean, onNav
             TopAppBar(
                 { Text(stringResource(R.string.update_network)) },
                 navigationIcon = { NavIcon(onNavigateUp) },
-                colors = TopAppBarDefaults.topAppBarColors(colorScheme.surfaceContainer)
+                colors = TopAppBarDefaults.topAppBarColors(MaterialTheme.colorScheme.surfaceContainer)
             )
         },
         contentWindowInsets = WindowInsets.ime
@@ -660,7 +659,7 @@ private fun AddNetworkScreen(
                 label = { Text(stringResource(R.string.password)) },
                 trailingIcon = {
                     IconButton(onClick = { hidePassword = !hidePassword }) {
-                        Icon(painter = painterResource(if (hidePassword) R.drawable.visibility_fill0 else R.drawable.visibility_off_fill0), contentDescription = "Show/hide password")
+                        Icon(painter = painterResource(if (hidePassword) R.drawable.visibility_fill0 else R.drawable.visibility_off_fill0), null)
                     }
                 }
             )
@@ -797,13 +796,13 @@ private fun AddNetworkScreen(
                 val result = setNetwork(WifiInfo(
                     -1, ssid, hiddenSsid, "", macRandomization, status, security, password, ipMode,
                     IpConf(ipAddress, gatewayAddress, dnsServers.lines().filter { it.isNotBlank() }),
-                    proxyMode, ProxyConf(httpProxyHost, httpProxyPort.toInt(), httpProxyExclList.lines().filter { it.isNotBlank() })
+                    proxyMode, ProxyConf(httpProxyHost, try { httpProxyPort.toInt() } catch (_: NumberFormatException) { 0 }, httpProxyExclList.lines().filter { it.isNotBlank() })
                 ))
                 context.showOperationResultToast(result)
                 if (result) onNavigateUp()
             },
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-            enabled = ((security != WifiSecurity.Psk || password.isNotEmpty()) &&
+            enabled = (ssid.isNotBlank() && (security != WifiSecurity.Psk || password.isNotEmpty()) &&
                 (ipMode != IpMode.Static || (ipAddress.isNotEmpty() &&
                 gatewayAddress.isNotEmpty() &&
                 dnsServers.isNotEmpty())) &&
@@ -1062,14 +1061,14 @@ fun NetworkStatsScreen(
             }
         }
         OutlinedTextField(
-            value = startTime.let { if (it == -1L) "" else formatTime(it) }, onValueChange = {}, readOnly = true,
+            value = startTime.let { if (it == -1L) "" else formatDate(it) }, onValueChange = {}, readOnly = true,
             label = { Text(stringResource(R.string.start_time)) },
             interactionSource = startTimeIs,
             isError = startTime >= endTime,
             modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
         )
         OutlinedTextField(
-            value = formatTime(endTime), onValueChange = {}, readOnly = true,
+            value = formatDate(endTime), onValueChange = {}, readOnly = true,
             label = { Text(stringResource(R.string.end_time)) },
             interactionSource = endTimeIs,
             isError = startTime >= endTime,
@@ -1308,7 +1307,7 @@ fun NetworkStatsViewerScreen(
         HorizontalPager(ps, Modifier.padding(top = 8.dp)) { page ->
             val item = data[index]
             Column(Modifier.fillMaxWidth().padding(horizontal = HorizontalPadding)) {
-                Text(formatTime(item.startTime) + "\n~\n" + formatTime(item.endTime),
+                Text(formatDate(item.startTime) + "\n~\n" + formatDate(item.endTime),
                     Modifier.align(Alignment.CenterHorizontally), textAlign = TextAlign.Center)
                 Spacer(Modifier.height(5.dp))
                 val txBytes = item.txBytes
@@ -1362,12 +1361,11 @@ fun NetworkStatsViewerScreen(
 
 @RequiresApi(29)
 enum class PrivateDnsMode(val id: Int, val text: Int) {
-    Off(DevicePolicyManager.PRIVATE_DNS_MODE_OFF, R.string.off),
     Opportunistic(DevicePolicyManager.PRIVATE_DNS_MODE_OPPORTUNISTIC, R.string.automatic),
     Host(DevicePolicyManager.PRIVATE_DNS_MODE_PROVIDER_HOSTNAME, R.string.enabled)
 }
 
-data class PrivateDnsConfiguration(val mode: PrivateDnsMode, val host: String)
+data class PrivateDnsConfiguration(val mode: PrivateDnsMode?, val host: String)
 
 @Serializable object PrivateDns
 
@@ -1379,7 +1377,7 @@ fun PrivateDnsScreen(
 ) {
     val context = LocalContext.current
     val focusMgr = LocalFocusManager.current
-    var mode by remember { mutableStateOf(PrivateDnsMode.Opportunistic) }
+    var mode by remember { mutableStateOf<PrivateDnsMode?>(PrivateDnsMode.Opportunistic) }
     var inputHost by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
         val conf = getPrivateDns()
@@ -1388,7 +1386,7 @@ fun PrivateDnsScreen(
     }
     MyScaffold(R.string.private_dns, onNavigateUp, 0.dp) {
         PrivateDnsMode.entries.forEach {
-            FullWidthRadioButtonItem(it.text, mode == it, it.id != DevicePolicyManager.PRIVATE_DNS_MODE_OFF) { mode = it }
+            FullWidthRadioButtonItem(it.text, mode == it) { mode = it }
         }
         if (mode == PrivateDnsMode.Host) OutlinedTextField(
             inputHost, { inputHost=it }, Modifier.fillMaxWidth().padding(HorizontalPadding, 4.dp),
@@ -1403,7 +1401,7 @@ fun PrivateDnsScreen(
                 context.showOperationResultToast(result)
             },
             modifier = Modifier.fillMaxWidth().padding(horizontal = HorizontalPadding),
-            enabled = if (mode == PrivateDnsMode.Host) inputHost.isNotEmpty() else true
+            enabled = if (mode == PrivateDnsMode.Host) inputHost.isNotEmpty() else if (mode == null) false else true
         ) {
             Text(stringResource(R.string.apply))
         }

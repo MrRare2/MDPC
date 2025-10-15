@@ -291,14 +291,14 @@ fun WorkModesScreen(
             title = { Text(stringResource(R.string.deactivate)) },
             text = { Text(stringResource(R.string.info_deactivate)) },
             confirmButton = {
-                var time by remember { mutableIntStateOf(3) }
+                var time by remember { mutableIntStateOf(15) }
                 LaunchedEffect(Unit) {
-                    for (i in (0..15).reversed()) {
+                    for (i in (0..14).reversed()) {
                         delay(1000)
                         time = i
                     }
                 }
-                val timeText = if (time != 0) " (${time}s)" else ""
+                val timeText = if (time != 0) " (${time}${stringResource(R.string.second_char)})" else ""
                 TextButton(
                     {
                         if (privilege.dhizuku) {
