@@ -603,7 +603,7 @@ fun AddDelegatedAdminScreen(
                 onNavigateUp()
             },
             modifier = Modifier.fillMaxWidth().padding(HorizontalPadding, vertical = 4.dp),
-            enabled = input.isNotBlank() && (!updateMode || scopes.toList() != data.scopes)
+            enabled = (if (updateMode) input.isNotBlank() && scopes.toList() != data.scopes else input.isNotBlank()) && scopes.isNotEmpty()
         ) {
             Text(stringResource(if (updateMode) R.string.update else R.string.add))
         }

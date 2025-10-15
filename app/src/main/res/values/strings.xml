@@ -37,7 +37,6 @@
     <string name="time_unit_ms">Time(ms)</string>
     <string name="length">Length</string>
     <string name="none">None</string>
-    <string name="no_logs">No logs</string>
     <string name="default_stringres">Default</string>
     <string name="apply">Apply</string>
     <string name="decide_by_user">Decide by user</string>
@@ -751,6 +750,8 @@
     <string name="info_language_reload">Language switch applies on app restart. Restart app?</string>
     <string name="user_restriction_tip">Long press an item to create a shortcut</string>
     <string name="second_char">s</string>
+    <string name="security_logs_collected">Security logs collected</string>
+    <string name="n_logs_in_total">%1$d logs in total</string>
 
     <!-- languages -->
     <string name="lang_en">English</string>

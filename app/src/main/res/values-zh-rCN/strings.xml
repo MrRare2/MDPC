@@ -711,6 +711,8 @@
     <string name="api_shared_response">共享API响应</string>
     <string name="project_fork_homepage">分叉主页</string>
     <string name="second_char">秒</string>
+    <string name="security_logs_collected">安全日志已收集</string>
+    <string name="n_logs_in_total">总共 %1$d 条日志</string>
     <string name="color_scheme">配色方案</string>
     <string name="color_blue">初音蓝</string>
     <string name="color_red">重音红</string>

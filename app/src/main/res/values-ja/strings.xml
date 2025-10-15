@@ -727,6 +727,8 @@
     <string name="info_language_reload">言語の切り替えはアプリの再起動後に適用されます。アプリを再起動しますか？</string>
     <string name="user_restriction_tip">項目を長押ししてショートカットを作成します</string>
     <string name="second_char">秒</string>
+    <string name="security_logs_collected">収集されたセキュリティログ</string>
+    <string name="n_logs_in_total">合計%1$d件のログ</string>
 
     <string name="color_scheme">カラー設定</string>
     <string name="color_blue">ミクブルー</string>
