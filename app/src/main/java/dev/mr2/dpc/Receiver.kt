@@ -11,12 +11,9 @@ import android.os.Build.VERSION
 import android.os.UserHandle
 import android.os.UserManager
 import androidx.core.app.NotificationCompat
-import dev.mr2.dpc.dpm.handleNetworkLogs
 import dev.mr2.dpc.dpm.handlePrivilegeChange
+import dev.mr2.dpc.dpm.retrieveNetworkLogs
 import dev.mr2.dpc.dpm.retrieveSecurityLogs
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class Receiver : DeviceAdminReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -49,9 +46,7 @@ class Receiver : DeviceAdminReceiver() {
     override fun onNetworkLogsAvailable(context: Context, intent: Intent, batchToken: Long, networkLogsCount: Int) {
         super.onNetworkLogsAvailable(context, intent, batchToken, networkLogsCount)
         if (VERSION.SDK_INT >= 26) {
-            CoroutineScope(Dispatchers.IO).launch {
-                handleNetworkLogs(context, batchToken)
-            }
+            retrieveNetworkLogs(context.applicationContext as MyApplication, batchToken)
         }
     }
 
@@ -108,6 +103,10 @@ class Receiver : DeviceAdminReceiver() {
     override fun onUserRemoved(context: Context, intent: Intent, removedUser: UserHandle) {
         super.onUserRemoved(context, intent, removedUser)
         sendUserRelatedNotification(context, removedUser, NotificationType.UserRemoved)
+        val um = context.getSystemService(Context.USER_SERVICE) as UserManager
+        ShortcutUtils.deleteUserOperationShortcut(
+            context, um.getSerialNumberForUser(removedUser).toInt()
+        )
     }
 
     override fun onBugreportShared(context: Context, intent: Intent, hash: String) {

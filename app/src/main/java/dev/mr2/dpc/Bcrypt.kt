@@ -4,10 +4,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.mindrot.jbcrypt.BCrypt
 
-suspend fun hashPassword(password: String?): String =
-    withContext(Dispatchers.Default) {
-        BCrypt.hashpw(password ?: "", BCrypt.gensalt())
-    }
+fun hashPassword(password: String?): String =
+    BCrypt.hashpw(password ?: "", BCrypt.gensalt())
 
 suspend fun verifyPassword(password: String?, hashed: String?): Boolean =
     withContext(Dispatchers.Default) {

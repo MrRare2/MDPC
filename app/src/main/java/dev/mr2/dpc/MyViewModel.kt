@@ -91,12 +91,15 @@ import dev.mr2.dpc.dpm.SsidPolicy
 import dev.mr2.dpc.dpm.SsidPolicyType
 import dev.mr2.dpc.dpm.SystemOptionsStatus
 import dev.mr2.dpc.dpm.SystemUpdatePolicyInfo
+import dev.mr2.dpc.dpm.UserIdentifier
 import dev.mr2.dpc.dpm.UserInformation
+import dev.mr2.dpc.dpm.UserOperationType
 import dev.mr2.dpc.dpm.WifiInfo
 import dev.mr2.dpc.dpm.WifiSecurity
 import dev.mr2.dpc.dpm.WifiStatus
 import dev.mr2.dpc.dpm.activateOrgProfileCommand
 import dev.mr2.dpc.dpm.delegatedScopesList
+import dev.mr2.dpc.dpm.doUserOperationWithContext
 import dev.mr2.dpc.dpm.getPackageInstaller
 import dev.mr2.dpc.dpm.handlePrivilegeChange
 import dev.mr2.dpc.dpm.isValidPackageName
@@ -154,7 +157,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
         SP.lockPasswordHash = if (config.password == null) {
             ""
         } else {
-            config.password.hash()
+            hashPassword(config.password)
         }
         SP.biometricsUnlock = config.biometrics
         SP.lockWhenLeaving = config.whenLeaving
@@ -165,24 +168,16 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     fun setApiKey(key: String) {
         SP.apiKeyHash = if (key.isEmpty()) "" else key.hash()
     }
-    fun getEnabledNotifications(): List<NotificationType> {
-        val ids = SP.notifications
-            ?.split(',')
-            ?.mapNotNull { it.trim().toIntOrNull() }
-            ?.toSet()
-            ?: emptySet()
-        return NotificationType.entries.filter { it.id in ids }
+    val enabledNotifications = MutableStateFlow(emptyList<Int>())
+    fun getEnabledNotifications() {
+        val list = SP.notifications?.split(',')?.mapNotNull { it.toIntOrNull() }
+        enabledNotifications.value = list ?: NotificationType.entries.map { it.id }
     }
     fun setNotificationEnabled(type: NotificationType, enabled: Boolean) {
-        val currentList = SP.notifications
-            ?.split(',')
-            ?.mapNotNull { it.trim().toIntOrNull() }
-            ?.toSet()
-            ?: emptySet()
-
-        val updatedList = if (enabled) currentList + type.id else currentList - type.id
-
-        SP.notifications = updatedList.joinToString(",")
+        enabledNotifications.update { list ->
+            if (enabled) list.plus(type.id) else list.minus(type.id)
+        }
+        SP.notifications = enabledNotifications.value.joinToString(",") { it.toString() }
     }
     fun getLanguage(): String? {
         return SP.language
@@ -295,7 +290,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     fun getPackagePermissions(name: String) {
         if (name.isValidPackageName) {
             packagePermissions.value = runtimePermissions.associate {
-                it.permission to DPM.getPermissionGrantState(DAR, name, it.permission)
+                it.id to DPM.getPermissionGrantState(DAR, name, it.id)
             }
 	} else {
             packagePermissions.value = emptyMap()
@@ -1087,6 +1082,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
                 Dhizuku.requestPermission(object : DhizukuRequestPermissionListener() {
                     override fun onRequestPermission(grantResult: Int) {
                         if (grantResult == PackageManager.PERMISSION_GRANTED) onSucceed()
+                        else callback(false, application.getString(R.string.dhizuku_permission_not_granted))
                     }
                 })
             }
@@ -1282,35 +1278,28 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
             UM.getSerialNumberForUser(uh)
         )
     }
+    @Suppress("PrivateApi")
     @RequiresApi(28)
-    fun startUser(id: Int, isUserId: Boolean): Int {
-        val uh = getUserHandle(id, isUserId)
-        if (uh == null) return R.string.user_not_exist
-        return getUserOperationResultText(DPM.startUserInBackground(DAR, uh))
+    fun getUserIdentifiers(): List<UserIdentifier> {
+        return DPM.getSecondaryUsers(DAR)?.mapNotNull {
+            try {
+                val field = UserHandle::class.java.getDeclaredField("mHandle")
+                field.isAccessible = true
+                UserIdentifier(field.get(it) as Int, UM.getSerialNumberForUser(it))
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        } ?: emptyList()
     }
-    fun switchUser(id: Int, isUserId: Boolean): Boolean {
-        val uh = getUserHandle(id, isUserId)
-        if (uh == null) return false
-        DPM.switchUser(DAR, uh)
-        return true
+    fun doUserOperation(type: UserOperationType, id: Int, isUserId: Boolean): Boolean {
+        return doUserOperationWithContext(application, type, id, isUserId)
     }
-    @RequiresApi(28)
-    fun stopUser(id: Int, isUserId: Boolean): Int {
-        val uh = getUserHandle(id, isUserId)
-        if (uh == null) return R.string.user_not_exist
-        return getUserOperationResultText(DPM.stopUser(DAR, uh))
-    }
-    fun deleteUser(id: Int, isUserId: Boolean): Boolean {
-        val uh = getUserHandle(id, isUserId)
-        if (uh == null) return false
-        return DPM.removeUser(DAR, uh)
-    }
-    fun getUserHandle(id: Int, isUserId: Boolean): UserHandle? {
-        return if (isUserId && VERSION.SDK_INT >= 24) {
-            UserHandle.getUserHandleForUid(id * 100000)
-        } else {
-            UM.getUserForSerialNumber(id.toLong())
-        }
+    fun createUserOperationShortcut(type: UserOperationType, id: Int, isUserId: Boolean): Boolean {
+        val serial = if (isUserId && VERSION.SDK_INT >= 24) {
+            UM.getSerialNumberForUser(UserHandle.getUserHandleForUid(id * 100000))
+        } else id
+        return ShortcutUtils.setUserOperationShortcut(application, type, serial.toInt())
     }
     fun getUserOperationResultText(code: Int): Int {
         return when (code) {
@@ -1359,10 +1348,6 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     @RequiresApi(23)
     fun setUserIcon(bitmap: Bitmap) {
         DPM.setUserIcon(DAR, bitmap)
-    }
-    @RequiresApi(28)
-    fun getSecondaryUsers(): List<Long> {
-        return DPM.getSecondaryUsers(DAR).map { UM.getSerialNumberForUser(it) }
     }
     @RequiresApi(28)
     fun getUserSessionMessages(): Pair<String, String> {
@@ -1897,6 +1882,30 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
             stream.close()
             withContext(Dispatchers.Main) { callback() }
         }
+    }
+
+    // network logs
+    @RequiresApi(26)
+    fun getNetworkLoggingEnabled(): Boolean {
+        return DPM.isNetworkLoggingEnabled(DAR)
+    }
+    @RequiresApi(26)
+    fun setNetworkLoggingEnabled(enabled: Boolean) {
+        DPM.setNetworkLoggingEnabled(DAR, enabled)
+    }
+    fun getNetworkLogsCount(): Int {
+        return myRepo.getNetworkLogsCount().toInt()
+    }
+    fun exportNetworkLogs(uri: Uri, callback: () -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            application.contentResolver.openOutputStream(uri)?.use {
+                myRepo.exportNetworkLogs(it)
+            }
+            withContext(Dispatchers.Main) { callback() }
+        }
+    }
+    fun deleteNetworkLogs() {
+        myRepo.deleteNetworkLogs()
     }
 }
 

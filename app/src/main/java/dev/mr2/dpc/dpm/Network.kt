@@ -10,6 +10,7 @@ import android.app.admin.DevicePolicyManager.WIFI_SECURITY_PERSONAL
 import android.app.admin.WifiSsidPolicy
 import android.app.usage.NetworkStats
 import android.net.ConnectivityManager
+import android.net.Uri
 import android.net.wifi.WifiConfiguration
 import android.os.Build.VERSION
 import android.provider.Telephony
@@ -24,18 +25,14 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -65,6 +62,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -111,16 +109,19 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.mr2.dpc.BottomPadding
 import dev.mr2.dpc.HorizontalPadding
 import dev.mr2.dpc.MyViewModel
 import dev.mr2.dpc.Privilege
 import dev.mr2.dpc.R
-import dev.mr2.dpc.formatFileSize
+import dev.mr2.dpc.adaptiveInsets
+import dev.mr2.dpc.clickableTextField
 import dev.mr2.dpc.formatDate
+import dev.mr2.dpc.formatFileSize
 import dev.mr2.dpc.popToast
 import dev.mr2.dpc.showOperationResultToast
+import dev.mr2.dpc.ui.CircularProgressDialog
 import dev.mr2.dpc.ui.ErrorDialog
-import dev.mr2.dpc.ui.ExpandExposedTextFieldIcon
 import dev.mr2.dpc.ui.FullWidthCheckBoxItem
 import dev.mr2.dpc.ui.FullWidthRadioButtonItem
 import dev.mr2.dpc.ui.FunctionItem
@@ -139,6 +140,9 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Serializable object Network
 
@@ -183,8 +187,8 @@ fun NetworkOptionsScreen(
     getLanEnabled: () -> Boolean, setLanEnabled: (Boolean) -> Unit, onNavigateUp: () -> Unit
 ) {
     val privilege by Privilege.status.collectAsStateWithLifecycle()
-    var dialog by remember { mutableIntStateOf(0) }
-    var lanEnabled by remember { mutableStateOf(getLanEnabled()) }
+    var dialog by rememberSaveable { mutableIntStateOf(0) }
+    var lanEnabled by rememberSaveable { mutableStateOf(getLanEnabled()) }
     MyScaffold(R.string.options, onNavigateUp, 0.dp) {
         if (VERSION.SDK_INT >= 30 && (privilege.device || privilege.org)) {
             SwitchItem(R.string.lockdown_admin_configured_network, icon = R.drawable.wifi_password_fill0,
@@ -226,7 +230,7 @@ fun WifiScreen(
                 colors = TopAppBarDefaults.topAppBarColors(MaterialTheme.colorScheme.surfaceContainer)
             )
         },
-        contentWindowInsets = WindowInsets.ime
+        contentWindowInsets = adaptiveInsets()
     ) { paddingValues ->
         Column(
             modifier = Modifier.fillMaxSize().padding(paddingValues)
@@ -268,7 +272,7 @@ fun WifiOverviewScreen(
 ) {
     val context = LocalContext.current
     val privilege by Privilege.status.collectAsStateWithLifecycle()
-    var macDialog by remember { mutableStateOf(false) }
+    var macDialog by rememberSaveable { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
         Spacer(Modifier.height(10.dp))
         Row(
@@ -386,7 +390,7 @@ private fun SavedNetworks(
     removeNetwork: (Int) -> Boolean, editNetwork: (Int) -> Unit
 ) {
     val context = LocalContext.current
-    var dialog by remember { mutableIntStateOf(-1) }
+    var dialog by rememberSaveable { mutableIntStateOf(-1) }
     val list by configuredNetworks.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
         getConfiguredNetworks()
@@ -515,7 +519,7 @@ fun UpdateNetworkScreen(info: WifiInfo, setNetwork: (WifiInfo) -> Boolean, onNav
                 colors = TopAppBarDefaults.topAppBarColors(MaterialTheme.colorScheme.surfaceContainer)
             )
         },
-        contentWindowInsets = WindowInsets.ime
+        contentWindowInsets = adaptiveInsets()
     ) { paddingValues ->
         Column(
             modifier = Modifier.fillMaxSize().padding(paddingValues)
@@ -539,22 +543,22 @@ private fun AddNetworkScreen(
     val context = LocalContext.current
     val fm = LocalFocusManager.current
     /** 0: None, 1:Status, 2:Security, 3:MAC randomization, 4:Static IP, 5:Proxy, 6:Hidden SSID */
-    var menu by remember { mutableIntStateOf(0) }
-    var status by remember { mutableStateOf(WifiStatus.Enabled) }
-    var ssid by remember { mutableStateOf("") }
-    var hiddenSsid by remember { mutableStateOf<Boolean?>(false) }
-    var security by remember { mutableStateOf<WifiSecurity?>(WifiSecurity.Open) }
-    var password by remember { mutableStateOf("") }
-    var macRandomization by remember { mutableStateOf<WifiMacRandomization?>(WifiMacRandomization.None) }
-    var ipMode by remember { mutableStateOf<IpMode?>(IpMode.Dhcp) }
-    var ipAddress by remember { mutableStateOf("") }
-    var gatewayAddress by remember { mutableStateOf("") }
-    var dnsServers by remember { mutableStateOf("") }
-    var proxyMode by remember { mutableStateOf<ProxyMode?>(ProxyMode.None) }
-    var httpProxyHost by remember { mutableStateOf("") }
-    var httpProxyPort by remember { mutableStateOf("") }
-    var httpProxyExclList by remember { mutableStateOf("") }
-    var hidePassword by remember { mutableStateOf(true) }
+    var menu by rememberSaveable { mutableIntStateOf(0) }
+    var status by rememberSaveable { mutableStateOf(WifiStatus.Enabled) }
+    var ssid by rememberSaveable { mutableStateOf("") }
+    var hiddenSsid by rememberSaveable { mutableStateOf<Boolean?>(false) }
+    var security by rememberSaveable { mutableStateOf<WifiSecurity?>(WifiSecurity.Open) }
+    var password by rememberSaveable { mutableStateOf("") }
+    var macRandomization by rememberSaveable { mutableStateOf<WifiMacRandomization?>(WifiMacRandomization.None) }
+    var ipMode by rememberSaveable { mutableStateOf<IpMode?>(IpMode.Dhcp) }
+    var ipAddress by rememberSaveable { mutableStateOf("") }
+    var gatewayAddress by rememberSaveable { mutableStateOf("") }
+    var dnsServers by rememberSaveable { mutableStateOf("") }
+    var proxyMode by rememberSaveable { mutableStateOf<ProxyMode?>(ProxyMode.None) }
+    var httpProxyHost by rememberSaveable { mutableStateOf("") }
+    var httpProxyPort by rememberSaveable { mutableStateOf("") }
+    var httpProxyExclList by rememberSaveable { mutableStateOf("") }
+    var hidePassword by rememberSaveable { mutableStateOf(true) }
     LaunchedEffect(Unit) {
         if (updating) {
             hiddenSsid = null
@@ -578,7 +582,7 @@ private fun AddNetworkScreen(
                 Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                 readOnly = true,
                 label = { Text(stringResource(R.string.status)) },
-                trailingIcon = { ExpandExposedTextFieldIcon(menu == 1) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(menu == 1) },
             )
             ExposedDropdownMenu(menu == 1, { menu = 0 }) {
                 WifiStatus.entries.forEach {
@@ -603,7 +607,7 @@ private fun AddNetworkScreen(
                 stringResource(hiddenSsid?.yesOrNo ?: R.string.unchanged), {},
                 Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                 readOnly = true, label = { Text(stringResource(R.string.hidden_ssid)) },
-                trailingIcon = { ExpandExposedTextFieldIcon(menu == 1) }
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(menu == 1) }
             )
             DropdownMenu(menu == 6, { menu = 0 }) {
                 if (updating) DropdownMenuItem(
@@ -636,7 +640,7 @@ private fun AddNetworkScreen(
                 stringResource(security?.text ?: R.string.unchanged), {},
                 Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                 readOnly = true, label = { Text(stringResource(R.string.security)) },
-                trailingIcon = { ExpandExposedTextFieldIcon(menu == 1) }
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(menu == 1) }
             )
             ExposedDropdownMenu(menu == 2, { menu = 0 }) {
                 if (updating) UnchangedMenuItem { security = null }
@@ -672,7 +676,7 @@ private fun AddNetworkScreen(
                     stringResource(macRandomization?.text ?: R.string.unchanged), {},
                     Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                     readOnly = true, label = { Text(stringResource(R.string.mac_randomization)) },
-                    trailingIcon = { ExpandExposedTextFieldIcon(menu == 3) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(menu == 3) },
                 )
                 ExposedDropdownMenu(menu == 3, { menu = 0 }) {
                     if (updating) UnchangedMenuItem { macRandomization = null }
@@ -696,7 +700,7 @@ private fun AddNetworkScreen(
                     stringResource(ipMode?.text ?: R.string.unchanged), {},
                     Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                     readOnly = true, label = { Text(stringResource(R.string.ip_settings)) },
-                    trailingIcon = { ExpandExposedTextFieldIcon(menu == 4) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(menu == 4) },
                 )
                 ExposedDropdownMenu(menu == 4, { menu = 0 }) {
                     if (updating) UnchangedMenuItem { ipMode = null }
@@ -747,7 +751,7 @@ private fun AddNetworkScreen(
                     stringResource(proxyMode?.text ?: R.string.unchanged), {},
                     Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                     readOnly = true, label = { Text(stringResource(R.string.proxy)) },
-                    trailingIcon = { ExpandExposedTextFieldIcon(menu == 5) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(menu == 5) },
                 )
                 ExposedDropdownMenu(menu == 5, { menu = 0 }) {
                     if (updating) UnchangedMenuItem { proxyMode = null }
@@ -811,7 +815,7 @@ private fun AddNetworkScreen(
         ) {
             Text(stringResource(if (updating) R.string.update else R.string.add))
         }
-        Spacer(Modifier.height(40.dp))
+        Spacer(Modifier.height(BottomPadding))
     }
 }
 
@@ -823,7 +827,7 @@ fun WifiSecurityLevelScreen(
     getLevel: () -> Int, setLevel: (Int) -> Unit, onNavigateUp: () -> Unit
 ) {
     val context = LocalContext.current
-    var level by remember { mutableIntStateOf(getLevel()) }
+    var level by rememberSaveable { mutableIntStateOf(getLevel()) }
     MyScaffold(R.string.min_wifi_security_level, onNavigateUp, 0.dp) {
         FullWidthRadioButtonItem(R.string.wifi_security_open, level == WIFI_SECURITY_OPEN) { level = WIFI_SECURITY_OPEN }
         FullWidthRadioButtonItem("WEP, WPA(2)-PSK", level == WIFI_SECURITY_PERSONAL) { level = WIFI_SECURITY_PERSONAL }
@@ -861,8 +865,8 @@ fun WifiSsidPolicyScreen(
     val context = LocalContext.current
     val focusMgr = LocalFocusManager.current
     MyScaffold(R.string.wifi_ssid_policy, onNavigateUp, 0.dp) {
-        var type by remember { mutableStateOf(SsidPolicyType.None) }
-        val list = remember { mutableStateListOf<String>() }
+        var type by rememberSaveable { mutableStateOf(SsidPolicyType.None) }
+        val list = rememberSaveable { mutableStateListOf<String>() }
         LaunchedEffect(Unit) {
             getPolicy().let {
                 type = it.type
@@ -975,11 +979,7 @@ fun NetworkStatsScreen(
     var uid by rememberSaveable { mutableIntStateOf(NetworkStats.Bucket.UID_ALL) }
     var tag by rememberSaveable { mutableIntStateOf(NetworkStats.Bucket.TAG_NONE) }
     var state by rememberSaveable { mutableStateOf(NetworkStatsState.All) }
-    val startTimeIs = remember { MutableInteractionSource() }
-    val endTimeIs = remember { MutableInteractionSource() }
-    if (startTimeIs.collectIsPressedAsState().value) menu = NetworkStatsMenu.StartTime
-    if (endTimeIs.collectIsPressedAsState().value) menu = NetworkStatsMenu.EndTime
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
     MyScaffold(R.string.network_stats, onNavigateUp) {
         ExposedDropdownMenuBox(
             menu == NetworkStatsMenu.Type,
@@ -990,7 +990,9 @@ fun NetworkStatsScreen(
                 stringResource(type.text), {},
                 Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                 readOnly = true, label = { Text(stringResource(R.string.type)) },
-                trailingIcon = { ExpandExposedTextFieldIcon(menu == NetworkStatsMenu.Type) }
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(menu == NetworkStatsMenu.Type)
+                }
             )
             ExposedDropdownMenu(
                 menu == NetworkStatsMenu.Type, { menu = NetworkStatsMenu.None }
@@ -1010,14 +1012,16 @@ fun NetworkStatsScreen(
         }
         ExposedDropdownMenuBox(
             menu == NetworkStatsMenu.Target,
-            { menu = if (it) NetworkStatsMenu.Target else NetworkStatsMenu.None },
+            { menu = if(it) NetworkStatsMenu.Target else NetworkStatsMenu.None },
             Modifier.padding(bottom = 4.dp)
         ) {
             OutlinedTextField(
                 stringResource(target.text), {},
                 Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                 readOnly = true, label = { Text(stringResource(R.string.target)) },
-                trailingIcon = { ExpandExposedTextFieldIcon(menu == NetworkStatsMenu.Target) }
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(menu == NetworkStatsMenu.Target)
+                }
             )
             ExposedDropdownMenu(
                 menu == NetworkStatsMenu.Target, { menu = NetworkStatsMenu.None }
@@ -1037,14 +1041,16 @@ fun NetworkStatsScreen(
         }
         ExposedDropdownMenuBox(
             menu == NetworkStatsMenu.NetworkType,
-            { menu = if (it) NetworkStatsMenu.NetworkType else NetworkStatsMenu.None },
+            { menu = if(it) NetworkStatsMenu.NetworkType else NetworkStatsMenu.None },
             Modifier.padding(bottom = 4.dp)
         ) {
             OutlinedTextField(
                 stringResource(networkType.text), {},
                 Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                 readOnly = true, label = { Text(stringResource(R.string.network_type)) },
-                trailingIcon = { ExpandExposedTextFieldIcon(menu == NetworkStatsMenu.NetworkType) }
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(menu == NetworkStatsMenu.NetworkType)
+                }
             )
             ExposedDropdownMenu(
                 menu == NetworkStatsMenu.NetworkType, { menu = NetworkStatsMenu.None }
@@ -1061,23 +1067,27 @@ fun NetworkStatsScreen(
             }
         }
         OutlinedTextField(
-            value = startTime.let { if (it == -1L) "" else formatDate(it) }, onValueChange = {}, readOnly = true,
-            label = { Text(stringResource(R.string.start_time)) },
-            interactionSource = startTimeIs,
-            isError = startTime >= endTime,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+            formatDate(startTime), {},
+            Modifier
+                .fillMaxWidth()
+                .clickableTextField { menu = NetworkStatsMenu.StartTime }
+                .padding(bottom = 4.dp),
+            readOnly = true, label = { Text(stringResource(R.string.start_time)) },
+            isError = startTime >= endTime
         )
         OutlinedTextField(
-            value = formatDate(endTime), onValueChange = {}, readOnly = true,
-            label = { Text(stringResource(R.string.end_time)) },
-            interactionSource = endTimeIs,
-            isError = startTime >= endTime,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+            formatDate(endTime), {},
+            Modifier
+                .fillMaxWidth()
+                .clickableTextField { menu = NetworkStatsMenu.EndTime }
+                .padding(bottom = 4.dp),
+            readOnly = true, label = { Text(stringResource(R.string.end_time)) },
+            isError = startTime >= endTime
         )
-        if (target == NetworkStatsTarget.Uid || target == NetworkStatsTarget.UidTag || target == NetworkStatsTarget.UidTagState)
+        if(target == NetworkStatsTarget.Uid || target == NetworkStatsTarget.UidTag || target == NetworkStatsTarget.UidTagState)
             ExposedDropdownMenuBox(
             menu == NetworkStatsMenu.Uid,
-            { menu = if (it) NetworkStatsMenu.Uid else NetworkStatsMenu.None }
+            { menu = if(it) NetworkStatsMenu.Uid else NetworkStatsMenu.None }
         ) {
             var uidText by rememberSaveable { mutableStateOf(context.getString(NetworkStatsUID.All.text)) }
             var readOnly by rememberSaveable { mutableStateOf(true) }
@@ -1093,11 +1103,11 @@ fun NetworkStatsScreen(
                     it.toIntOrNull()?.let { num -> uid = num }
                 },
                 readOnly = readOnly, label = { Text(stringResource(R.string.uid)) },
-                trailingIcon = { ExpandExposedTextFieldIcon(menu == NetworkStatsMenu.Uid) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(menu == NetworkStatsMenu.Uid) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 isError = !readOnly && uidText.toIntOrNull() == null,
                 modifier = Modifier
-                    .menuAnchor(if (readOnly) MenuAnchorType.PrimaryNotEditable else MenuAnchorType.PrimaryEditable)
+                    .menuAnchor(if(readOnly) MenuAnchorType.PrimaryNotEditable else MenuAnchorType.PrimaryEditable)
                     .fillMaxWidth().padding(bottom = 4.dp)
             )
             ExposedDropdownMenu(
@@ -1114,7 +1124,7 @@ fun NetworkStatsScreen(
                         }
                     )
                 }
-                if (VERSION.SDK_INT >= 24) DropdownMenuItem(
+                if(VERSION.SDK_INT >= 24) DropdownMenuItem(
                     text = { Text(stringResource(R.string.choose_an_app)) },
                     onClick = {
                         readOnly = true
@@ -1135,7 +1145,7 @@ fun NetworkStatsScreen(
         if (VERSION.SDK_INT >= 24 && (target == NetworkStatsTarget.UidTag || target == NetworkStatsTarget.UidTagState))
             ExposedDropdownMenuBox(
             menu == NetworkStatsMenu.Tag,
-            { menu = if (it) NetworkStatsMenu.Tag else NetworkStatsMenu.None },
+            { menu = if(it) NetworkStatsMenu.Tag else NetworkStatsMenu.None },
             Modifier.padding(bottom = 4.dp)
         ) {
             var tagText by rememberSaveable { mutableStateOf(context.getString(R.string.all)) }
@@ -1147,10 +1157,12 @@ fun NetworkStatsScreen(
                     it.toIntOrNull()?.let { num -> tag = num }
                 },
                 readOnly = readOnly, label = { Text(stringResource(R.string.uid)) },
-                trailingIcon = { ExpandExposedTextFieldIcon(menu == NetworkStatsMenu.Tag) },
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(menu == NetworkStatsMenu.Tag)
+                },
                 isError = !readOnly && tagText.toIntOrNull() == null,
                 modifier = Modifier
-                    .menuAnchor(if (readOnly) MenuAnchorType.PrimaryNotEditable else MenuAnchorType.PrimaryEditable)
+                    .menuAnchor(if(readOnly) MenuAnchorType.PrimaryNotEditable else MenuAnchorType.PrimaryEditable)
                     .fillMaxWidth().padding(bottom = 4.dp)
             )
             ExposedDropdownMenu(
@@ -1177,14 +1189,16 @@ fun NetworkStatsScreen(
         }
         if (VERSION.SDK_INT >= 28 && target == NetworkStatsTarget.UidTagState) ExposedDropdownMenuBox(
             menu == NetworkStatsMenu.State,
-            { menu = if (it) NetworkStatsMenu.State else NetworkStatsMenu.None },
+            { menu = if(it) NetworkStatsMenu.State else NetworkStatsMenu.None },
             Modifier.padding(bottom = 4.dp)
         ) {
             OutlinedTextField(
                 stringResource(state.text), {},
                 Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                 readOnly = true, label = { Text(stringResource(R.string.uid)) },
-                trailingIcon = { ExpandExposedTextFieldIcon(menu == NetworkStatsMenu.State) }
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(menu == NetworkStatsMenu.State)
+                }
             )
             ExposedDropdownMenu(
                 menu == NetworkStatsMenu.State, { menu = NetworkStatsMenu.None }
@@ -1267,7 +1281,7 @@ data class NetworkStatsData(
 fun NetworkStatsViewerScreen(
     data: List<NetworkStatsData>, clearData: () -> Unit, onNavigateUp: () -> Unit
 ) {
-    var index by remember { mutableIntStateOf(0) }
+    var index by rememberSaveable { mutableIntStateOf(0) }
     val size = data.size
     val ps = rememberPagerState { size }
     index = ps.currentPage
@@ -1278,7 +1292,7 @@ fun NetworkStatsViewerScreen(
         }
     }
     MySmallTitleScaffold(R.string.network_stats, onNavigateUp, 0.dp) {
-        if (size > 1) Row(
+        if(size > 1) Row(
             Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -1327,14 +1341,14 @@ fun NetworkStatsViewerScreen(
                     Text(stringResource(R.string.state), Modifier.padding(end = 8.dp), style = MaterialTheme.typography.titleMedium)
                     Text(stringResource(text))
                 }
-                if (VERSION.SDK_INT >= 24) {
+                if(VERSION.SDK_INT >= 24) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         val tag = item.tag
                         Text(stringResource(R.string.tag), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(end = 8.dp))
-                        Text(if (tag == NetworkStats.Bucket.TAG_NONE) stringResource(R.string.all) else tag.toString())
+                        Text(if(tag == NetworkStats.Bucket.TAG_NONE) stringResource(R.string.all) else tag.toString())
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        val text = when (item.roaming) {
+                        val text = when(item.roaming) {
                             NetworkStats.Bucket.ROAMING_ALL -> R.string.all
                             NetworkStats.Bucket.ROAMING_YES -> R.string.yes
                             NetworkStats.Bucket.ROAMING_NO -> R.string.no
@@ -1344,8 +1358,8 @@ fun NetworkStatsViewerScreen(
                         Text(stringResource(text))
                     }
                 }
-                if (VERSION.SDK_INT >= 26) Row(verticalAlignment = Alignment.CenterVertically) {
-                    val text = when (item.metered) {
+                if(VERSION.SDK_INT >= 26) Row(verticalAlignment = Alignment.CenterVertically) {
+                    val text = when(item.metered) {
                         NetworkStats.Bucket.METERED_ALL -> R.string.all
                         NetworkStats.Bucket.METERED_YES -> R.string.yes
                         NetworkStats.Bucket.METERED_NO -> R.string.no
@@ -1377,8 +1391,8 @@ fun PrivateDnsScreen(
 ) {
     val context = LocalContext.current
     val focusMgr = LocalFocusManager.current
-    var mode by remember { mutableStateOf<PrivateDnsMode?>(PrivateDnsMode.Opportunistic) }
-    var inputHost by remember { mutableStateOf("") }
+    var mode by rememberSaveable { mutableStateOf<PrivateDnsMode?>(PrivateDnsMode.Opportunistic) }
+    var inputHost by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(Unit) {
         val conf = getPrivateDns()
         mode = conf.mode
@@ -1468,12 +1482,12 @@ fun RecommendedGlobalProxyScreen(
 ) {
     val context = LocalContext.current
     val focusMgr = LocalFocusManager.current
-    var type by remember { mutableStateOf(ProxyType.Off) }
-    var pacUrl by remember { mutableStateOf("") }
-    var specifyPort by remember { mutableStateOf(false) }
-    var host by remember { mutableStateOf("") }
-    var port by remember { mutableStateOf("") }
-    var exclList by remember { mutableStateOf("") }
+    var type by rememberSaveable { mutableStateOf(ProxyType.Off) }
+    var pacUrl by rememberSaveable { mutableStateOf("") }
+    var specifyPort by rememberSaveable { mutableStateOf(false) }
+    var host by rememberSaveable { mutableStateOf("") }
+    var port by rememberSaveable { mutableStateOf("") }
+    var exclList by rememberSaveable { mutableStateOf("") }
     MyScaffold(R.string.recommended_global_proxy, onNavigateUp, 0.dp) {
         ProxyType.entries.forEach {
             FullWidthRadioButtonItem(it.text, type == it) { type = it }
@@ -1538,50 +1552,82 @@ fun RecommendedGlobalProxyScreen(
 
 @RequiresApi(26)
 @Composable
-fun NetworkLoggingScreen(onNavigateUp: () -> Unit) {
+fun NetworkLoggingScreen(
+    getEnabled: () -> Boolean, setEnabled: (Boolean) -> Unit, getCount: () -> Int,
+    exportLogs: (Uri, () -> Unit) -> Unit, deleteLogs: () -> Unit, onNavigateUp: () -> Unit
+) {
     val context = LocalContext.current
-    val logFile = context.filesDir.resolve("NetworkLogs.json")
-    var fileSize by remember { mutableLongStateOf(0) }
-    LaunchedEffect(Unit) { fileSize = logFile.length() }
-    val exportNetworkLogsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-        if (uri != null) context.contentResolver.openOutputStream(uri)?.use { outStream ->
-            outStream.write("[".encodeToByteArray())
-            logFile.inputStream().use { it.copyTo(outStream) }
-            outStream.write("]".encodeToByteArray())
-            context.showOperationResultToast(true)
+    var enabled by remember { mutableStateOf(false) }
+    var count by remember { mutableIntStateOf(0) }
+    var dialog by rememberSaveable { mutableStateOf(false) }
+    var exporting by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        enabled = getEnabled()
+        count = getCount()
+    }
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) {
+            exporting = true
+            exportLogs(uri) {
+                exporting = false
+                context.showOperationResultToast(true)
+            }
         }
     }
-    MyScaffold(R.string.network_logging, onNavigateUp) {
+    MyScaffold(R.string.network_logging, onNavigateUp, 0.dp) {
         SwitchItem(
-            R.string.enable,
-            getState = { Privilege.DPM.isNetworkLoggingEnabled(Privilege.DAR) },
-            onCheckedChange = { Privilege.DPM.setNetworkLoggingEnabled(Privilege.DAR, it) },
-            padding = false
+            R.string.enable, enabled, {
+                setEnabled(it)
+                enabled = it
+            }
         )
-        Text(stringResource(R.string.log_file_size_is, formatFileSize(fileSize)))
-        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            Button(
-                onClick = {
-                    exportNetworkLogsLauncher.launch("NetworkLogs.json")
-                },
-                enabled = fileSize > 0,
-                modifier = Modifier.fillMaxWidth(0.49F)
-            ) {
-                Text(stringResource(R.string.export_logs))
-            }
-            Button(
-                onClick = {
-                    logFile.delete()
-                    fileSize = logFile.length()
-                },
-                enabled = fileSize > 0,
-                modifier = Modifier.fillMaxWidth(0.96F)
-            ) {
-                Text(stringResource(R.string.delete_logs))
-            }
+        Text(
+            stringResource(R.string.n_logs_in_total, count),
+            Modifier.padding(HorizontalPadding, 5.dp)
+        )
+        Button(
+            {
+                val date = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
+                exportLauncher.launch("network_logs_$date")
+            },
+            Modifier.fillMaxWidth().padding(horizontal = HorizontalPadding),
+            count > 0
+        ) {
+            Text(stringResource(R.string.export_logs))
         }
-        Notes(R.string.info_network_log)
+        if (count > 0) Button(
+            {
+                dialog = true
+            },
+            Modifier.fillMaxWidth().padding(horizontal = HorizontalPadding),
+        ) {
+            Text(stringResource(R.string.delete_logs))
+        }
+        Spacer(Modifier.height(10.dp))
+        Notes(R.string.info_network_log, HorizontalPadding)
     }
+    if (exporting) CircularProgressDialog { exporting = false }
+    if (dialog) AlertDialog(
+        text = {
+            Text(stringResource(R.string.delete_logs))
+        },
+        confirmButton = {
+            TextButton({
+                deleteLogs()
+                dialog = false
+            }) {
+                Text(stringResource(R.string.confirm))
+            }
+        },
+        dismissButton = {
+            TextButton({ dialog = false }) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+        onDismissRequest = { dialog = false }
+    )
 }
 
 @Serializable object PreferentialNetworkService
@@ -1593,7 +1639,7 @@ fun PreferentialNetworkServiceScreen(
     pnsConfigs: StateFlow<List<PreferentialNetworkServiceInfo>>, getConfigs: () -> Unit,
     onNavigateUp: () -> Unit, onNavigate: (AddPreferentialNetworkServiceConfig) -> Unit
 ) {
-    var masterEnabled by remember { mutableStateOf(getEnabled()) }
+    var masterEnabled by rememberSaveable { mutableStateOf(getEnabled()) }
     val configs by pnsConfigs.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
         getConfigs()
@@ -1650,13 +1696,13 @@ fun AddPreferentialNetworkServiceConfigScreen(
     setConfig: (PreferentialNetworkServiceInfo, Boolean) -> Unit, onNavigateUp: () -> Unit
 ) {
     val updateMode = origin.id != -1
-    var enabled by remember { mutableStateOf(origin.enabled) }
-    var id by remember { mutableIntStateOf(origin.id) }
-    var allowFallback by remember { mutableStateOf(origin.allowFallback) }
-    var blockNonMatching by remember { mutableStateOf(origin.blockNonMatching) }
-    var excludedUids by remember { mutableStateOf(origin.excludedUids.joinToString("\n")) }
-    var includedUids by remember { mutableStateOf(origin.includedUids.joinToString("\n")) }
-    var dropdown by remember { mutableStateOf(false) }
+    var enabled by rememberSaveable { mutableStateOf(origin.enabled) }
+    var id by rememberSaveable { mutableIntStateOf(origin.id) }
+    var allowFallback by rememberSaveable { mutableStateOf(origin.allowFallback) }
+    var blockNonMatching by rememberSaveable { mutableStateOf(origin.blockNonMatching) }
+    var excludedUids by rememberSaveable { mutableStateOf(origin.excludedUids.joinToString("\n")) }
+    var includedUids by rememberSaveable { mutableStateOf(origin.includedUids.joinToString("\n")) }
+    var dropdown by rememberSaveable { mutableStateOf(false) }
     MySmallTitleScaffold(R.string.preferential_network_service, onNavigateUp) {
         SwitchItem(title = R.string.enabled, state = enabled, onCheckedChange = { enabled = it }, padding = false)
         ExposedDropdownMenuBox(dropdown, { dropdown = it }) {
@@ -1664,7 +1710,7 @@ fun AddPreferentialNetworkServiceConfigScreen(
                 if (id == -1) "" else id.toString(), {},
                 Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
                 readOnly = true, label = { Text("id") },
-                trailingIcon = { ExpandExposedTextFieldIcon(dropdown) }
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(dropdown) }
             )
             ExposedDropdownMenu(dropdown, { dropdown = false }) {
                 for (i in 1..5) {
@@ -1741,7 +1787,7 @@ fun OverrideApnScreen(
     apnConfigs: StateFlow<List<ApnConfig>>, getConfigs: () -> Unit, getEnabled: () -> Boolean,
     setEnabled: (Boolean) -> Unit, onNavigateUp: () -> Unit, onNavigateToAddSetting: (Int) -> Unit
 ) {
-    var enabled by remember { mutableStateOf(getEnabled()) }
+    var enabled by rememberSaveable { mutableStateOf(getEnabled()) }
     val configs by apnConfigs.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { getConfigs() }
     MyScaffold(R.string.override_apn, onNavigateUp, 0.dp) {
@@ -1875,31 +1921,31 @@ fun AddApnSettingScreen(
     onNavigateUp: () -> Unit
 ) {
     val context = LocalContext.current
-    var menu by remember { mutableStateOf(ApnMenu.None) }
-    var enabled by remember { mutableStateOf(true) }
-    var entryName by remember { mutableStateOf(origin?.name ?: "") }
-    var apnName by remember { mutableStateOf(origin?.apn ?: "") }
-    var apnType by remember { mutableIntStateOf(origin?.apnType ?: 0) }
-    var profileId by remember { mutableStateOf(origin?.profileId?.toString() ?: "") }
-    var carrierId by remember { mutableStateOf(origin?.carrierId?.toString() ?: "") }
-    var authType by remember { mutableStateOf(ApnAuthType.None) }
-    var user by remember { mutableStateOf(origin?.username ?: "") }
-    var password by remember { mutableStateOf(origin?.password ?: "") }
-    var proxy by remember { mutableStateOf(origin?.proxy ?: "") }
-    var port by remember { mutableStateOf(origin?.port?.toString() ?: "") }
-    var mmsProxy by remember { mutableStateOf(origin?.mmsProxy ?: "") }
-    var mmsPort by remember { mutableStateOf(origin?.mmsPort?.toString() ?: "") }
-    var mmsc by remember { mutableStateOf(origin?.mmsc ?: "") }
-    var mtuV4 by remember { mutableStateOf(origin?.mtuV4?.toString() ?: "") }
-    var mtuV6 by remember { mutableStateOf(origin?.mtuV6?.toString() ?: "") }
-    var mvnoType by remember { mutableStateOf(origin?.mvno ?: ApnMvnoType.SPN) }
-    var networkType by remember { mutableIntStateOf(origin?.networkType ?: 0) }
-    var operatorNumeric by remember { mutableStateOf(origin?.operatorNumeric ?: "") }
-    var protocol by remember { mutableStateOf(origin?.protocol ?: ApnProtocol.Ip) }
-    var roamingProtocol by remember { mutableStateOf(origin?.roamingProtocol ?: ApnProtocol.Ip) }
-    var persistent by remember { mutableStateOf(origin?.persistent == true) }
-    var alwaysOn by remember { mutableStateOf(origin?.alwaysOn == true) }
-    var errorMessage: String? by remember { mutableStateOf(null) }
+    var menu by rememberSaveable { mutableStateOf(ApnMenu.None) }
+    var enabled by rememberSaveable { mutableStateOf(true) }
+    var entryName by rememberSaveable { mutableStateOf(origin?.name ?: "") }
+    var apnName by rememberSaveable { mutableStateOf(origin?.apn ?: "") }
+    var apnType by rememberSaveable { mutableIntStateOf(origin?.apnType ?: 0) }
+    var profileId by rememberSaveable { mutableStateOf(origin?.profileId?.toString() ?: "") }
+    var carrierId by rememberSaveable { mutableStateOf(origin?.carrierId?.toString() ?: "") }
+    var authType by rememberSaveable { mutableStateOf(ApnAuthType.None) }
+    var user by rememberSaveable { mutableStateOf(origin?.username ?: "") }
+    var password by rememberSaveable { mutableStateOf(origin?.password ?: "") }
+    var proxy by rememberSaveable { mutableStateOf(origin?.proxy ?: "") }
+    var port by rememberSaveable { mutableStateOf(origin?.port?.toString() ?: "") }
+    var mmsProxy by rememberSaveable { mutableStateOf(origin?.mmsProxy ?: "") }
+    var mmsPort by rememberSaveable { mutableStateOf(origin?.mmsPort?.toString() ?: "") }
+    var mmsc by rememberSaveable { mutableStateOf(origin?.mmsc ?: "") }
+    var mtuV4 by rememberSaveable { mutableStateOf(origin?.mtuV4?.toString() ?: "") }
+    var mtuV6 by rememberSaveable { mutableStateOf(origin?.mtuV6?.toString() ?: "") }
+    var mvnoType by rememberSaveable { mutableStateOf(origin?.mvno ?: ApnMvnoType.SPN) }
+    var networkType by rememberSaveable { mutableIntStateOf(origin?.networkType ?: 0) }
+    var operatorNumeric by rememberSaveable { mutableStateOf(origin?.operatorNumeric ?: "") }
+    var protocol by rememberSaveable { mutableStateOf(origin?.protocol ?: ApnProtocol.Ip) }
+    var roamingProtocol by rememberSaveable { mutableStateOf(origin?.roamingProtocol ?: ApnProtocol.Ip) }
+    var persistent by rememberSaveable { mutableStateOf(origin?.persistent == true) }
+    var alwaysOn by rememberSaveable { mutableStateOf(origin?.alwaysOn == true) }
+    var errorMessage: String? by rememberSaveable { mutableStateOf(null) }
     MySmallTitleScaffold(R.string.apn_setting, onNavigateUp) {
         SwitchItem(R.string.enabled, state = enabled, onCheckedChange = { enabled = it }, padding = false)
         OutlinedTextField(
@@ -1967,7 +2013,7 @@ fun AddApnSettingScreen(
             OutlinedTextField(
                 authType.text, {}, Modifier.fillMaxWidth(),
                 label = { Text("Authentication type") },
-                trailingIcon = { ExpandExposedTextFieldIcon(menu == ApnMenu.AuthType) }
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(menu == ApnMenu.AuthType) }
             )
             ExposedDropdownMenu(menu == ApnMenu.AuthType, { menu = ApnMenu.None }) {
                 ApnAuthType.entries.forEach {
@@ -1987,7 +2033,7 @@ fun AddApnSettingScreen(
             OutlinedTextField(
                 protocol.text, {}, Modifier.fillMaxWidth(),
                 label = { Text("APN protocol") },
-                trailingIcon = { ExpandExposedTextFieldIcon(menu == ApnMenu.Protocol) }
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(menu == ApnMenu.Protocol) }
             )
             ExposedDropdownMenu(menu == ApnMenu.Protocol, { menu = ApnMenu.None }) {
                 ApnProtocol.entries.filter { VERSION.SDK_INT >= it.requiresApi }.forEach {
@@ -2008,7 +2054,9 @@ fun AddApnSettingScreen(
             OutlinedTextField(
                 roamingProtocol.text, {}, Modifier.fillMaxWidth(),
                 label = { Text("APN roaming protocol") },
-                trailingIcon = { ExpandExposedTextFieldIcon(menu == ApnMenu.RoamingProtocol) }
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(menu == ApnMenu.RoamingProtocol)
+                }
             )
             ExposedDropdownMenu(menu == ApnMenu.RoamingProtocol, { menu = ApnMenu.None }) {
                 ApnProtocol.entries.filter { VERSION.SDK_INT >= it.requiresApi }.forEach {
@@ -2067,7 +2115,9 @@ fun AddApnSettingScreen(
                 mvnoType.text, {},
                 Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
                 readOnly = true, label = { Text("MVNO type") },
-                trailingIcon = { ExpandExposedTextFieldIcon(menu == ApnMenu.RoamingProtocol) }
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(menu == ApnMenu.RoamingProtocol)
+                }
             )
             ExposedDropdownMenu(menu == ApnMenu.MvnoType, { menu = ApnMenu.None }) {
                 ApnMvnoType.entries.forEach {

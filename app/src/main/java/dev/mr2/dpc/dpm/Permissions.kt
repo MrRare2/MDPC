@@ -16,11 +16,9 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
@@ -83,6 +81,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mr2.dpc.AppInfo
+import dev.mr2.dpc.BottomPadding
 import dev.mr2.dpc.DhizukuClientInfo
 import dev.mr2.dpc.DhizukuPermissions
 import dev.mr2.dpc.HorizontalPadding
@@ -90,6 +89,7 @@ import dev.mr2.dpc.MyViewModel
 import dev.mr2.dpc.Privilege
 import dev.mr2.dpc.R
 import dev.mr2.dpc.Settings
+import dev.mr2.dpc.adaptiveInsets
 import dev.mr2.dpc.showOperationResultToast
 import dev.mr2.dpc.ui.CircularProgressDialog
 import dev.mr2.dpc.ui.InfoItem
@@ -116,9 +116,9 @@ fun WorkModesScreen(
 ) {
     val privilege by Privilege.status.collectAsStateWithLifecycle()
     /** 0: none, 1: device owner, 2: circular progress indicator, 3: result, 4: deactivate, 5: command */
-    var dialog by remember { mutableIntStateOf(0) }
-    var operationSucceed by remember { mutableStateOf(false) }
-    var resultText by remember { mutableStateOf("") }
+    var dialog by rememberSaveable { mutableIntStateOf(0) }
+    var operationSucceed by rememberSaveable { mutableStateOf(false) }
+    var resultText by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(privilege) {
         if (!params.canNavigateUp && privilege.device) {
             delay(1000)
@@ -144,7 +144,7 @@ fun WorkModesScreen(
                     if (params.canNavigateUp) NavIcon(onNavigateUp)
                 },
                 actions = {
-                    var expanded by remember { mutableStateOf(false) }
+                    var expanded by rememberSaveable { mutableStateOf(false) }
                     if (privilege.device || privilege.profile) Box {
                         IconButton({ expanded = true }) {
                             Icon(Icons.Default.MoreVert, null)
@@ -182,7 +182,7 @@ fun WorkModesScreen(
                 }
             )
         },
-        contentWindowInsets = WindowInsets.ime
+        contentWindowInsets = adaptiveInsets()
     ) { paddingValues ->
         fun handleResult(succeeded: Boolean, output: String?) {
             operationSucceed = succeeded
@@ -367,7 +367,7 @@ fun DhizukuServerSettingsScreen(
     getDhizukuClients: () -> Unit, updateDhizukuClient: (DhizukuClientInfo) -> Unit,
     getServerEnabled: () -> Boolean, setServerEnabled: (Boolean) -> Unit, onNavigateUp: () -> Unit
 ) {
-    var enabled by remember { mutableStateOf(getServerEnabled()) }
+    var enabled by rememberSaveable { mutableStateOf(getServerEnabled()) }
     val clients by dhizukuClients.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { getDhizukuClients() }
     MyLazyScaffold(R.string.dhizuku_server, onNavigateUp) {
@@ -379,7 +379,7 @@ fun DhizukuServerSettingsScreen(
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
         }
         if (enabled) items(clients) { (client, app) ->
-            var expand by remember { mutableStateOf(false) }
+            var expand by rememberSaveable { mutableStateOf(false) }
             Card(
                 Modifier
                     .fillMaxWidth()
@@ -455,7 +455,7 @@ fun LockScreenInfoScreen(
 ) {
     val context = LocalContext.current
     val focusMgr = LocalFocusManager.current
-    var infoText by remember { mutableStateOf(getText()) }
+    var infoText by rememberSaveable { mutableStateOf(getText()) }
     MyScaffold(R.string.lock_screen_info, onNavigateUp) {
         OutlinedTextField(
             value = infoText,
@@ -531,7 +531,7 @@ fun DelegatedAdminsScreen(
                 Row(Modifier.weight(1F), verticalAlignment = Alignment.CenterVertically) {
                     Image(
                         painter = rememberDrawablePainter(app.icon), contentDescription = null,
-                        modifier = Modifier.padding(start = 12.dp, end = 18.dp).size(40.dp)
+                        modifier = Modifier.padding(start = 12.dp, end = 18.dp).size(BottomPadding)
                     )
                     Column {
                         Text(app.label)
@@ -567,7 +567,7 @@ fun AddDelegatedAdminScreen(
     setDelegatedAdmin: (String, List<String>) -> Unit,  onNavigateUp: () -> Unit
 ) {
     val updateMode = data.pkg.isNotEmpty()
-    var input by remember { mutableStateOf(data.pkg) }
+    var input by rememberSaveable { mutableStateOf(data.pkg) }
     val scopes = rememberSaveable { mutableStateListOf(*data.scopes.toTypedArray()) }
     LaunchedEffect(Unit) {
         input = chosenPackage.receive()
@@ -626,7 +626,7 @@ fun AddDelegatedAdminScreen(
 @Composable
 fun DeviceInfoScreen(vm: MyViewModel, onNavigateUp: () -> Unit) {
     val privilege by Privilege.status.collectAsStateWithLifecycle()
-    var dialog by remember { mutableIntStateOf(0) }
+    var dialog by rememberSaveable { mutableIntStateOf(0) }
     MyScaffold(R.string.device_info, onNavigateUp, 0.dp) {
         if (VERSION.SDK_INT >= 34 && (privilege.device || privilege.org)) {
             InfoItem(R.string.financed_device, vm.getDeviceFinanced().yesOrNo)
@@ -667,8 +667,8 @@ fun SupportMessageScreen(
     setLongMessage: (String?) -> Unit, onNavigateUp: () -> Unit
 ) {
     val context = LocalContext.current
-    var shortMsg by remember { mutableStateOf("") }
-    var longMsg by remember { mutableStateOf("") }
+    var shortMsg by rememberSaveable { mutableStateOf("") }
+    var longMsg by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(Unit) {
         shortMsg = getShortMessage()
         longMsg = getLongMessage()
@@ -751,8 +751,8 @@ fun TransferOwnershipScreen(
     transferOwnership: (ComponentName) -> Unit, onNavigateUp: () -> Unit, onTransferred: () -> Unit
 ) {
     val privilege by Privilege.status.collectAsStateWithLifecycle()
-    var selectedIndex by remember { mutableIntStateOf(-1) }
-    var dialog by remember { mutableStateOf(false) }
+    var selectedIndex by rememberSaveable { mutableIntStateOf(-1) }
+    var dialog by rememberSaveable { mutableStateOf(false) }
     val receivers by deviceAdmins.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { getDeviceAdmins() }
     MyLazyScaffold(R.string.transfer_ownership, onNavigateUp) {

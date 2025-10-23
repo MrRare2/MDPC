@@ -330,7 +330,6 @@
     <string name="invalid_config">Invalid config</string>
     <string name="excluded_hosts">Excluded hosts</string>
     <string name="network_logging">Network logging</string>
-    <string name="log_file_size_is">Log file size: %1$s</string>
     <string name="delete_logs">Delete logs</string>
     <string name="export_logs">Export logs</string>
     <string name="wifi_auth_keypair">Wi-Fi keypair</string>
@@ -752,6 +751,10 @@
     <string name="second_char">s</string>
     <string name="security_logs_collected">Security logs collected</string>
     <string name="n_logs_in_total">%1$d logs in total</string>
+    <string name="network_logs_collected">Network logs collected</string>
+    <string name="start_user_n">Start user %1$d</string>
+    <string name="switch_to_user_n">Switch to user %1$d</string>
+    <string name="stop_user_n">Stop user %1$d</string>
 
     <!-- languages -->
     <string name="lang_en">English</string>

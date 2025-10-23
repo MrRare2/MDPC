@@ -10,10 +10,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -150,7 +149,7 @@ fun AppChooserScreen(
                 colors = TopAppBarDefaults.topAppBarColors(MaterialTheme.colorScheme.surfaceContainer)
             )
         },
-        contentWindowInsets = WindowInsets.ime
+        contentWindowInsets = adaptiveInsets()
     ) { paddingValues ->
         LazyColumn(Modifier.fillMaxSize().padding(paddingValues)) {
             if (progress < 1F) stickyHeader {
@@ -178,10 +177,10 @@ fun AppChooserScreen(
                     }
                 }
             }
-            item { Spacer(Modifier.padding(vertical = 30.dp)) }
+            item { Spacer(Modifier.height(BottomPadding)) }
         }
     }
 }
 
 val getInstalledAppsFlags =
-    if(Build.VERSION.SDK_INT >= 24) PackageManager.MATCH_DISABLED_COMPONENTS or PackageManager.MATCH_UNINSTALLED_PACKAGES else 0
+    if (Build.VERSION.SDK_INT >= 24) PackageManager.MATCH_DISABLED_COMPONENTS or PackageManager.MATCH_UNINSTALLED_PACKAGES else 0

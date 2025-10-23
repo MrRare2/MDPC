@@ -729,6 +729,10 @@
     <string name="second_char">秒</string>
     <string name="security_logs_collected">収集されたセキュリティログ</string>
     <string name="n_logs_in_total">合計%1$d件のログ</string>
+    <string name="network_logs_collected">収集されたネットワークログ</string>
+    <string name="start_user_n">ユーザー %1$d を開始</string>
+    <string name="switch_to_user_n">ユーザー %1$d に切り替え</string>
+    <string name="stop_user_n">ユーザー %1$d を停止</string>
 
     <string name="color_scheme">カラー設定</string>
     <string name="color_blue">ミクブルー</string>

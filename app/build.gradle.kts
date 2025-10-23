@@ -252,5 +252,6 @@ dependencies {
     implementation(libs.jbcrypt)
     implementation(libs.androidx.compose.materialicons)
     implementation(libs.androidx.biometric)
+    implementation(libs.material.icons.core)
     implementation(kotlin("reflect"))
 }

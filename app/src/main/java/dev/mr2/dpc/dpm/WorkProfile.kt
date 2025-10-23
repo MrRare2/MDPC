@@ -25,6 +25,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.MenuAnchorType
@@ -55,7 +56,6 @@ import dev.mr2.dpc.R
 import dev.mr2.dpc.showOperationResultToast
 import dev.mr2.dpc.ui.CheckBoxItem
 import dev.mr2.dpc.ui.CircularProgressDialog
-import dev.mr2.dpc.ui.ExpandExposedTextFieldIcon
 import dev.mr2.dpc.ui.FullWidthCheckBoxItem
 import dev.mr2.dpc.ui.FunctionItem
 import dev.mr2.dpc.ui.MyScaffold
@@ -302,7 +302,7 @@ fun CrossProfileIntentFilterScreen(
                 stringResource(direction.text), {},
                 Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                 label = { Text(stringResource(R.string.direction)) }, readOnly = true,
-                trailingIcon = { ExpandExposedTextFieldIcon(dropdown) }
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(dropdown) }
             )
 	    ExposedDropdownMenu(dropdown, { dropdown = false }) {
                 IntentFilterDirection.entries.forEach {

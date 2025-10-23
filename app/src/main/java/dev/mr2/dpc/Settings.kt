@@ -18,10 +18,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -47,10 +46,11 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -133,7 +133,7 @@ fun SettingsScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
                 }
             )
         },
-        contentWindowInsets = WindowInsets.ime
+        contentWindowInsets = adaptiveInsets()
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -354,26 +354,19 @@ data class AppLockConfig(
 
 @Composable
 fun AppLockSettingsScreen(
-    getConfig: () -> AppLockConfig, setConfig: (AppLockConfig) -> Unit,
+    config: AppLockConfig, setConfig: (AppLockConfig) -> Unit,
     onNavigateUp: () -> Unit
 ) = MyScaffold(R.string.app_lock, onNavigateUp) {
     var context = LocalContext.current
-    var password by remember { mutableStateOf("") }
-    var hidePassword by remember { mutableStateOf(true) }
-    var confirmPassword by remember { mutableStateOf("") }
-    var hidePasswordConfirm by remember { mutableStateOf(true) }
-    var allowBiometrics by remember { mutableStateOf(false) }
-    var lockWhenLeaving by remember { mutableStateOf(false) }
-    var alreadySet by remember { mutableStateOf(false) }
+    var password by rememberSaveable { mutableStateOf("") }
+    var hidePassword by rememberSaveable { mutableStateOf(true) }
+    var confirmPassword by rememberSaveable { mutableStateOf("") }
+    var hidePasswordConfirm by rememberSaveable { mutableStateOf(true) }
+    var allowBiometrics by rememberSaveable { mutableStateOf(config.biometrics) }
+    var lockWhenLeaving by rememberSaveable { mutableStateOf(config.whenLeaving) }
+    var alreadySet by rememberSaveable { mutableStateOf(config.password != null) }
     val isInputLegal = password.length !in 1..3 && (alreadySet || password.isNotBlank())
     val biometricsAllowed = BiometricManager.from(context).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS
-    LaunchedEffect(Unit) {
-        val config = getConfig()
-        password = config.password ?: ""
-        allowBiometrics = config.biometrics
-        lockWhenLeaving = config.whenLeaving
-        alreadySet = config.password != null
-    }
     OutlinedTextField(
         password, { password = it }, Modifier.fillMaxWidth().padding(vertical = 4.dp),
         label = { Text(stringResource(R.string.password)) },
@@ -443,8 +436,8 @@ fun ApiSettings(
     MyScaffold(R.string.api, onNavigateUp) {
         var enabled by remember { mutableStateOf(alreadyEnabled) }
         var sharedReplyEnabled by remember { mutableStateOf(getSrEnabled()) }
-        var key by remember { mutableStateOf("") }
-        var dialog by remember { mutableStateOf(0) }
+        var key by rememberSaveable { mutableStateOf("") }
+        var dialog by rememberSaveable { mutableStateOf(0) }
         SwitchItem(R.string.enable, state = enabled, onCheckedChange = {
             if (!it) dialog = 1
             else enabled = true
@@ -502,15 +495,17 @@ fun ApiSettings(
 
 @Composable
 fun NotificationsScreen(
-    getState: () -> List<NotificationType>, setNotification: (NotificationType, Boolean) -> Unit,
-    onNavigateUp: () -> Unit
+    enabledNotifications: StateFlow<List<Int>>, getState: () -> Unit,
+    setNotification: (NotificationType, Boolean) -> Unit, onNavigateUp: () -> Unit
 ) = MyScaffold(R.string.notifications, onNavigateUp, 0.dp) {
-    val enabledNotifications = remember { mutableStateListOf(*getState().toTypedArray()) }
-    NotificationType.entries.forEach { type ->
-        SwitchItem(type.text, type in enabledNotifications, {
-            setNotification(type, it)
-            enabledNotifications.run { if (it) plusAssign(type) else minusAssign(type) }
-        })
+    val notifications by enabledNotifications.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) {
+        getState()
+    }
+    NotificationType.entries.filter {
+        it.channel == MyNotificationChannel.Events
+    }.forEach { type ->
+        SwitchItem(type.text, type.id in notifications, { setNotification(type, it) })
     }
 }
 

@@ -28,8 +28,14 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -40,8 +46,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -80,15 +88,14 @@ import kotlinx.serialization.Serializable
 fun UsersScreen(vm: MyViewModel, onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
     val context = LocalContext.current
     val privilege by Privilege.status.collectAsStateWithLifecycle()
-    /** 1: secondary users, 2: logout*/
-    var dialog by remember { mutableIntStateOf(0) }
+    /** 1: logout */
+    var dialog by rememberSaveable { mutableIntStateOf(0) }
     MyScaffold(R.string.users, onNavigateUp, 0.dp) {
         if (VERSION.SDK_INT >= 28 && privilege.profile && privilege.affiliated) {
-            FunctionItem(R.string.logout, icon = R.drawable.logout_fill0) { dialog = 2 }
+            FunctionItem(R.string.logout, icon = R.drawable.logout_fill0) { dialog = 1 }
         }
         FunctionItem(R.string.user_info, icon = R.drawable.person_fill0) { onNavigate(UserInfo) }
         if (VERSION.SDK_INT >= 28 && privilege.device) {
-            FunctionItem(R.string.secondary_users, icon = R.drawable.list_fill0) { dialog = 1 }
             FunctionItem(R.string.options, icon = R.drawable.tune_fill0) { onNavigate(UsersOptions) }
         }
         if (privilege.device) {
@@ -125,24 +132,6 @@ fun UsersScreen(vm: MyViewModel, onNavigateUp: () -> Unit, onNavigate: (Any) -> 
         }
     }
     if (VERSION.SDK_INT >= 28 && dialog == 1) AlertDialog(
-        title = { Text(stringResource(R.string.secondary_users)) },
-        text = {
-            val list = vm.getSecondaryUsers()
-            val text = if (list.isEmpty()) {
-                stringResource(R.string.no_secondary_users)
-            } else {
-                "(" + stringResource(R.string.serial_number) + ")\n" + list.joinToString("\n")
-            }
-            Text(text)
-        },
-        confirmButton = {
-            TextButton({ dialog = 0 }) {
-                Text(stringResource(R.string.confirm))
-            }
-        },
-        onDismissRequest = { dialog = 0 }
-    )
-    if (VERSION.SDK_INT >= 28 && dialog == 2) AlertDialog(
         title = { Text(stringResource(R.string.logout)) },
         text = {
             Text(stringResource(R.string.info_logout))
@@ -170,7 +159,7 @@ fun UsersScreen(vm: MyViewModel, onNavigateUp: () -> Unit, onNavigate: (Any) -> 
 fun UsersOptionsScreen(
     getLogoutEnabled: () -> Boolean, setLogoutEnabled: (Boolean) -> Unit, onNavigateUp: () -> Unit
 ) {
-    var logoutEnabled by remember { mutableStateOf(false) }
+    var logoutEnabled by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) { logoutEnabled = getLogoutEnabled() }
     MyScaffold(R.string.options, onNavigateUp, 0.dp) {
         if (VERSION.SDK_INT >= 28) {
@@ -194,7 +183,7 @@ data class UserInformation(
 @Composable
 fun UserInfoScreen(getInfo: () -> UserInformation, onNavigateUp: () -> Unit) {
     var info by remember { mutableStateOf(UserInformation()) }
-    var infoDialog by remember { mutableIntStateOf(0) }
+    var infoDialog by rememberSaveable { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
         info = getInfo()
     }
@@ -226,21 +215,42 @@ fun UserInfoScreen(getInfo: () -> UserInformation, onNavigateUp: () -> Unit) {
     )
 }
 
+class UserIdentifier(val id: Int, val serial: Long)
+
+enum class UserOperationType {
+    Start, Switch, Stop, Delete
+}
+
 @Serializable object UserOperation
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserOperationScreen(
-    startUser: (Int, Boolean) -> Int, switchUser: (Int, Boolean) -> Boolean,
-    stopUser: (Int, Boolean) -> Int, deleteUser: (Int, Boolean) -> Boolean, onNavigateUp: () -> Unit
+    getUsers: () -> List<UserIdentifier>, doOperation: (UserOperationType, Int, Boolean) -> Boolean,
+    createShortcut: (UserOperationType, Int, Boolean) -> Boolean, onNavigateUp: () -> Unit
 ) {
     val context = LocalContext.current
-    var input by remember { mutableStateOf("") }
+    var input by rememberSaveable { mutableStateOf("") }
     val focusMgr = LocalFocusManager.current
-    var useUserId by remember { mutableStateOf(false) }
-    var dialog by remember { mutableStateOf(false) }
+    var useUserId by rememberSaveable { mutableStateOf(false) }
+    var dialog by rememberSaveable { mutableStateOf(false) }
+    var menu by remember { mutableStateOf(false) }
     val legalInput = input.toIntOrNull() != null
+    val identifiers = remember { mutableStateListOf<UserIdentifier>() }
+    @Composable
+    fun CreateShortcutIcon(type: UserOperationType) {
+        FilledTonalIconButton({
+            if (!createShortcut(type, input.toInt(), useUserId))
+                context.showOperationResultToast(false)
+        }, enabled = legalInput) {
+            Icon(painterResource(R.drawable.open_in_new), null)
+        }
+    }
+    LaunchedEffect(Unit) {
+        identifiers.addAll(getUsers())
+    }
     MyScaffold(R.string.user_operation, onNavigateUp) {
-        if (VERSION.SDK_INT >= 24) SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+        if (VERSION.SDK_INT >= 24) SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
             SegmentedButton(!useUserId, { useUserId = false }, SegmentedButtonDefaults.itemShape(0, 2)) {
                 Text(stringResource(R.string.serial_number))
             }
@@ -248,50 +258,84 @@ fun UserOperationScreen(
                 Text(stringResource(R.string.user_id))
             }
         }
-        OutlinedTextField(
-            value = input,
-            onValueChange = { input = it },
-            label = { Text(stringResource(if (useUserId) R.string.user_id else R.string.serial_number)) },
-            modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { focusMgr.clearFocus() })
-        )
-        if (VERSION.SDK_INT >= 28) {
-            Button(
-                onClick = {
-                    focusMgr.clearFocus()
-                    context.popToast(startUser(input.toInt(), useUserId))
+        ExposedDropdownMenuBox(menu, { menu = it }) {
+            OutlinedTextField(
+                input, { input = it },
+                Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(MenuAnchorType.PrimaryEditable)
+                    .padding(top = 4.dp, bottom = 8.dp),
+                label = {
+                    Text(stringResource(if(useUserId) R.string.user_id else R.string.serial_number))
                 },
-                enabled = legalInput,
-                modifier = Modifier.fillMaxWidth()
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(menu)
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done)
+            )
+            ExposedDropdownMenu(menu, { menu = false }) {
+                if (identifiers.isEmpty()) {
+                    DropdownMenuItem(
+                        { Text(stringResource(R.string.no_secondary_users)) }, {}
+                    )
+                } else {
+                    identifiers.forEach {
+                        val text = (if (useUserId) it.id else it.serial).toString()
+                        DropdownMenuItem(
+                            { Text(text) },
+                            {
+                                input = text
+                                menu = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+        if (VERSION.SDK_INT >= 28) Row {
+            Button(
+                {
+                    focusMgr.clearFocus()
+                    val result = doOperation(UserOperationType.Start, input.toInt(), useUserId)
+                    context.showOperationResultToast(result)
+                },
+                Modifier.weight(1F),
+                legalInput
             ) {
                 Icon(Icons.Default.PlayArrow, null, Modifier.padding(end = 4.dp))
                 Text(stringResource(R.string.start_in_background))
             }
+            CreateShortcutIcon(UserOperationType.Start)
         }
-        Button(
-            onClick = {
-                focusMgr.clearFocus()
-                if (switchUser(input.toInt(), useUserId)) context.popToast(R.string.user_not_exist)
-            },
-            enabled = legalInput,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(painterResource(R.drawable.sync_alt_fill0), null, Modifier.padding(end = 4.dp))
-            Text(stringResource(R.string.user_operation_switch))
-        }
-        if (VERSION.SDK_INT >= 28) {
+        Row {
             Button(
-                onClick = {
+                {
                     focusMgr.clearFocus()
-                    context.popToast(stopUser(input.toInt(), useUserId))
+                    val result = doOperation(UserOperationType.Switch, input.toInt(), useUserId)
+                    context.showOperationResultToast(result)
                 },
-                enabled = legalInput,
-                modifier = Modifier.fillMaxWidth()
+                Modifier.weight(1F),
+                legalInput
+            ) {
+                Icon(painterResource(R.drawable.sync_alt_fill0), null, Modifier.padding(end = 4.dp))
+                Text(stringResource(R.string.user_operation_switch))
+            }
+            CreateShortcutIcon(UserOperationType.Switch)
+        }
+        if (VERSION.SDK_INT >= 28) Row {
+            Button(
+                {
+                    focusMgr.clearFocus()
+                    val result = doOperation(UserOperationType.Stop, input.toInt(), useUserId)
+                    context.showOperationResultToast(result)
+                },
+                Modifier.weight(1F),
+                legalInput
             ) {
                 Icon(Icons.Default.Close, null, Modifier.padding(end = 4.dp))
                 Text(stringResource(R.string.stop))
             }
+            CreateShortcutIcon(UserOperationType.Stop)
         }
         Button(
             onClick = {
@@ -311,7 +355,8 @@ fun UserOperationScreen(
         },
         confirmButton = {
             TextButton({
-                context.showOperationResultToast(deleteUser(input.toInt(), useUserId))
+                val result = doOperation(UserOperationType.Delete, input.toInt(), useUserId)
+                context.showOperationResultToast(result)
                 dialog = false
             }) {
                 Text(stringResource(R.string.confirm))
@@ -335,9 +380,9 @@ fun CreateUserScreen(
 ) {
     var result by remember { mutableStateOf<CreateUserResult?>(null) }
     val focusMgr = LocalFocusManager.current
-    var userName by remember { mutableStateOf("") }
-    var creating by remember { mutableStateOf(false) }
-    var flags by remember { mutableIntStateOf(0) }
+    var userName by rememberSaveable { mutableStateOf("") }
+    var creating by rememberSaveable { mutableStateOf(false) }
+    var flags by rememberSaveable { mutableIntStateOf(0) }
     MyScaffold(R.string.create_user, onNavigateUp, 0.dp) {
         OutlinedTextField(
             userName, { userName= it }, Modifier.fillMaxWidth().padding(horizontal = HorizontalPadding),
@@ -401,7 +446,7 @@ fun AffiliationIdScreen(
     onNavigateUp: () -> Unit
 ) {
     val focusMgr = LocalFocusManager.current
-    var input by remember { mutableStateOf("") }
+    var input by rememberSaveable { mutableStateOf("") }
     val list by affiliationIds.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { getIds() }
     MyScaffold(R.string.affiliation_id, onNavigateUp) {
@@ -440,7 +485,7 @@ fun AffiliationIdScreen(
 fun ChangeUsernameScreen(setName: (String) -> Unit, onNavigateUp: () -> Unit) {
     val context = LocalContext.current
     val focusMgr = LocalFocusManager.current
-    var inputUsername by remember { mutableStateOf("") }
+    var inputUsername by rememberSaveable { mutableStateOf("") }
     MyScaffold(R.string.change_username, onNavigateUp) {
         OutlinedTextField(
             value = inputUsername,
@@ -473,8 +518,8 @@ fun UserSessionMessageScreen(
 ) {
     val context = LocalContext.current
     val focusMgr = LocalFocusManager.current
-    var start by remember { mutableStateOf("") }
-    var end by remember { mutableStateOf("") }
+    var start by rememberSaveable { mutableStateOf("") }
+    var end by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(Unit) {
         val messages = getMessages()
         start = messages.first

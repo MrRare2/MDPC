@@ -3,13 +3,13 @@ agp = "8.13.0"
 kotlin = "2.2.20"
 
 navigation-compose = "2.9.5"
-composeBom = "2025.09.01"
+composeBom = "2025.10.00"
 accompanist-drawablepainter = "0.37.3"
 accompanist-permissions = "0.37.3"
 shizuku = "13.1.5"
 fragment = "1.8.9"
 dhizuku = "2.5.4"
-dhizuku-server = "0.0.5"
+dhizuku-server = "0.0.6"
 hiddenApiBypass = "6.1"
 libsu = "6.0.0"
 serialization = "1.9.0"
@@ -46,6 +46,8 @@ androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "a
 androidx-compose-materialicons = { group = "androidx.compose.material", name = "material-icons-extended", version = "1.7.8" }
 
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "androidx-biometric" }
+
+material-icons-core = { group = "androidx.compose.material", name = "material-icons-core" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

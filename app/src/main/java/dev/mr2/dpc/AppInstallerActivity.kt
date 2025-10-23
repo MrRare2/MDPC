@@ -53,7 +53,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -157,7 +156,7 @@ private fun AppInstaller(
             )
         }
     ) { paddingValues ->
-        var tab by remember { mutableIntStateOf(0) }
+        var tab by rememberSaveable { mutableIntStateOf(0) }
         val pagerState = rememberPagerState { 2 }
         val scrollState = rememberScrollState()
         tab = pagerState.targetPage

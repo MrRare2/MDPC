@@ -15,15 +15,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -53,7 +52,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -73,11 +71,13 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mr2.dpc.AppInfo
 import dev.mr2.dpc.AppInstallerActivity
+import dev.mr2.dpc.BottomPadding
 import dev.mr2.dpc.HorizontalPadding
 import dev.mr2.dpc.MyViewModel
 import dev.mr2.dpc.Privilege
 import dev.mr2.dpc.R
 import dev.mr2.dpc.SP
+import dev.mr2.dpc.adaptiveInsets
 import dev.mr2.dpc.showOperationResultToast
 import dev.mr2.dpc.ui.FullWidthRadioButtonItem
 import dev.mr2.dpc.ui.FunctionItem
@@ -157,7 +157,7 @@ fun ApplicationsFeaturesScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Un
                 scrollBehavior = sb
             )
         },
-        contentWindowInsets = WindowInsets.ime
+        contentWindowInsets = adaptiveInsets()
     ) { paddingValues ->
         Column(
             Modifier
@@ -232,7 +232,7 @@ fun ApplicationDetailsScreen(
 ) {
     val packageName = param.packageName
     val privilege by Privilege.status.collectAsStateWithLifecycle()
-    var dialog by remember { mutableIntStateOf(0) } // 1: clear storage, 2: uninstall
+    var dialog by rememberSaveable { mutableIntStateOf(0) } // 1: clear storage, 2: uninstall
     val info = vm.getAppInfo(packageName)
     val status by vm.appStatus.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { vm.getAppStatus(packageName) }
@@ -274,7 +274,7 @@ fun ApplicationDetailsScreen(
         )
         if (SP.displayDangerousFeatures && VERSION.SDK_INT >= 28) FunctionItem(R.string.clear_app_storage, icon = R.drawable.mop_fill0) { dialog = 1 }
         if (SP.displayDangerousFeatures) FunctionItem(R.string.uninstall, icon = R.drawable.delete_fill0) { dialog = 2 }
-	Spacer(Modifier.height(40.dp))
+	Spacer(Modifier.height(BottomPadding))
     }
     if (dialog == 1 && VERSION.SDK_INT >= 28)
         ClearAppStorageDialog(packageName, vm::clearAppData) { dialog = 0 }
@@ -300,8 +300,8 @@ fun PermissionsManagerScreen(
 ) {
     val packageNameParam = param.packageName
     val privilege by Privilege.status.collectAsStateWithLifecycle()
-    var packageName by remember { mutableStateOf(packageNameParam ?: "") }
-    var selectedPermission by remember { mutableStateOf<PermissionItem?>(null) }
+    var packageName by rememberSaveable { mutableStateOf(packageNameParam ?: "") }
+    var selectedPermission by rememberSaveable { mutableIntStateOf(-1) }
     val permissions by packagePermissions.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
         packageName = chosenPackage.receive()
@@ -317,19 +317,19 @@ fun PermissionsManagerScreen(
                 Spacer(Modifier.padding(vertical = 4.dp))
             }
         }
-        items(runtimePermissions, { it.permission }) {
+        itemsIndexed(runtimePermissions, { _, it -> it.id }) { index, it ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(packageName.isValidPackageName) {
-                        selectedPermission = it
+                        selectedPermission = index
                     }
                     .padding(8.dp)
             ) {
                 Icon(painterResource(it.icon), null, Modifier.padding(horizontal = 12.dp))
                 Column {
-                    val state = when (permissions[it.permission]) {
+                    val state = when (permissions[it.id]) {
                         PERMISSION_GRANT_STATE_DEFAULT -> R.string.default_stringres
                         PERMISSION_GRANT_STATE_GRANTED -> R.string.granted
                         PERMISSION_GRANT_STATE_DENIED -> R.string.denied
@@ -341,17 +341,18 @@ fun PermissionsManagerScreen(
             }
         }
         item {
-            Spacer(Modifier.padding(vertical = 30.dp))
+            Spacer(Modifier.height(BottomPadding))
         }
     }
-    if (selectedPermission != null) {
+    if (selectedPermission != -1) {
+        val permission = runtimePermissions[selectedPermission]
         fun changeState(state: Int) {
-	        val result = setPackagePermission(packageName, selectedPermission!!.permission, state)
-            if (result) selectedPermission = null
+            val result = setPackagePermission(packageName, permission.id, state)
+            if (result) selectedPermission = -1
         }
         @Composable
         fun GrantPermissionItem(label: Int, status: Int) {
-            val selected = permissions[selectedPermission!!.permission] == status
+            val selected = permissions[permission.id] == status
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -366,14 +367,14 @@ fun PermissionsManagerScreen(
             }
         }
         AlertDialog(
-            onDismissRequest = { selectedPermission = null },
-            confirmButton = { TextButton({ selectedPermission = null }) { Text(stringResource(R.string.cancel)) } },
-            title = { Text(stringResource(selectedPermission!!.label)) },
+            onDismissRequest = { selectedPermission = -1 },
+            confirmButton = { TextButton({ selectedPermission = -1 }) { Text(stringResource(R.string.cancel)) } },
+            title = { Text(stringResource(permission.label)) },
             text = {
                 Column {
-                    Text(selectedPermission!!.permission)
+                    Text(permission.id)
                     Spacer(Modifier.padding(vertical = 4.dp))
-                    if (!(VERSION.SDK_INT >= 31 && selectedPermission!!.profileOwnerRestricted && privilege.profile)) {
+                    if (!(VERSION.SDK_INT >= 31 && permission.profileOwnerRestricted && privilege.profile)) {
                         GrantPermissionItem(R.string.granted, PERMISSION_GRANT_STATE_GRANTED)
                     }
                     GrantPermissionItem(R.string.denied, PERMISSION_GRANT_STATE_DENIED)
@@ -394,8 +395,8 @@ fun ClearAppStorageScreen(
     chosenPackage: Channel<String>, onChoosePackage: () -> Unit,
     onClear: (String, (Boolean) -> Unit) -> Unit, onNavigateUp: () -> Unit
 ) {
-    var dialog by remember { mutableStateOf(false) }
-    var packageName by remember { mutableStateOf("") }
+    var dialog by rememberSaveable { mutableStateOf(false) }
+    var packageName by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(Unit) {
         packageName = chosenPackage.receive()
     }
@@ -419,7 +420,7 @@ private fun ClearAppStorageDialog(
     packageName: String, onClear: (String, (Boolean) -> Unit) -> Unit, onClose: () -> Unit
 ) {
     val context = LocalContext.current
-    var clearing by remember { mutableStateOf(false) }
+    var clearing by rememberSaveable { mutableStateOf(false) }
     AlertDialog(
         title = { Text(stringResource(R.string.clear_app_storage)) },
         text = {
@@ -429,7 +430,7 @@ private fun ClearAppStorageDialog(
             TextButton(
                 {
                     clearing = true
-		    onClear(packageName) {
+                    onClear(packageName) {
                         Looper.prepare()
                         context.showOperationResultToast(it)
                         onClose()
@@ -458,8 +459,8 @@ fun UninstallAppScreen(
     chosenPackage: Channel<String>, onChoosePackage: () -> Unit,
     onUninstall: (String, (String?) -> Unit) -> Unit, onNavigateUp: () -> Unit
 ) {
-    var dialog by remember { mutableStateOf(false) }
-    var packageName by remember { mutableStateOf("") }
+    var dialog by rememberSaveable { mutableStateOf(false) }
+    var packageName by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(Unit) {
         packageName = chosenPackage.receive()
     }
@@ -485,8 +486,8 @@ private fun UninstallAppDialog(
     packageName: String, onUninstall: (String, (String?) -> Unit) -> Unit, onClose: () -> Unit
 ) {
     val context = LocalContext.current
-    var uninstalling by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var uninstalling by rememberSaveable { mutableStateOf(false) }
+    var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
     AlertDialog(
         title = { Text(stringResource(R.string.uninstall)) },
         text = {
@@ -527,7 +528,7 @@ fun InstallExistingAppScreen(
     onInstall: (String) -> Boolean, onNavigateUp: () -> Unit
 ) {
     val context = LocalContext.current
-    var packageName by remember { mutableStateOf("") }
+    var packageName by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(Unit) {
         packageName = chosenPackage.receive()
     }
@@ -563,7 +564,7 @@ fun CredentialManagerPolicyScreen(
     val context = LocalContext.current
     var policy by rememberSaveable { mutableIntStateOf(getCmPolicy()) }
     val packages by cmPackages.collectAsStateWithLifecycle()
-    var packageName by remember { mutableStateOf("") }
+    var packageName by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(Unit) {
         packageName = chosenPackage.receive()
     }
@@ -601,14 +602,14 @@ fun CredentialManagerPolicyScreen(
                 }
                 Button(
                     {
-			setCmPolicy(policy)
-			context.showOperationResultToast(true)
+                        setCmPolicy(policy)
+                        context.showOperationResultToast(true)
                     },
                     Modifier.fillMaxWidth()
                 ) {
                     Text(stringResource(R.string.apply))
                 }
-		Spacer(Modifier.height(40.dp))
+                Spacer(Modifier.height(BottomPadding))
             }
         }
     }
@@ -626,7 +627,7 @@ fun PermittedAsAndImPackages(
 ) {
     val context = LocalContext.current
     val packages by packagesState.collectAsStateWithLifecycle()
-    var packageName by remember { mutableStateOf("") }
+    var packageName by rememberSaveable { mutableStateOf("") }
     var allowAll by rememberSaveable { mutableStateOf(getPackages()) }
     LaunchedEffect(Unit) {
         packageName = chosenPackage.receive()
@@ -663,7 +664,7 @@ fun PermittedAsAndImPackages(
             }
             Spacer(Modifier.height(10.dp))
             Notes(note, HorizontalPadding)
-	    Spacer(Modifier.height(40.dp))
+	    Spacer(Modifier.height(BottomPadding))
         }
     }
 }
@@ -676,7 +677,7 @@ fun EnableSystemAppScreen(
     onEnable: (String) -> Unit, onNavigateUp: () -> Unit
 ) {
     val context = LocalContext.current
-    var packageName by remember { mutableStateOf("") }
+    var packageName by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(Unit) {
         packageName = chosenPackage.receive()
     }
@@ -684,16 +685,16 @@ fun EnableSystemAppScreen(
         Spacer(Modifier.padding(vertical = 4.dp))
         PackageNameTextField(packageName, onChoosePackage,
             Modifier.padding(bottom = 8.dp)) { packageName = it }
-        Button(
-            {
-                onEnable(packageName)
-                packageName = ""
-                context.showOperationResultToast(true)
-            },
-            Modifier.fillMaxWidth(),
-            packageName.isValidPackageName
-        ) {
-            Text(stringResource(R.string.enable))
+            Button(
+                {
+                    onEnable(packageName)
+                    packageName = ""
+                    context.showOperationResultToast(true)
+                },
+                Modifier.fillMaxWidth(),
+                packageName.isValidPackageName
+            ) {
+                Text(stringResource(R.string.enable))
         }
         Notes(R.string.info_enable_system_app)
     }
@@ -708,7 +709,7 @@ fun SetDefaultDialerScreen(
     onSet: (String) -> Unit, onNavigateUp: () -> Unit
 ) {
     val context = LocalContext.current
-    var packageName by remember { mutableStateOf("") }
+    var packageName by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(Unit) {
         packageName = chosenPackage.receive()
     }
@@ -716,15 +717,15 @@ fun SetDefaultDialerScreen(
         Spacer(Modifier.padding(vertical = 4.dp))
         PackageNameTextField(packageName, onChoosePackage,
             Modifier.padding(bottom = 8.dp)) { packageName = it }
-        Button(
-            {
-                onSet(packageName)
-                context.showOperationResultToast(true)
-            },
-            Modifier.fillMaxWidth(),
-            packageName.isValidPackageName
-        ) {
-            Text(stringResource(R.string.set))
+            Button(
+                {
+                    onSet(packageName)
+                    context.showOperationResultToast(true)
+                },
+                Modifier.fillMaxWidth(),
+                packageName.isValidPackageName
+            ) {
+                Text(stringResource(R.string.set))
         }
     }
 }
@@ -748,7 +749,7 @@ fun PackageFunctionScreen(
     chosenPackage: Channel<String>, onChoosePackage: () -> Unit, notes: Int? = null
 ) {
     val packages by packagesState.collectAsStateWithLifecycle()
-    var packageName by remember { mutableStateOf("") }
+    var packageName by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(Unit) {
         onGet()
         packageName = chosenPackage.receive()
@@ -775,7 +776,7 @@ fun PackageFunctionScreen(
                 Text(stringResource(R.string.add))
             }
             if (notes != null) Notes(notes, HorizontalPadding)
-	    Spacer(Modifier.height(40.dp))
+	    Spacer(Modifier.height(BottomPadding))
         }
     }
 }

@@ -713,6 +713,10 @@
     <string name="second_char">秒</string>
     <string name="security_logs_collected">安全日志已收集</string>
     <string name="n_logs_in_total">总共 %1$d 条日志</string>
+    <string name="network_logs_collected">网络日志已收集</string>
+    <string name="start_user_n">启动用户 %1$d</string>
+    <string name="switch_to_user_n">切换到用户 %1$d</string>
+    <string name="stop_user_n">停止用户 %1$d</string>
     <string name="color_scheme">配色方案</string>
     <string name="color_blue">初音蓝</string>
     <string name="color_red">重音红</string>
