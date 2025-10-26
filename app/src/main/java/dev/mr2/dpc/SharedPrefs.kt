@@ -27,6 +27,8 @@ class SharedPrefs(context: Context) {
     var language by StringSharedPref("language.lang")
     var languageRegion by StringSharedPref("language.region")
     var sharedApiReply by BooleanSharedPref("api.sharedreply", false)
+    var apiPort by IntSharedPref("api.tcp.port", 6737)
+    var apiTcpEnabled by BooleanSharedPref("api.tcp.enabled", false)
     var notifications by StringSharedPref("notifications")
     var shortcutKey by StringSharedPref("shortcut_key")
 }

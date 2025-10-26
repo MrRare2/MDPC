@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.content.Context
 import android.os.Build.VERSION
 import android.os.Bundle
+import android.os.PowerManager
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -231,7 +232,7 @@ import dev.mr2.dpc.dpm.WorkModesScreen
 import dev.mr2.dpc.dpm.WorkProfile
 import dev.mr2.dpc.dpm.WorkProfileScreen
 import dev.mr2.dpc.dpm.dhizukuErrorStatus
-import dev.mr2.dpc.ui.Animations
+import dev.mr2.dpc.ui.NavTransition
 import dev.mr2.dpc.ui.theme.MDPCTheme
 import kotlinx.serialization.Serializable
 import java.util.Locale
@@ -299,7 +300,11 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
     val focusMgr = LocalFocusManager.current
     val lifecycleOwner = LocalLifecycleOwner.current
     fun navigateUp() { navController.navigateUp() }
-    fun navigate(destination: Any) { navController.navigate(destination) }
+    fun navigate(destination: Any) {
+        navController.navigate(destination) {
+            launchSingleTop = true
+        }
+    }
     fun choosePackage() {
         navController.navigate(ApplicationsList(false))
     }
@@ -309,6 +314,8 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
                 popUpTo<Home> { inclusive = true }
             }
         }
+
+        if (SP.apiTcpEnabled) vm.startApiTcpServer(true)
     }
     @Suppress("NewApi") NavHost(
         navController = navController,
@@ -317,10 +324,10 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
             .fillMaxSize()
             .background(colorScheme.background)
             .pointerInput(Unit) { detectTapGestures(onTap = { focusMgr.clearFocus() }) },
-        enterTransition = Animations.navHostEnterTransition,
-        exitTransition = Animations.navHostExitTransition,
-        popEnterTransition = Animations.navHostPopEnterTransition,
-        popExitTransition = Animations.navHostPopExitTransition
+        enterTransition = { NavTransition.enterTransition },
+        exitTransition = { NavTransition.exitTransition },
+        popEnterTransition = { NavTransition.popEnterTransition },
+        popExitTransition = { NavTransition.popExitTransition }
     ) {
         composable<Home> { HomeScreen(::navigate) }
         composable<WorkModes> {
@@ -679,7 +686,9 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
             AppLockSettingsScreen(vm.getAppLockConfig(), vm::setAppLockConfig, ::navigateUp)
         }
         composable<ApiSettings> {
-            ApiSettings(vm::getApiEnabled, vm::getApiSrEnabled, vm::setApiKey, vm::setApiSrEnabled, ::navigateUp)
+            ApiSettings(vm::getApiEnabled, vm::getApiSrEnabled, vm::setApiKey, vm::setApiSrEnabled,
+                vm::getApiTcpEnabled, vm::setApiTcpEnabled,
+                vm::getApiPort, vm::setApiPort, vm::startApiTcpServer, vm::restartApiTcpServer, ::navigateUp)
         }
         composable<Notifications> {
             NotificationsScreen(vm.enabledNotifications, vm::getEnabledNotifications,

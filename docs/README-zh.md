@@ -46,19 +46,19 @@ MrRare2的DPC应用基于[OwnDroid](https://github.com/BinTianqi/OwnDroid)开发
 1. 删除这些用户（次要用户、访客账户等）。
 # API
 有关发送的意图附加参数及参数详情，请查看[接收器文件](https://github.com/MrRare2/MDPC/blob/master/app%2Fsrc%2Fmain%2Fjava%2Fdev%2Fmr2%2Fdpc%2FApiReceiver.kt)。
-## 通过Shell发送
+### 通过Shell发送
 ```shell
 am broadcast -n dev.mr2.dpc/.ApiReceiver -a dev.mr2.dpc.api.ACTION_NAME --es key ...
 ```
-## 通过代码发送
-### Java
+### 通过代码发送
+#### Java
 ```java
 Intent intent = new Intent("dev.mr2.dpc.api.ACTION_NAME");
 intent.setClassName("dev.mr2.dpc", "dev.mr2.dpc.ApiReceiver");
 intent.putExtra("key", "...");
 sendBroadcast(intent);
 ```
-### Kotlin
+#### Kotlin
 ```kotlin
 val intent = Intent("dev.mr2.dpc.api.ACTION_NAME").apply {
     setClassName("dev.mr2.dpc", "dev.mr2.dpc.ApiReceiver")
@@ -66,6 +66,13 @@ val intent = Intent("dev.mr2.dpc.api.ACTION_NAME").apply {
 }
 sendBroadcast(intent)
 ```
+## TCP（高级）
+向应用定义端口的`localhost`发送原始TCP响应。
+请求为JSON，使用AES-GCM 256位加密，并进行Base64编码。
+密钥为API密钥的SHA-512哈希的前32字节。
+加密格式为「IV + 密文 + GCM标签」。
+
+解密步骤相反：Base64解码 → AES解密 → 解析JSON。
 # 构建
 ## Termux
 - 安装依赖项

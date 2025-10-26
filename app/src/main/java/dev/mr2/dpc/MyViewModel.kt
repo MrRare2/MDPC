@@ -136,12 +136,8 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
         SP.darkTheme = newTheme.darkTheme
         SP.blackTheme = newTheme.blackTheme
     }
-    fun getDisplayDangerousFeatures(): Boolean {
-        return SP.displayDangerousFeatures
-    }
-    fun getShortcutsEnabled(): Boolean {
-        return SP.shortcuts
-    }
+    fun getDisplayDangerousFeatures(): Boolean = SP.displayDangerousFeatures
+    fun getShortcutsEnabled(): Boolean = SP.shortcuts
     fun setDisplayDangerousFeatures(state: Boolean) {
         SP.displayDangerousFeatures = state
     }
@@ -179,28 +175,41 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
         }
         SP.notifications = enabledNotifications.value.joinToString(",") { it.toString() }
     }
-    fun getLanguage(): String? {
-        return SP.language
-    }
-    fun getLanguageRegion(): String? {
-        return SP.languageRegion
-    }
+    fun getLanguage(): String? = SP.language
+    fun getLanguageRegion(): String? = SP.languageRegion
     fun setLanguage(language: String?, region: String?) {
         SP.language = language
         SP.languageRegion = region
         if (SP.language != "default") application.setLocale(SP.language ?: "", SP.languageRegion ?: "") else application.resetLocale()
     }
-    fun getLauncherVisible(): Boolean {
-        return application.isLauncherVisible
-    }
+    fun getLauncherVisible(): Boolean = application.isLauncherVisible
     fun setLauncherVisible(enabled: Boolean) {
         application.isLauncherVisible = enabled
     }
-    fun getApiSrEnabled(): Boolean {
-        return SP.sharedApiReply
-    }
+    fun getApiSrEnabled(): Boolean = SP.sharedApiReply
     fun setApiSrEnabled(enabled: Boolean) {
         SP.sharedApiReply = enabled
+    }
+    fun getApiPort(): String = SP.apiPort.toString()
+    fun setApiPort(port: String) {
+        SP.apiPort = port.toInt()
+    }
+    fun getApiTcpEnabled(): Boolean = SP.apiTcpEnabled
+    fun setApiTcpEnabled(enabled: Boolean) {
+        SP.apiTcpEnabled = enabled
+    }
+    fun startApiTcpServer(enabled: Boolean) {
+        val intent = Intent(application, TCPService::class.java)
+        if (enabled) {
+            try {
+                if (VERSION.SDK_INT >= 26) application.startForegroundService(intent)
+                else application.startService(intent)
+            } catch (_: Exception) { }
+        } else application.stopService(intent)
+    }
+    fun restartApiTcpServer() {
+        startApiTcpServer(false)
+        startApiTcpServer(true)
     }
 
     val chosenPackage = Channel<String>(1, BufferOverflow.DROP_LATEST)
@@ -626,10 +635,18 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
             false
         }
     }
+    @SuppressLint("PrivateApi")
     @RequiresApi(24)
     fun getOrgName(): String {
-        return try { DPM.getOrganizationName(DAR).toString() }
-        catch (_: Exception) { "" }
+        return try {
+            DPM.getOrganizationName(DAR)?.toString() ?: ""
+        } catch (_: Exception) {
+            try {
+                val method = DevicePolicyManager::class.java.getDeclaredMethod("getDeviceOwnerOrganizationName")
+                method.isAccessible = true
+                (method.invoke(DPM) as CharSequence).toString()
+            } catch (_: Exception) { "" }
+        }
     }
     @RequiresApi(24)
     fun setOrgName(name: String) {

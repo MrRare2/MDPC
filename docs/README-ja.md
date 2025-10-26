@@ -46,19 +46,19 @@ MrRare2のDPCアプリは、[OwnDroid](https://github.com/BinTianqi/OwnDroid)に
 1. それらのユーザー（セカンダリユーザー、ゲストアカウントなど）を削除する。
 # API
 インテントエクストラや引数については、[レシーバーファイル](https://github.com/MrRare2/MDPC/blob/master/app%2Fsrc%2Fmain%2Fjava%2Fdev%2Fmr2%2Fdpc%2FApiReceiver.kt)を確認してください。
-## シェル経由での送信
+### シェル経由での送信
 ```shell
 am broadcast -n dev.mr2.dpc/.ApiReceiver -a dev.mr2.dpc.api.ACTION_NAME --es key ...
 ```
-## コード経由での送信
-### Java
+### コード経由での送信
+#### Java
 ```java
 Intent intent = new Intent("dev.mr2.dpc.api.ACTION_NAME");
 intent.setClassName("dev.mr2.dpc", "dev.mr2.dpc.ApiReceiver");
 intent.putExtra("key", "...");
 sendBroadcast(intent);
 ```
-### Kotlin
+#### Kotlin
 ```kotlin
 val intent = Intent("dev.mr2.dpc.api.ACTION_NAME").apply {
     setClassName("dev.mr2.dpc", "dev.mr2.dpc.ApiReceiver")
@@ -66,6 +66,13 @@ val intent = Intent("dev.mr2.dpc.api.ACTION_NAME").apply {
 }
 sendBroadcast(intent)
 ```
+## TCP（高度）
+アプリで定義されたポートの`localhost`に対して、生のTCPレスポンスを送信します。
+リクエストはJSONをAES-GCM 256-ビットで暗号化し、Base64でエンコードします。
+キーはAPIキーのSHA-512ハッシュの最初の32バイトを使用します。
+暗号化の形式は「IV + 暗号文 + GCMタグ」です。
+
+復号の手順も同様です：Base64デコード → AESで復号 → JSONを解析。
 # ビルド
 ## Termux
 - 依存関係のインストール

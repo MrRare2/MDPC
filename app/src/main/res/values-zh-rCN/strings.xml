@@ -717,6 +717,10 @@
     <string name="start_user_n">启动用户 %1$d</string>
     <string name="switch_to_user_n">切换到用户 %1$d</string>
     <string name="stop_user_n">停止用户 %1$d</string>
+    <string name="api_notif_title">API服务器正在运行</string>
+    <string name="api_notif_channel_description">API的TCP服务器</string>
+    <string name="api_tcp">（高级）TCP</string>
+    <string name="api_start_tcp">启动TCP服务器</string>
     <string name="color_scheme">配色方案</string>
     <string name="color_blue">初音蓝</string>
     <string name="color_red">重音红</string>

@@ -46,19 +46,20 @@ This is mostly only used for MrRare2 but you can use it as well if you want.
 1. Remove those users (secondary users, guest accounts, etc...)
 # API
 You can check [the receiver](https://github.com/MrRare2/MDPC/blob/master/app%2Fsrc%2Fmain%2Fjava%2Fdev%2Fmr2%2Fdpc%2FApiReceiver.kt) file for the intent extras to sends as well as the arguments
-## Sending via shell
+## Intent based
+### Sending via shell
 ```shell
 am broadcast -n dev.mr2.dpc/.ApiReceiver -a dev.mr2.dpc.api.ACTION_NAME --es key ...
 ```
-## Sending via code
-### Java
+### Sending via code
+#### Java
 ```java
 Intent intent = new Intent("dev.mr2.dpc.api.ACTION_NAME");
 intent.setClassName("dev.mr2.dpc", "dev.mr2.dpc.ApiReceiver");
 intent.putExtra("key", "...");
 sendBroadcast(intent);
 ```
-### Kotlin
+#### Kotlin
 ```kotlin
 val intent = Intent("dev.mr2.dpc.api.ACTION_NAME").apply {
     setClassName("dev.mr2.dpc", "dev.mr2.dpc.ApiReceiver")
@@ -66,6 +67,8 @@ val intent = Intent("dev.mr2.dpc.api.ACTION_NAME").apply {
 }
 sendBroadcast(intent)
 ```
+## TCP (advanced)
+Send a raw TCP response to `localhost` at the port defined in the app with a base64 encoded AES-GCM 256-bit JSON request, with the key being the SHA-512 of the API key using only the first 32 bytes, under the spec of `IV + ciphertext + tag`. Decoding is the opposite way: base64 decode -> AES decrypt with key -> parse JSON. It also uses the same spec.
 # Build
 ## Termux
 - Install deps

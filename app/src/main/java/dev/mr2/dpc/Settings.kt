@@ -4,7 +4,10 @@ import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build.VERSION
+import android.os.PowerManager
+import android.provider.Settings
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -429,14 +432,20 @@ fun AppLockSettingsScreen(
 
 @Composable
 fun ApiSettings(
-    getEnabled: () -> Boolean, getSrEnabled: () -> Boolean, setKey: (String) -> Unit, setSrEnabled: (Boolean) -> Unit, onNavigateUp: () -> Unit
+    getEnabled: () -> Boolean, getSrEnabled: () -> Boolean, setKey: (String) -> Unit, setSrEnabled: (Boolean) -> Unit,
+    getApiTcpEnabled: () -> Boolean, setApiTcpEnabled: (Boolean) -> Unit,
+    getApiPort: () -> String, setApiPort: (String) -> Unit, startApiTcpServer: (Boolean) -> Unit, restartApiTcpServer: () -> Unit,
+    onNavigateUp: () -> Unit
 ) {
     val context = LocalContext.current
+    val pm = context.getSystemService(PowerManager::class.java)
     var alreadyEnabled by remember { mutableStateOf(getEnabled()) }
     MyScaffold(R.string.api, onNavigateUp) {
         var enabled by remember { mutableStateOf(alreadyEnabled) }
         var sharedReplyEnabled by remember { mutableStateOf(getSrEnabled()) }
+        var tcpEnabled by remember { mutableStateOf(getApiTcpEnabled()) }
         var key by rememberSaveable { mutableStateOf("") }
+        var tcpPort by rememberSaveable { mutableStateOf(getApiPort()) }
         var dialog by rememberSaveable { mutableStateOf(0) }
         SwitchItem(R.string.enable, state = enabled, onCheckedChange = {
             if (!it) dialog = 1
@@ -447,6 +456,35 @@ fun ApiSettings(
                 setSrEnabled(it)
                 sharedReplyEnabled = it
             }, padding = false)
+            SwitchItem(R.string.api_tcp, state = tcpEnabled, onCheckedChange = {
+                if (it && !pm.isIgnoringBatteryOptimizations(context.packageName)) context.startActivity(
+                    Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                        data = Uri.parse("package:${context.packageName}")
+                })
+                setApiTcpEnabled(it)
+                startApiTcpServer(it)
+                tcpEnabled = it
+            }, padding = false)
+            if (tcpEnabled) {
+                OutlinedTextField(
+                    tcpPort, {
+                        tcpPort = it.filter { c -> c.isDigit() }.toIntOrNull()?.coerceIn(1, 65535)?.toString() ?: ""
+                    },
+                    Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                    label = { Text(stringResource(R.string.port)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next)
+                )
+                Button(
+                    onClick = {
+                        setApiPort(tcpPort)
+                        restartApiTcpServer()
+                        context.showOperationResultToast(true)
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+                ) {
+                    Text(stringResource(R.string.api_start_tcp))
+                }
+            }
             OutlinedTextField(
                 key, { key = it }, Modifier.fillMaxWidth().padding(bottom = 4.dp),
                 label = { Text(stringResource(R.string.api_key)) },
@@ -460,6 +498,10 @@ fun ApiSettings(
         Button(
             onClick = {
                 setKey(if (enabled) key else "")
+                if (!enabled) {
+                    setApiTcpEnabled(false)
+                    tcpEnabled = false
+                }
                 alreadyEnabled = enabled
                 context.showOperationResultToast(true)
             },

@@ -733,6 +733,10 @@
     <string name="start_user_n">ユーザー %1$d を開始</string>
     <string name="switch_to_user_n">ユーザー %1$d に切り替え</string>
     <string name="stop_user_n">ユーザー %1$d を停止</string>
+    <string name="api_notif_title">APIサーバーが実行中</string>
+    <string name="api_notif_channel_description">API用のTCPサーバー</string>
+    <string name="api_tcp">(高度) TCP</string>
+    <string name="api_start_tcp">TCPサーバーを起動</string>
 
     <string name="color_scheme">カラー設定</string>
     <string name="color_blue">ミクブルー</string>

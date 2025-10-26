@@ -755,6 +755,10 @@
     <string name="start_user_n">Start user %1$d</string>
     <string name="switch_to_user_n">Switch to user %1$d</string>
     <string name="stop_user_n">Stop user %1$d</string>
+    <string name="api_notif_title">API server running</string>
+    <string name="api_notif_channel_description">This is for the API TCP server.</string>
+    <string name="api_tcp">(Advanced) TCP</string>
+    <string name="api_start_tcp">Start TCP server</string>
 
     <!-- languages -->
     <string name="lang_en">English</string>

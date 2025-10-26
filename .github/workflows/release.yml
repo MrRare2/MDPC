@@ -28,12 +28,13 @@ jobs:
       - name: Build APK
         run: |
           echo "${{ secrets.KEY_BASE64 }}" | base64 --decode - > app/release.jks
-          ./gradlew clean assembleRelease --no-build-cache --no-configuration-cache \
+          ./gradlew clean build --no-build-cache --no-configuration-cache \
             -PstoreFile="$(pwd)/app/release.jks" \
             -PstorePassword="${{ secrets.KEYSTORE_PASSWORD }}" \
             -PkeyPassword="${{ secrets.KEY_PASSWORD }}" \
             -PkeyAlias="${{ secrets.KEY_ALIAS }}"
-          mv app/build/outputs/apk/release/app-release.apk MDPC-${{ github.sha }}.apk
+          mv app/build/outputs/apk/release/app-release.apk MDPC-release.apk
+          mv app/build/outputs/apk/debug/app-debug.apk MDPC-debug.apk
 
       - name: Create Git tag
         run: |
@@ -42,6 +43,13 @@ jobs:
           git config user.email ${{ secrets.GIT_EMAIL }}
           git tag -a "$VERSION" -m "Release $VERSION"
           git push origin "$VERSION"
+
+      - name: Generate SHA-256 checksum
+        run: |
+          for file in *; do
+            [ -f "$file" ] || continue
+            sha256sum "$file" | awk '{print $1}' > "${file%.*}".sha256
+          done
 
       - name: Generate release notes
         id: notes
@@ -68,7 +76,7 @@ jobs:
               notes = "Initial release.";
             }
 
-            const desc = context.payload.inputs.release_description || "";
+            const desc = (context.payload.inputs.release_description || "").replace(/\\n/g, "\n");
             core.setOutput("body", notes + (desc ? "\n\n" + desc : ""));
 
       - name: Create GitHub release
@@ -78,7 +86,4 @@ jobs:
           gh release create "v${{ github.event.inputs.release_version }}" \
             -t "v${{ github.event.inputs.release_version }}" \
             -F <(echo "${{ steps.notes.outputs.body }}") \
-            *.apk
-
-      - name: Generate and submit dependency graph
-        uses: gradle/actions/dependency-submission@v4
+            *.apk *.sha256

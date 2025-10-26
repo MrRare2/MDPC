@@ -66,6 +66,7 @@ import dev.mr2.dpc.HorizontalPadding
 import dev.mr2.dpc.MyViewModel
 import dev.mr2.dpc.Privilege
 import dev.mr2.dpc.R
+import dev.mr2.dpc.SP
 import dev.mr2.dpc.formatDate
 import dev.mr2.dpc.popToast
 import dev.mr2.dpc.showOperationResultToast
@@ -305,7 +306,7 @@ fun UserOperationScreen(
                 Icon(Icons.Default.PlayArrow, null, Modifier.padding(end = 4.dp))
                 Text(stringResource(R.string.start_in_background))
             }
-            CreateShortcutIcon(UserOperationType.Start)
+            if (SP.shortcuts) CreateShortcutIcon(UserOperationType.Start)
         }
         Row {
             Button(
@@ -320,7 +321,7 @@ fun UserOperationScreen(
                 Icon(painterResource(R.drawable.sync_alt_fill0), null, Modifier.padding(end = 4.dp))
                 Text(stringResource(R.string.user_operation_switch))
             }
-            CreateShortcutIcon(UserOperationType.Switch)
+            if (SP.shortcuts) CreateShortcutIcon(UserOperationType.Switch)
         }
         if (VERSION.SDK_INT >= 28) Row {
             Button(
@@ -335,7 +336,7 @@ fun UserOperationScreen(
                 Icon(Icons.Default.Close, null, Modifier.padding(end = 4.dp))
                 Text(stringResource(R.string.stop))
             }
-            CreateShortcutIcon(UserOperationType.Stop)
+            if (SP.shortcuts) CreateShortcutIcon(UserOperationType.Stop)
         }
         Button(
             onClick = {
