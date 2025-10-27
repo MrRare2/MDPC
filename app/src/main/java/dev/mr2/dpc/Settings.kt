@@ -218,6 +218,23 @@ fun SettingsOptionsScreen(
     }
 }
 
+enum class ThemeColors(val text: Int, val id: Int) {
+    MaterialYou(R.string.material_you_color, 0),
+    Blue(R.string.color_blue, 1),
+    Red(R.string.color_red, 2),
+    Orange(R.string.color_orange, 3),
+    Yellow(R.string.color_yellow, 4),
+    Pink(R.string.color_pink, 5),
+    Purple(R.string.color_purple, 6),
+    Green(R.string.color_green, 7)
+}
+
+enum class DarkMode(val text: Int, val id: Int) {
+    FollowSystem(R.string.follow_system, -1),
+    On(R.string.on, 1),
+    Off(R.string.off, 0)
+}
+
 @Serializable object Appearance
 
 @Composable
@@ -228,21 +245,8 @@ fun AppearanceScreen(
     var darkThemeMenu by remember { mutableStateOf(false) }
     var colorSelectorMenu by remember { mutableStateOf(false) }
     val theme by currentTheme.collectAsStateWithLifecycle()
-    val darkThemeTextID = when (theme.darkTheme) {
-        1 -> R.string.on
-        0 -> R.string.off
-        else -> R.string.follow_system
-    }
-    val colorSchemeTextID = when (theme.themeColor) {
-	    1 -> R.string.color_blue
-	    2 -> R.string.color_red
-	    3 -> R.string.color_orange
-	    4 -> R.string.color_yellow
-	    5 -> R.string.color_pink
-	    6 -> R.string.color_purple
-	    7 -> R.string.color_green
-	    else -> R.string.material_you_color
-    }
+    val darkThemeTextID = DarkMode.entries.find { it.id == theme.darkTheme }?.text ?: R.string.place_holder
+    val colorSchemeTextID = ThemeColors.entries.find { it.id == theme.themeColor }?.text ?: R.string.place_holder
     MyScaffold(R.string.appearance, onNavigateUp, 0.dp) {
         Box {
             FunctionItem(R.string.color_scheme, stringResource(colorSchemeTextID)) { colorSelectorMenu = true }
@@ -250,64 +254,16 @@ fun AppearanceScreen(
                 expanded = colorSelectorMenu, onDismissRequest = { colorSelectorMenu = false },
                 offset = DpOffset(x = 25.dp, y = 0.dp)
             ) {
-                if (VERSION.SDK_INT >= 31) {
+                ThemeColors.entries.forEach {
+                    if (VERSION.SDK_INT < 31 && it == ThemeColors.MaterialYou) return@forEach
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.material_you_color)) },
+                        text = { Text(stringResource(it.text)) },
                         onClick = {
-                            setTheme(theme.copy(themeColor = 0))
+                            setTheme(theme.copy(themeColor = it.id))
                             colorSelectorMenu = false
                         }
                     )
                 }
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.color_blue)) },
-                    onClick = {
-                        setTheme(theme.copy(themeColor = 1))
-                        colorSelectorMenu = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.color_red)) },
-                    onClick = {
-                        setTheme(theme.copy(themeColor = 2))
-                        colorSelectorMenu = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.color_orange)) },
-                    onClick = {
-                        setTheme(theme.copy(themeColor = 3))
-                        colorSelectorMenu = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.color_yellow)) },
-                    onClick = {
-                        setTheme(theme.copy(themeColor = 4))
-                        colorSelectorMenu = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.color_pink)) },
-                    onClick = {
-                        setTheme(theme.copy(themeColor = 5))
-                        colorSelectorMenu = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.color_purple)) },
-                    onClick = {
-                        setTheme(theme.copy(themeColor = 6))
-                        colorSelectorMenu = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.color_green)) },
-                    onClick = {
-                        setTheme(theme.copy(themeColor = 7))
-                        colorSelectorMenu = false
-                    }
-                )
             }
         }
         Box {
@@ -316,27 +272,15 @@ fun AppearanceScreen(
                 expanded = darkThemeMenu, onDismissRequest = { darkThemeMenu = false },
                 offset = DpOffset(x = 25.dp, y = 0.dp)
             ) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.follow_system)) },
-                    onClick = {
-                        setTheme(theme.copy(darkTheme = -1))
-                        darkThemeMenu = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.on)) },
-                    onClick = {
-                        setTheme(theme.copy(darkTheme = 1))
-                        darkThemeMenu = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.off)) },
-                    onClick = {
-                        setTheme(theme.copy(darkTheme = 0))
-                        darkThemeMenu = false
-                    }
-                )
+                DarkMode.entries.forEach {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(it.text)) },
+                        onClick = {
+                            setTheme(theme.copy(darkTheme = it.id))
+                            darkThemeMenu = false
+                        }
+                    )
+                }
             }
         }
         AnimatedVisibility(theme.darkTheme == 1 || (theme.darkTheme == -1 && isSystemInDarkTheme())) {
@@ -448,23 +392,21 @@ fun ApiSettings(
         var tcpPort by rememberSaveable { mutableStateOf(getApiPort()) }
         var dialog by rememberSaveable { mutableStateOf(0) }
         SwitchItem(R.string.enable, state = enabled, onCheckedChange = {
-            if (!it) dialog = 1
-            else enabled = true
+            if (!it && alreadyEnabled) dialog = 1
+            else enabled = it
         }, padding = false)
         if (enabled) {
 	        SwitchItem(R.string.api_shared_response, state = sharedReplyEnabled, onCheckedChange = {
                 setSrEnabled(it)
                 sharedReplyEnabled = it
-            }, padding = false)
+            }, padding = false, enabled = alreadyEnabled)
             SwitchItem(R.string.api_tcp, state = tcpEnabled, onCheckedChange = {
                 if (it && !pm.isIgnoringBatteryOptimizations(context.packageName)) context.startActivity(
-                    Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                        data = Uri.parse("package:${context.packageName}")
-                })
+                    Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply { data = Uri.parse("package:${context.packageName}") })
                 setApiTcpEnabled(it)
                 startApiTcpServer(it)
                 tcpEnabled = it
-            }, padding = false)
+            }, padding = false, enabled = alreadyEnabled)
             if (tcpEnabled) {
                 OutlinedTextField(
                     tcpPort, {
@@ -495,13 +437,9 @@ fun ApiSettings(
                 }
             )
         }
-        Button(
+        if (enabled) Button(
             onClick = {
-                setKey(if (enabled) key else "")
-                if (!enabled) {
-                    setApiTcpEnabled(false)
-                    tcpEnabled = false
-                }
+                setKey(key)
                 alreadyEnabled = enabled
                 context.showOperationResultToast(true)
             },
@@ -522,6 +460,9 @@ fun ApiSettings(
                 confirmButton = {
                     TextButton(onClick = {
                         enabled = false
+                        setApiTcpEnabled(false)
+                        startApiTcpServer(false)
+                        setKey("")
                         dialog = 0
                     }) {
                         Text(stringResource(R.string.confirm))
@@ -565,10 +506,10 @@ fun LanguageScreen(getLanguage: () -> String?, getLanguageRegion: () -> String?,
     MyScaffold(R.string.languages, onNavigateUp, 0.dp) {
 	    FullWidthRadioButtonItem(
             stringResource(R.string.follow_system),
-	        currentLanguage == "default"
+	        currentLanguage == null && currentLanguage == null
         ) {
-            currentLanguage = "default"
-	        currentRegion = "default"
+            currentLanguage = null
+	        currentRegion = null
         }
 
 	    languages.forEach { lang ->

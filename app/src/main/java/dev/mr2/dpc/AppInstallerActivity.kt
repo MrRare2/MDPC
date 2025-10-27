@@ -37,8 +37,9 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -103,7 +104,7 @@ class AppInstallerActivity:FragmentActivity() {
                 val writingPackage by vm.writingPackage.collectAsStateWithLifecycle()
                 val result by vm.result.collectAsStateWithLifecycle()
                 AppInstaller(
-                    installing, options, { if(!installing) vm.options.value = it },
+                    installing, options, { if (!installing) vm.options.value = it },
                     packages, { uri -> vm.packages.update { it.minus(uri) } },
                     { uris -> vm.packages.update { it.plus(uris) } },
                     vm::startInstall, writtenPackages, writingPackage,
@@ -118,7 +119,7 @@ class AppInstallerActivity:FragmentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Composable
 private fun AppInstaller(
@@ -143,14 +144,14 @@ private fun AppInstaller(
             )
         },
         floatingActionButton = {
-            if(packages.isNotEmpty()) ExtendedFloatingActionButton(
+            if (packages.isNotEmpty()) ExtendedFloatingActionButton(
                 text = { Text(stringResource(R.string.start)) },
                 icon = {
-                    if(installing) CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    if (installing) CircularWavyProgressIndicator(modifier = Modifier.size(24.dp))
                     else Icon(Icons.Default.PlayArrow, null)
                 },
                 onClick = {
-                    if(SP.lockPasswordHash.isNullOrEmpty()) onStartInstall() else appLockDialog = true
+                    if (SP.lockPasswordHash.isNullOrEmpty()) onStartInstall() else appLockDialog = true
                 },
                 expanded = !installing
             )
@@ -181,14 +182,14 @@ private fun AppInstaller(
             }
             HorizontalPager(pagerState) { page ->
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState).padding(top = 8.dp)) {
-                    if(page == 0) Packages(installing, packages, onPackageRemove, onPackageChoose, writtenPackages, writingPackage)
+                    if (page == 0) Packages(installing, packages, onPackageRemove, onPackageChoose, writtenPackages, writingPackage)
                     else Options(options, onOptionsChange)
                 }
             }
             ResultDialog(result, onResultDialogClose)
         }
     }
-    if(appLockDialog) {
+    if (appLockDialog) {
         AppLockDialog({
             appLockDialog = false
             onStartInstall()
@@ -223,7 +224,7 @@ private fun ColumnScope.Packages(
     }
 }
 
-
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun PackageItem(uri: Uri, installing: Boolean, onRemove: () -> Unit, isWritten: Boolean, isWriting: Boolean) {
     Row(
@@ -236,11 +237,11 @@ private fun PackageItem(uri: Uri, installing: Boolean, onRemove: () -> Unit, isW
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.fillMaxWidth(0.85F)
         )
-        if(!installing) IconButton(onRemove) {
+        if (!installing) IconButton(onRemove) {
             Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.remove))
         }
-        if(isWritten) Icon(Icons.Default.Check, null, Modifier.padding(end = 8.dp), MaterialTheme.colorScheme.secondary)
-        if(isWriting) CircularProgressIndicator(Modifier.padding(end = 8.dp).size(24.dp))
+        if (isWritten) Icon(Icons.Default.Check, null, Modifier.padding(end = 8.dp), MaterialTheme.colorScheme.secondary)
+        if (isWriting) CircularWavyProgressIndicator(Modifier.padding(end = 8.dp).size(24.dp))
     }
 }
 
@@ -263,7 +264,7 @@ private fun ColumnScope.Options(options: SessionParamsOptions, onChange: (Sessio
     FullWidthRadioButtonItem(R.string.inherit_existing, options.mode == PackageInstaller.SessionParams.MODE_INHERIT_EXISTING) {
         onChange(options.copy(mode = PackageInstaller.SessionParams.MODE_INHERIT_EXISTING))
     }
-    if(Build.VERSION.SDK_INT >= 34) {
+    if (Build.VERSION.SDK_INT >= 34) {
         AnimatedVisibility(options.mode == PackageInstaller.SessionParams.MODE_INHERIT_EXISTING) {
             FullWidthCheckBoxItem(R.string.dont_kill_app, options.noKill) {
                 onChange(options.copy(noKill = it))
@@ -290,11 +291,11 @@ private fun ColumnScope.Options(options: SessionParamsOptions, onChange: (Sessio
 
 @Composable
 private fun ResultDialog(result: Intent?, onDialogClose: () -> Unit) {
-    if(result != null) {
+    if (result != null) {
         val status = result.getIntExtra(PackageInstaller.EXTRA_STATUS, 999)
         AlertDialog(
             title = {
-                val text = if(status == PackageInstaller.STATUS_SUCCESS) R.string.success else R.string.failure
+                val text = if (status == PackageInstaller.STATUS_SUCCESS) R.string.success else R.string.failure
                 Text(stringResource(text))
             },
             text = {
@@ -332,15 +333,15 @@ class AppInstallerViewModel(application: Application): AndroidViewModel(applicat
     val writingPackage = MutableStateFlow<Uri?>(null)
     private fun getSessionParams(): PackageInstaller.SessionParams {
         return PackageInstaller.SessionParams(options.value.mode).apply {
-            if(Build.VERSION.SDK_INT >= 34) {
-                if(options.value.keepOriginalEnabledSetting) setApplicationEnabledSettingPersistent()
+            if (Build.VERSION.SDK_INT >= 34) {
+                if (options.value.keepOriginalEnabledSetting) setApplicationEnabledSettingPersistent()
                 setDontKillApp(options.value.noKill)
             }
             setInstallLocation(options.value.location)
         }
     }
     fun startInstall() {
-        if(installing.value) return
+        if (installing.value) return
         installing.value = true
         viewModelScope.launch(Dispatchers.IO) {
             val context = getApplication<Application>()
@@ -367,7 +368,7 @@ class AppInstallerViewModel(application: Application): AndroidViewModel(applicat
             val receiver = object : BroadcastReceiver() {
                 override fun onReceive(context: Context, intent: Intent) {
                     val statusExtra = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, 999)
-                    if(statusExtra == PackageInstaller.STATUS_PENDING_USER_ACTION) {
+                    if (statusExtra == PackageInstaller.STATUS_PENDING_USER_ACTION) {
                         @SuppressWarnings("UnsafeIntentLaunch")
                         context.startActivity(
                             (intent.getParcelableExtra(Intent.EXTRA_INTENT) as Intent?)
@@ -376,7 +377,7 @@ class AppInstallerViewModel(application: Application): AndroidViewModel(applicat
                     } else {
                         result.value = intent
                         writtenPackages.value = setOf()
-                        if(statusExtra == PackageInstaller.STATUS_SUCCESS) {
+                        if (statusExtra == PackageInstaller.STATUS_SUCCESS) {
                             packages.value = setOf()
                         }
                         installing.value = false
@@ -388,7 +389,7 @@ class AppInstallerViewModel(application: Application): AndroidViewModel(applicat
                 context, receiver, IntentFilter(ACTION), null,
                 null, ContextCompat.RECEIVER_EXPORTED
             )
-            val pi = if(Build.VERSION.SDK_INT >= 34) {
+            val pi = if (Build.VERSION.SDK_INT >= 34) {
                 PendingIntent.getBroadcast(
                     context, sessionId, Intent(ACTION),
                     PendingIntent.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT or PendingIntent.FLAG_MUTABLE
