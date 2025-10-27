@@ -113,7 +113,7 @@
     <string name="transfer">転送</string>
     <string name="transfer_ownership_warning">%1$s 権限が %2$s に移譲されます</string>
 
-    <string name="dhizuku_server">Dhizuku サーバー</string>
+    <string name="dhizuku_server">Dhizukuサーバー</string>
     <string name="request_permission">権限をリクエスト</string>
     <string name="allow">許可</string>
     <string name="reject">拒否</string>
@@ -180,7 +180,7 @@
     <string name="permission_policy">権限ポリシー</string>
     <string name="auto_grant">自動付与</string>
     <string name="auto_deny">自動拒否</string>
-    <string name="mte_policy">MTE ポリシー</string>
+    <string name="mte_policy">MTEポリシー</string>
     <string name="nearby_app_streaming">ニアバイアプリストリーミングポリシー</string>
     <string name="nearby_streaming_policy">ニアバイストリーミングポリシー</string>
     <string name="nearby_notification_streaming">ニアバイ通知ストリーミングポリシー</string>
@@ -737,6 +737,12 @@
     <string name="api_notif_channel_description">API用のTCPサーバー</string>
     <string name="api_tcp">(高度) TCP</string>
     <string name="api_start_tcp">TCPサーバーを起動</string>
+    <string name="ca_cert_serial_number">シリアル番号</string>
+    <string name="ca_cert_subject">サブジェクト</string>
+    <string name="ca_cert_issuer">発行者</string>
+    <string name="ca_cert_issued_on">発行日</string>
+    <string name="ca_cert_expires_on">有効期限</string>
+    <string name="ca_cert_sha256_fingerprint">SHA-256フィンガープリント</string>
 
     <string name="color_scheme">カラー設定</string>
     <string name="color_blue">ミクブルー</string>

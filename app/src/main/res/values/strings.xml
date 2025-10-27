@@ -759,6 +759,12 @@
     <string name="api_notif_channel_description">This is for the API TCP server.</string>
     <string name="api_tcp">(Advanced) TCP</string>
     <string name="api_start_tcp">Start TCP server</string>
+    <string name="ca_cert_serial_number">Serial number</string>
+    <string name="ca_cert_subject">Subject</string>
+    <string name="ca_cert_issuer">Issuer</string>
+    <string name="ca_cert_issued_on">Issued on</string>
+    <string name="ca_cert_expires_on">Expires on</string>
+    <string name="ca_cert_sha256_fingerprint">SHA-256 fingerprint</string>
 
     <!-- languages -->
     <string name="lang_en">English</string>

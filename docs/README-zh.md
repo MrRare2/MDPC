@@ -73,6 +73,11 @@ sendBroadcast(intent)
 加密格式为「IV + 密文 + GCM标签」。
 
 解密步骤相反：Base64解码 → AES解密 → 解析JSON。
+
+> [!WARNING]
+> 使用TCP AP**I风险自负**！
+> 对于因使用该API或应用程序本身而造成的**任何损害**，开发者**概不负责**。
+
 # 构建
 ## Termux
 - 安装依赖项

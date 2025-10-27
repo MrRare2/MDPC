@@ -721,6 +721,12 @@
     <string name="api_notif_channel_description">API的TCP服务器</string>
     <string name="api_tcp">（高级）TCP</string>
     <string name="api_start_tcp">启动TCP服务器</string>
+    <string name="ca_cert_serial_number">序列号</string>
+    <string name="ca_cert_subject">主题</string>
+    <string name="ca_cert_issuer">颁发者</string>
+    <string name="ca_cert_issued_on">签发日期</string>
+    <string name="ca_cert_expires_on">到期日期</string>
+    <string name="ca_cert_sha256_fingerprint">SHA-256指纹</string>
     <string name="color_scheme">配色方案</string>
     <string name="color_blue">初音蓝</string>
     <string name="color_red">重音红</string>

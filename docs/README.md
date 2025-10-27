@@ -69,6 +69,11 @@ sendBroadcast(intent)
 ```
 ## TCP (advanced)
 Send a raw TCP response to `localhost` at the port defined in the app with a base64 encoded AES-GCM 256-bit JSON request, with the key being the SHA-512 of the API key using only the first 32 bytes, under the spec of `IV + ciphertext + tag`. Decoding is the opposite way: base64 decode -> AES decrypt with key -> parse JSON. It also uses the same spec.
+
+> [!WARNING]
+> Only use the TCP API at your own risk!
+> The developers are **not responsible** for any type of damage this usage may cause, as with the usage of the app itself.
+
 # Build
 ## Termux
 - Install deps
