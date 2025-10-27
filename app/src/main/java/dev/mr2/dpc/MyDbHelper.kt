@@ -18,11 +18,11 @@ class MyDbHelper(context: Context): SQLiteOpenHelper(context, "data", null, 4) {
     }
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         // ver 2
-        db.execSQL("CREATE TABLE security_logs (id INTEGER, tag INTEGER, level INTEGER," +
+        db.execSQL("CREATE TABLE IF NOT EXISTS security_logs (id INTEGER, tag INTEGER, level INTEGER," +
             "time INTEGER, data TEXT)")
         // ver 3
         db.execSQL(
-            "CREATE TABLE network_logs (id INTEGER, package INTEGER, time INTEGER," +
+            "CREATE TABLE IF NOT EXISTS network_logs (id INTEGER, package INTEGER, time INTEGER," +
                 "type TEXT, host TEXT, count INTEGER, addresses TEXT, address TEXT," +
                 "port INTEGER)"
         )
