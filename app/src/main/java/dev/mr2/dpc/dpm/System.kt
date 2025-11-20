@@ -1425,11 +1425,10 @@ fun CaCertScreen(
                 Icon(Icons.Default.Add, stringResource(R.string.install))
             }
         },
-        contentWindowInsets = adaptiveInsets()
+        //contentWindowInsets = adaptiveInsets()
     ) { paddingValues ->
         LazyColumn(
             Modifier
-                .fillMaxSize()
                 .padding(paddingValues),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

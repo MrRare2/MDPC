@@ -74,6 +74,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.mr2.dpc.dpm.ManageAppGroups
 import dev.mr2.dpc.ui.FunctionItem
 import dev.mr2.dpc.ui.FullWidthRadioButtonItem
 import dev.mr2.dpc.ui.MyScaffold
@@ -152,6 +153,7 @@ fun SettingsScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Unit) {
                 FunctionItem(title = R.string.api, icon = R.drawable.code_fill0) { onNavigate(ApiSettings) }
             if (privilege.device && !privilege.dhizuku)
                 FunctionItem(R.string.notifications, icon = R.drawable.notifications_fill0) { onNavigate(Notifications) }
+            FunctionItem(R.string.manage_app_groups, icon = R.drawable.folder_fill0) { onNavigate(ManageAppGroups) }
 	        FunctionItem(R.string.languages, icon = R.drawable.language_fill0) { onNavigate(LanguageScreen) }
             FunctionItem(title = R.string.about, icon = R.drawable.info_fill0) { onNavigate(About) }
         }
@@ -382,6 +384,7 @@ fun ApiSettings(
     onNavigateUp: () -> Unit
 ) {
     val context = LocalContext.current
+    val privilege by Privilege.status.collectAsStateWithLifecycle()
     val pm = context.getSystemService(PowerManager::class.java)
     var alreadyEnabled by remember { mutableStateOf(getEnabled()) }
     MyScaffold(R.string.api, onNavigateUp) {
@@ -406,7 +409,7 @@ fun ApiSettings(
                 setApiTcpEnabled(it)
                 startApiTcpServer(it)
                 tcpEnabled = it
-            }, padding = false, enabled = alreadyEnabled)
+            }, padding = false, enabled = alreadyEnabled && !privilege.dhizuku)
             if (tcpEnabled) {
                 OutlinedTextField(
                     tcpPort, {
@@ -414,7 +417,8 @@ fun ApiSettings(
                     },
                     Modifier.fillMaxWidth().padding(bottom = 4.dp),
                     label = { Text(stringResource(R.string.port)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                    enabled = !privilege.dhizuku
                 )
                 Button(
                     onClick = {
@@ -423,6 +427,7 @@ fun ApiSettings(
                         context.showOperationResultToast(true)
                     },
                     modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+                    enabled = !privilege.dhizuku
                 ) {
                     Text(stringResource(R.string.api_start_tcp))
                 }

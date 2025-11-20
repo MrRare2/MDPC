@@ -104,9 +104,9 @@ fun PasswordScreen(vm: MyViewModel,onNavigateUp: () -> Unit, onNavigate: (Any) -
             FunctionItem(R.string.required_strong_auth_timeout, icon = R.drawable.fingerprint_off_fill0) { dialog = 2 }
         }
         FunctionItem(R.string.pwd_history, icon = R.drawable.history_fill0) { dialog = 5 }
-        if (VERSION.SDK_INT < 31) {
+        //if (VERSION.SDK_INT < 31) {
             FunctionItem(R.string.required_password_quality, icon = R.drawable.password_fill0) { onNavigate(RequiredPasswordQuality) }
-        }
+        //}
     }
     if (dialog != 0) {
         var input by remember { mutableStateOf("") }
@@ -392,7 +392,8 @@ fun RequiredPasswordComplexityScreen(
                 setComplexity(complexity)
                 context.showOperationResultToast(true)
             },
-            modifier = Modifier.fillMaxWidth().padding(HorizontalPadding, 8.dp)
+            modifier = Modifier.fillMaxWidth().padding(HorizontalPadding, 8.dp),
+            enabled = complexity != getComplexity()
         ) {
             Text(text = stringResource(R.string.apply))
         }
@@ -456,40 +457,43 @@ fun KeyguardDisabledFeaturesScreen(
                 setConfig(KeyguardDisableConfig(mode, flags))
                 context.showOperationResultToast(true)
             },
-            modifier = Modifier.fillMaxWidth().padding(HorizontalPadding, 8.dp)
+            modifier = Modifier.fillMaxWidth().padding(HorizontalPadding, 8.dp),
         ) {
             Text(text = stringResource(R.string.apply))
         }
     }
 }
 
+enum class PasswordQuality(val text: Int, val id: Int) {
+    Unspecified(R.string.password_quality_unspecified, PASSWORD_QUALITY_UNSPECIFIED),
+    Something(R.string.password_quality_something, PASSWORD_QUALITY_SOMETHING),
+    Alphabetic(R.string.password_quality_alphabetic, PASSWORD_QUALITY_ALPHABETIC),
+    Numeric(R.string.password_quality_numeric, PASSWORD_QUALITY_NUMERIC),
+    Alphanumeric(R.string.password_quality_alphanumeric, PASSWORD_QUALITY_ALPHANUMERIC),
+    BiometricWeak(R.string.password_quality_biometrics_weak, PASSWORD_QUALITY_BIOMETRIC_WEAK),
+    NumericComplex(R.string.password_quality_numeric_complex, PASSWORD_QUALITY_NUMERIC_COMPLEX)
+}
+
 @Serializable object RequiredPasswordQuality
 
 @Composable
-fun RequiredPasswordQualityScreen(onNavigateUp: () -> Unit) {
+fun RequiredPasswordQualityScreen(onNavigateUp: () -> Unit, getPasswordQuality: () -> Int, setPasswordQuality: (Int) -> Unit) {
     val context = LocalContext.current
-    val passwordQuality = mapOf(
-        PASSWORD_QUALITY_UNSPECIFIED to R.string.password_quality_unspecified,
-        PASSWORD_QUALITY_SOMETHING to R.string.password_quality_something,
-        PASSWORD_QUALITY_ALPHABETIC to R.string.password_quality_alphabetic,
-        PASSWORD_QUALITY_NUMERIC to R.string.password_quality_numeric,
-        PASSWORD_QUALITY_ALPHANUMERIC to R.string.password_quality_alphanumeric,
-        PASSWORD_QUALITY_BIOMETRIC_WEAK to R.string.password_quality_biometrics_weak,
-        PASSWORD_QUALITY_NUMERIC_COMPLEX to R.string.password_quality_numeric_complex
-    )
-    var selectedItem by rememberSaveable { mutableIntStateOf(PASSWORD_QUALITY_UNSPECIFIED) }
-    LaunchedEffect(Unit) { selectedItem = Privilege.DPM.getPasswordQuality(Privilege.DAR) }
+    var selectedItem by rememberSaveable { mutableStateOf(PasswordQuality.Unspecified.id) }
+    LaunchedEffect(Unit) { selectedItem = getPasswordQuality() }
     MyScaffold(R.string.required_password_quality, onNavigateUp) {
-        passwordQuality.forEach {
-            RadioButtonItem(it.value, selectedItem == it.key) { selectedItem = it.key }
+        PasswordQuality.entries.forEach {
+            RadioButtonItem(it.text, selectedItem == it.id) { selectedItem = it.id }
+
         }
         Spacer(Modifier.padding(vertical = 5.dp))
         Button(
             onClick = {
-                Privilege.DPM.setPasswordQuality(Privilege.DAR, selectedItem)
+                setPasswordQuality(selectedItem)
                 context.showOperationResultToast(true)
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = selectedItem != getPasswordQuality()
         ) {
             Text(stringResource(R.string.apply))
         }

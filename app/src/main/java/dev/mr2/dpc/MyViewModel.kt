@@ -62,6 +62,7 @@ import dev.mr2.dpc.dpm.ApnAuthType
 import dev.mr2.dpc.dpm.ApnConfig
 import dev.mr2.dpc.dpm.ApnMvnoType
 import dev.mr2.dpc.dpm.ApnProtocol
+import dev.mr2.dpc.dpm.AppGroup
 import dev.mr2.dpc.dpm.AppStatus
 import dev.mr2.dpc.dpm.CaCertInfo
 import dev.mr2.dpc.dpm.CreateUserResult
@@ -281,9 +282,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     val ucdPackages = MutableStateFlow(emptyList<AppInfo>())
     @RequiresApi(30)
     fun getUcdPackages() {
-        ucdPackages.value = DPM.getUserControlDisabledPackages(DAR).map {
-            getAppInfo(it)
-        }
+        ucdPackages.value = DPM.getUserControlDisabledPackages(DAR).distinct().map { getAppInfo(it) }
     }
     @RequiresApi(30)
     fun setPackageUcd(name: String, status: Boolean) {
@@ -316,7 +315,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     val mddPackages = MutableStateFlow(emptyList<AppInfo>())
     @RequiresApi(28)
     fun getMddPackages() {
-        mddPackages.value = DPM.getMeteredDataDisabledPackages(DAR).map { getAppInfo(it) }
+        mddPackages.value = DPM.getMeteredDataDisabledPackages(DAR).distinct().map { getAppInfo(it) }
     }
     @RequiresApi(28)
     fun setPackageMdd(name: String, status: Boolean): Boolean {
@@ -331,7 +330,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     val kuPackages = MutableStateFlow(emptyList<AppInfo>())
     @RequiresApi(28)
     fun getKuPackages() {
-        kuPackages.value = DPM.getKeepUninstalledPackages(DAR)?.map { getAppInfo(it) } ?: emptyList()
+        kuPackages.value = DPM.getKeepUninstalledPackages(DAR)?.distinct()?.map { getAppInfo(it) } ?: emptyList()
     }
     @RequiresApi(28)
     fun setPackageKu(name: String, status: Boolean) {
@@ -345,7 +344,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     val cpPackages = MutableStateFlow(emptyList<AppInfo>())
     @RequiresApi(30)
     fun getCpPackages() {
-        cpPackages.value = DPM.getCrossProfilePackages(DAR).map { getAppInfo(it) }
+        cpPackages.value = DPM.getCrossProfilePackages(DAR).distinct().map { getAppInfo(it) }
     }
     @RequiresApi(30)
     fun setPackageCp(name: String, status: Boolean) {
@@ -359,7 +358,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     // Cross-profile widget providers
     val cpwProviders = MutableStateFlow(emptyList<AppInfo>())
     fun getCpwProviders() {
-        cpwProviders.value = DPM.getCrossProfileWidgetProviders(DAR).map { getAppInfo(it) }
+        cpwProviders.value = DPM.getCrossProfileWidgetProviders(DAR).distinct().map { getAppInfo(it) }
     }
     fun setCpwProvider(name: String, status: Boolean): Boolean {
         val result = if (status) {
@@ -421,7 +420,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     @RequiresApi(34)
     fun getCmPolicy(): Int {
         return DPM.credentialManagerPolicy?.let { policy ->
-            cmPackages.value = policy.packageNames.map { getAppInfo(it) }
+            cmPackages.value = policy.packageNames.distinct().map { getAppInfo(it) }
             policy.policyType
         } ?: -1
     }
@@ -442,7 +441,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     val pimPackages = MutableStateFlow(emptyList<AppInfo>())
     fun getPimPackages(): Boolean {
         return DPM.getPermittedInputMethods(DAR).let { packages ->
-            pimPackages.value = packages?.map { getAppInfo(it) } ?: emptyList()
+            pimPackages.value = packages?.distinct()?.map { getAppInfo(it) } ?: emptyList()
             packages == null
         }
     }
@@ -552,7 +551,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
                 DevicePolicyManager.EXTRA_PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME,
                 MyAdminComponent
             )
-	} else {
+	    } else {
             intent.putExtra(
                 DevicePolicyManager.EXTRA_PROVISIONING_DEVICE_ADMIN_PACKAGE_NAME,
                 application.packageName
@@ -619,6 +618,24 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
 	    DevicePolicyManager.FLAG_MANAGED_CAN_ACCESS_PARENT
         }
         DPM.addCrossProfileIntentFilter(DAR, filter, flags)
+    }
+
+    val appGroups = MutableStateFlow(emptyList<AppGroup>())
+    init {
+        getAppGroups()
+    }
+    fun getAppGroups() {
+        appGroups.value = myRepo.getAppGroups()
+    }
+    fun setAppGroup(id: Int?, name: String, apps: List<String>) {
+        myRepo.setAppGroup(id, name, apps)
+        getAppGroups()
+    }
+    fun deleteAppGroup(id: Int) {
+        myRepo.deleteAppGroup(id)
+        appGroups.update { group ->
+            group.filter { it.id != id }
+        }
     }
 
     // late sync, system parts
@@ -1853,6 +1870,12 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     }
     fun setPasswordHistoryLength(length: Int) {
         DPM.setPasswordHistoryLength(DAR, length)
+    }
+    fun getPasswordQuality(): Int {
+        return DPM.getPasswordQuality(DAR)
+    }
+    fun setPasswordQuality(quality: Int) {
+        DPM.setPasswordQuality(DAR, quality)
     }
 
     // security logs

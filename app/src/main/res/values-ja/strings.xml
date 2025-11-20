@@ -744,6 +744,11 @@
     <string name="ca_cert_expires_on">有効期限</string>
     <string name="ca_cert_sha256_fingerprint">SHA-256フィンガープリント</string>
 
+    <string name="app_group">アプリグループ</string>
+    <string name="manage_app_groups">アプリグループを管理</string>
+    <string name="edit_app_group">グループを編集</string>
+    <string name="add_to_list">リストに追加</string>
+
     <string name="color_scheme">カラー設定</string>
     <string name="color_blue">ミクブルー</string>
     <string name="color_red">テト赤い</string>

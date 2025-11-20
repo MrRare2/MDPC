@@ -24,6 +24,9 @@ import com.rosan.dhizuku.api.DhizukuBinderWrapper
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.json.JSONObject
 import org.json.JSONArray
 
@@ -38,7 +41,6 @@ fun realHandler(context: Context, req: JSONObject): JSONObject {
     val wm = context.getSystemService(Context.WIFI_SERVICE) as WifiManager?
     val hwm = context.getSystemService(Context.HARDWARE_PROPERTIES_SERVICE) as HardwarePropertiesManager?
     val um = context.getSystemService(Context.USER_SERVICE) as UserManager?
-    val pm = context.packageManager.packageInstaller
     val repo = (context.applicationContext as MyApplication).myRepo
     try {
         ret = when (act) {
@@ -70,12 +72,13 @@ fun realHandler(context: Context, req: JSONObject): JSONObject {
             "SYSTEM_LOCK_NOW" -> dpm.lockNow()
             "SYSTEM_SET_TIME" -> dpm.setTime(receiver, getArg<Long>("time_ts", req))
             "SYSTEM_SET_TZ" -> dpm.setTimeZone(receiver, getArg<String>("time_tz", req))
-            "SYSTEM_SET_AUTO_TIME_POLICY" -> dpm.setAutoTimePolicy(getArg<Int>("flags", req))
-            "SYSTEM_SET_AUTO_TZ_POLICY" -> dpm.setAutoTimeZonePolicy(getArg<Int>("flags", req))
-            "SYSTEM_SET_CONTENT_PROTECTION_POLICY" -> dpm.setContentProtectionPolicy(receiver, getArg<Int>("flags", req))
-            "SYSTEM_SET_PERMISSION_POLICY" -> dpm.setPermissionPolicy(receiver, getArg<Int>("flags", req))
-            "SYSTEM_SET_MTE_POLICY" -> dpm.setMtePolicy(getArg<Int>("flags", req))
-            "SYSTEM_SET_NEARBY_APP_STREAMING_POLICY" -> dpm.setNearbyAppStreamingPolicy(getArg<Int>("flags", req))
+            "SYSTEM_SET_AUTO_TIME_POLICY" -> dpm.setAutoTimePolicy(getArg<Int>("policy", req))
+            "SYSTEM_SET_AUTO_TZ_POLICY" -> dpm.setAutoTimeZonePolicy(getArg<Int>("policy", req))
+            "SYSTEM_SET_CONTENT_PROTECTION_POLICY" -> dpm.setContentProtectionPolicy(receiver, getArg<Int>("policy", req))
+            "SYSTEM_SET_PERMISSION_POLICY" -> dpm.setPermissionPolicy(receiver, getArg<Int>("policy", req))
+            "SYSTEM_SET_MTE_POLICY" -> dpm.setMtePolicy(getArg<Int>("policy", req))
+            "SYSTEM_SET_NEARBY_APP_STREAMING_POLICY" -> dpm.setNearbyAppStreamingPolicy(getArg<Int>("policy", req))
+            "SYSTEM_SET_NEARBY_NOTIFICATION_STREAMING_POLICY" -> dpm.setNearbyNotificationStreamingPolicy(getArg<Int>("policy", req))
             "SYSTEM_DISABLE_ACCOUNTS_MANAGEMENT" -> dpm.setAccountManagementDisabled(receiver, getArg<String>("account", req), true)
             "SYSTEM_ENABLE_ACCOUNTS_MANAGEMENT" -> dpm.setAccountManagementDisabled(receiver, getArg<String>("account", req), false)
             "SYSTEM_DISABLE_FRP_POLICY" -> dpm.setFactoryResetProtectionPolicy(receiver, FactoryResetProtectionPolicy.Builder()
@@ -94,10 +97,10 @@ fun realHandler(context: Context, req: JSONObject): JSONObject {
             "APP_HIDE" -> dpm.setApplicationHidden(receiver, getArg<String>("package", req), true)
             "APP_UNHIDE" -> dpm.setApplicationHidden(receiver, getArg<String>("package", req), false)
             "APP_SUSPEND" -> dpm.setPackagesSuspended(receiver, arrayOf(getArg<String>("package", req)), true)
-            "APP_UNSUSPEND" -> dpm.setPackagesSuspended(receiver, arrayOf(getArg<String>("package", req)), false).isEmpty()
+            "APP_UNSUSPEND" -> dpm.setPackagesSuspended(receiver, arrayOf(getArg<String>("package", req)), false)
             "APP_ADD_UNINSTALL_BLOCK" -> dpm.setUninstallBlocked(receiver, getArg<String>("package", req), true)
             "APP_REMOVE_UNINSTALL_BLOCK" -> dpm.setUninstallBlocked(receiver, getArg<String>("package", req), false)
-            "APP_UNINSTALL" -> uninstallApp(context, getArg<String>("app", req), pm)
+            "APP_UNINSTALL" -> runBlocking { uninstallApp(context, getArg<String>("app", req)) }
             "SYSTEM_REBOOT" -> dpm.reboot(receiver)
             "USER_SET_LOCK_SCREEN_INFO" -> dpm.setDeviceOwnerLockScreenInfo(receiver, getArg<String>("text", req))
             "USER_SET_SHORT_SUPPORT_MESSAGE" -> dpm.setShortSupportMessage(receiver, getArg<String>("text", req))
@@ -135,10 +138,11 @@ fun realHandler(context: Context, req: JSONObject): JSONObject {
             "GET_DEVICE_OWNER_COMPONENT" -> receiver.flattenToString()
             "GET_AUTO_TIME_STATE" -> dpm.getAutoTimeEnabled(receiver)
             "GET_AUTO_TIME_POLICY" -> dpm.getAutoTimePolicy()
+            "GET_AUTO_TIME_STATE_OLD" -> dpm.getAutoTimeRequired()
             "GET_AUTO_TIME_ZONE_STATE" -> dpm.getAutoTimeZoneEnabled(receiver)
             "GET_AUTO_TIME_ZONE_POLICY" -> dpm.getAutoTimeZonePolicy()
-            "GET_BLUETOOTH_CONTACT_SHARING_STATE" -> !dpm.getBluetoothContactSharingDisabled(receiver)
-            "GET_CAMERA_STATE" -> !dpm.getCameraDisabled(receiver)
+            "GET_BLUETOOTH_CONTACT_SHARING_STATE" -> dpm.getBluetoothContactSharingDisabled(receiver)
+            "GET_CAMERA_STATE" -> dpm.getCameraDisabled(receiver)
             "GET_CONTENT_PROTECTION_POLICY" -> dpm.getContentProtectionPolicy(receiver)
             "GET_FAILED_PASSWORD_ATTEMPTS" -> dpm.getCurrentFailedPasswordAttempts()
             "GET_DPM_ROLE_HOLDER_PACKAGE" -> dpm.getDevicePolicyManagementRoleHolderPackage()
@@ -176,7 +180,7 @@ fun realHandler(context: Context, req: JSONObject): JSONObject {
             "GET_PERSONAL_APPS_SUSPENDED_REASONS" -> dpm.getPersonalAppsSuspendedReasons(receiver)
             "GET_REQUIRED_PASSWORD_COMPLEXITY" -> dpm.getRequiredPasswordComplexity()
             "GET_REQUIRED_STRONG_AUTH_TIMEOUT" -> dpm.getRequiredStrongAuthTimeout(receiver)
-            "GET_SCRCAP_STATE" -> !dpm.getScreenCaptureDisabled(receiver)
+            "GET_SCRCAP_STATE" -> dpm.getScreenCaptureDisabled(receiver)
             "GET_STORAGE_ENCRYPTION_STATUS" -> dpm.getStorageEncryptionStatus()
             "GET_USER_CONTROL_DISABLED_PACKAGES" -> JSONArray(dpm.getUserControlDisabledPackages(receiver) ?: emptyList<String>())
             "GET_WIFI_MAC_ADDRESS" -> dpm.getWifiMacAddress(receiver)
@@ -184,26 +188,26 @@ fun realHandler(context: Context, req: JSONObject): JSONObject {
             "IS_AFFILIATED" -> dpm.isAffiliatedUser()
             "IS_ALWAYS_ON_VPN_LOCKDOWN" -> dpm.isAlwaysOnVpnLockdownEnabled(receiver)
             "IS_APP_HIDDEN" -> dpm.isApplicationHidden(receiver, getArg<String>("app", req))
-            "IS_BACKUP_SERVICE_ACTIVE" -> dpm.isBackupServiceEnabled(receiver)
-            "IS_COMMON_CRITERIA" -> dpm.isCommonCriteriaModeEnabled(receiver)
-            "IS_FINANCED" -> dpm.isDeviceFinanced()
-            "IS_DEVICE_ID_ATTESTATION_SUPPORTED" -> dpm.isDeviceIdAttestationSupported()
+            "GET_BACKUP_SERVICE_STATE" -> dpm.isBackupServiceEnabled(receiver)
+            "GET_COMMON_CRITERIA_STATE" -> dpm.isCommonCriteriaModeEnabled(receiver)
+            "GET_FINANCED_STATE" -> dpm.isDeviceFinanced()
+            "GET_DEVICE_ID_ATTESTATION_SUPPORTED_STATE" -> dpm.isDeviceIdAttestationSupported()
             "IS_EPHEMERAL" -> dpm.isEphemeralUser(receiver)
             "CAN_LOGOUT" -> dpm.isLogoutEnabled()
             "IS_MANAGED" -> dpm.isManagedProfile(receiver)
-            "IS_MASTER_VOLUME_MUTED" -> dpm.isMasterVolumeMuted(receiver)
+            "GET_MASTER_VOLUME_STATE" -> dpm.isMasterVolumeMuted(receiver)
             "IS_NETWORK_LOGGING" -> dpm.isNetworkLoggingEnabled(receiver)
             "IS_OVERRIDING_APNS" -> dpm.isOverrideApnEnabled(receiver)
             "IS_APP_SUSPENDED" -> dpm.isPackageSuspended(receiver, getArg<String>("app", req))
-            "IS_PREFERENTIAL_NETWORK_SERVICE" -> dpm.isPreferentialNetworkServiceEnabled()
-            "IS_RESET_PASSWORD_TOKEN_ACTIVE" -> dpm.isResetPasswordTokenActive(receiver)
+            "GET_PREFERENTIAL_NETWORK_SERVICE_STATE" -> dpm.isPreferentialNetworkServiceEnabled()
+            "GET_RESET_PASSWORD_TOKEN_ACTIVE_STATE" -> dpm.isResetPasswordTokenActive(receiver)
             "IS_SECURITY_LOGGING" -> dpm.isSecurityLoggingEnabled(receiver)
             "GET_STATUS_BAR_STATE" -> dpm.isStatusBarDisabled()
             "IS_UNINSTALL_BLOCKED" -> dpm.isUninstallBlocked(receiver, getArg<String>("app", req))
             "IS_UNIQUE_DEVICE_ATTESTATION_SUPPORTED" -> dpm.isUniqueDeviceAttestationSupported()
             "IS_USING_UNIFIED_PASSWORD" -> dpm.isUsingUnifiedPassword(receiver)
             "EMERGENCY_TRANSFER_DHIZUKU" -> dpm.transferOwnership(receiver, ComponentName("com.rosan.dhizuku", "com.rosan.dhizuku.server.DhizukuDAReceiver"), null)
-            "APP_INSTALL" -> installApp(context, getArg<String>("apkPath", req), pm)
+            "APP_INSTALL" -> runBlocking { installApp(context, getArg<String>("apkPath", req)) }
             "GET_USER_RESTRICTIONS" -> JSONArray(dpm.getUserRestrictions(receiver).keySet().filter { dpm.getUserRestrictions(receiver).getBoolean(it, false) })
             "GET_FAN_SPEEDS" -> JSONArray(hwm?.getFanSpeeds())
             "GET_CPU_USAGES" -> JSONArray(
@@ -256,6 +260,18 @@ fun realHandler(context: Context, req: JSONObject): JSONObject {
                     put("ssids", policy?.getSsids()?.let { JSONArray(it.map { it.toString() }) } ?: JSONObject.NULL)
                 }
             }
+            "SYSTEM_LOCATION_ENABLE" -> dpm.setLocationEnabled(receiver, true)
+            "SYSTEM_LOCATION_DISABLE" -> dpm.setLocationEnabled(receiver, false)
+            "GET_DELEGATED_PACKAGES" -> JSONArray(dpm.getDelegatePackages(receiver, getArg<String>("scope", req)))
+            "GET_DELEGATED_SCOPES" -> JSONArray(dpm.getDelegatedScopes(receiver, getArg<String>("package", req)))
+            "GET_NEARBY_APP_STREAMING_POLICY" -> dpm.getNearbyAppStreamingPolicy()
+            "GET_NEARBY_NOTIFICATION_STREAMING_POLICY" -> dpm.getNearbyNotificationStreamingPolicy()
+            "SYSTEM_ENABLE_CONFIGURED_NETWORKS_LOCKDOWN" -> dpm.setConfiguredNetworksLockdownState(receiver, true)
+            "SYSTEM_DISABLE_CONFIGURED_NETWORKS_LOCKDOWN" -> dpm.setConfiguredNetworksLockdownState(receiver, false)
+            "VERSION" -> JSONObject().apply {
+                put("version_name", BuildConfig.VERSION_NAME)
+                put("version_code", BuildConfig.VERSION_CODE)
+            }
             else -> throw IllegalArgumentException("invalid action '$act'")
         }
         ret = if (ret == null || ret is Unit) JSONObject.NULL else ret
@@ -281,7 +297,7 @@ private fun addWifiNetwork(wm: WifiManager?, ssid: String, sharedKey: String?, b
     return netId
 }
 
-private fun wrapSession(session: Session) {
+/*:private fun wrapSession(session: Session) {
     val field = session.javaClass.getDeclaredField("mSession")
     field.isAccessible = true
     val oldInterface = field.get(session) as IPackageInstallerSession
@@ -289,29 +305,141 @@ private fun wrapSession(session: Session) {
     val newBinder = Dhizuku.binderWrapper(oldBinder)
     val newInterface = IPackageInstallerSession.Stub.asInterface(newBinder)
     if (newInterface != null) field.set(session, newInterface)
-}
+} */
 
-private fun installApp(context: Context, apkPath: String, pm: PackageInstaller) {
-    val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
-    val sessionId = pm.createSession(params)
-    val apk = File(apkPath)
-    pm.openSession(sessionId).use { session ->
-        if (SP.dhizuku) wrapSession(session)
-        FileInputStream(apk).use { input ->
-            session.openWrite("install", 0, apk.length()).use { output ->
-                input.copyTo(output)
-                session.fsync(output)
+private suspend fun installApp(context: Context, apkPath: String): JSONObject =
+    suspendCancellableCoroutine { cont ->
+        val pm = context.packageManager.packageInstaller
+        val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
+        val sessionId = pm.createSession(params)
+
+        val resumed = AtomicBoolean(false)
+
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context, intent: Intent) {
+                val result = JSONObject().apply {
+                    val extras = intent.extras
+                    extras?.keySet()?.forEach { key ->
+                        val value = extras.get(key)
+                        when (value) {
+                            null -> put(key, JSONObject.NULL)
+                            else -> put(key, value.toString())
+                        }
+                    }
+
+                    val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
+                    put(PackageInstaller.EXTRA_STATUS, status)
+                    put(PackageInstaller.EXTRA_STATUS_MESSAGE, intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE) ?: "")
+                    put("sessionId", sessionId)
+                }
+                    if (resumed.compareAndSet(false, true)) {
+                        cont.resumeWith(Result.success(result))
+                    }
+
+                    runCatching { context.unregisterReceiver(this) }
+                }
+            }
+
+        val action = "dev.mr2.tmp.INSTALL_$sessionId"
+        val filter = IntentFilter(action)
+        val flags = if (Build.VERSION.SDK_INT >= 33)
+            Context.RECEIVER_NOT_EXPORTED else 0
+        context.registerReceiver(receiver, filter, flags)
+
+        cont.invokeOnCancellation {
+            if (resumed.compareAndSet(false, true)) {
+                cont.resumeWith(
+                    Result.success(
+                        JSONObject().apply {
+                            put(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
+                            put(PackageInstaller.EXTRA_STATUS_MESSAGE, "")
+                            put("sessionId", sessionId)
+                        }
+                    )
+                )
+            }
+            runCatching { context.unregisterReceiver(receiver) }
+            runCatching { pm.openSession(sessionId).abandon() }
+        }
+
+        pm.openSession(sessionId).use { session ->
+            // if (SP.dhizuku) wrapSession(session)
+
+            FileInputStream(File(apkPath)).use { input ->
+                session.openWrite("app", 0, File(apkPath).length()).use { output ->
+                    input.copyTo(output)
+                    session.fsync(output)
+                }
+            }
+
+            val pendingIntent = Intent(action).apply {
+                `package` = context.packageName
+            }
+            val piFlags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+            val pi = PendingIntent.getBroadcast(context, sessionId, pendingIntent, piFlags)
+
+            session.commit(pi.intentSender)
+        }
+    }
+
+private suspend fun uninstallApp(context: Context, packageName: String): JSONObject =
+    suspendCancellableCoroutine { cont ->
+        val pm = context.packageManager.packageInstaller
+
+        val resumed = AtomicBoolean(false)
+
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context, intent: Intent) {
+                val result = JSONObject().apply {
+                    val extras = intent.extras
+                    extras?.keySet()?.forEach { key ->
+                        val value = extras.get(key)
+                        when (value) {
+                            null -> put(key, JSONObject.NULL)
+                            else -> put(key, value.toString())
+                        }
+                    }
+
+                    val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
+                    put(PackageInstaller.EXTRA_STATUS, status)
+                    put(PackageInstaller.EXTRA_STATUS_MESSAGE, intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE) ?: "")
+                    put("packageName", packageName)
+                }
+
+                if (resumed.compareAndSet(false, true)) {
+                    cont.resumeWith(Result.success(result))
+                }
+
+                runCatching { context.unregisterReceiver(this) }
             }
         }
-        val callbackIntent = Intent("PACKAGE_STATUS").apply { `package` = context.packageName }
-        val piFlags = if (Build.VERSION.SDK_INT >= 34) PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT else PendingIntent.FLAG_MUTABLE
-        val pi = PendingIntent.getBroadcast(context, sessionId, callbackIntent, piFlags).intentSender
-        session.commit(pi)
-    }
-}
 
-private fun uninstallApp(context: Context, app: String, pm: PackageInstaller?) {
-    val intent = Intent("PACKAGE_STATUS").apply { `package` = context.packageName }
-    val pi = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE).intentSender
-    pm?.uninstall(app, pi)
-}
+        val action = "dev.mr2.tmp.UNINSTALL"
+        val filter = IntentFilter(action)
+        val flags = if (Build.VERSION.SDK_INT >= 33)
+            Context.RECEIVER_NOT_EXPORTED else 0
+        context.registerReceiver(receiver, filter, flags)
+
+        cont.invokeOnCancellation {
+            if (resumed.compareAndSet(false, true)) {
+                cont.resumeWith(
+                    Result.success(
+                        JSONObject().apply {
+                            put(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
+                            put(PackageInstaller.EXTRA_STATUS_MESSAGE, "Cancelled")
+                            put("packageName", packageName)
+                        }
+                    )
+                )
+            }
+            runCatching { context.unregisterReceiver(receiver) }
+        }
+
+        val pendingIntent = Intent(action).apply {
+            setPackage(context.packageName)
+        }
+        val piFlags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+        val pi = PendingIntent.getBroadcast(context, packageName.hashCode(), pendingIntent, piFlags)
+
+        pm.uninstall(packageName, pi.intentSender)
+    }

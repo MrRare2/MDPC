@@ -3,6 +3,7 @@ package dev.mr2.dpc
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageInstaller
 import android.net.wifi.WifiManager
 import android.os.Binder
@@ -17,7 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 object Privilege {
     fun initialize(context: Context) {
         if (SP.dhizuku) {
-            if (Dhizuku.init(context)) try {
+           if (Dhizuku.init(context)) try {
                 if (Dhizuku.isPermissionGranted()) {
                     val dhizukuDpm = binderWrapperDevicePolicyManager(context)
                     if (dhizukuDpm != null) {
@@ -27,8 +28,8 @@ object Privilege {
                         return
                     }
                 }
-            } catch (_: Exception) {
-                false
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
             dhizukuErrorStatus.value = 2
         }
@@ -63,6 +64,7 @@ object Privilege {
     fun updateStatus() {
         val profile = DPM.isProfileOwnerApp(DAR.packageName)
         val work = profile && Build.VERSION.SDK_INT >= 24 && DPM.isManagedProfile(DAR)
+
         status.value = Status(
             device = DPM.isDeviceOwnerApp(DAR.packageName),
             profile = profile,

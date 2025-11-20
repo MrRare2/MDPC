@@ -37,8 +37,8 @@ android {
         applicationId = "dev.mr2.dpc"
         minSdk = 21
         targetSdk = 36
-        versionCode = 4100
-        versionName = "7.2.0"
+        versionCode = 4101
+        versionName = "7.2.1"
         multiDexEnabled = false
     }
 
@@ -68,6 +68,7 @@ android {
     buildFeatures {
         compose = true
         aidl = true
+        buildConfig = true
     }
     androidResources {
         generateLocaleConfig = true

@@ -301,6 +301,7 @@ fun WorkModesScreen(
                 val timeText = if (time != 0) " (${time}${stringResource(R.string.second_char)})" else ""
                 TextButton(
                     {
+                        vm.startApiTcpServer(false)
                         if (privilege.dhizuku) {
                             vm.deactivateDhizukuMode()
                         } else {
@@ -748,7 +749,7 @@ data class DeviceAdmin(val app: AppInfo, val admin: ComponentName)
 @Composable
 fun TransferOwnershipScreen(
     deviceAdmins: StateFlow<List<DeviceAdmin>>, getDeviceAdmins: () -> Unit,
-    transferOwnership: (ComponentName) -> Unit, onNavigateUp: () -> Unit, onTransferred: () -> Unit
+    transferOwnership: (ComponentName) -> Unit, startApiTcpServer: (Boolean) -> Unit, onNavigateUp: () -> Unit, onTransferred: () -> Unit
 ) {
     val privilege by Privilege.status.collectAsStateWithLifecycle()
     var selectedIndex by rememberSaveable { mutableIntStateOf(-1) }
@@ -792,6 +793,7 @@ fun TransferOwnershipScreen(
         confirmButton = {
             TextButton(
                 onClick = {
+                    startApiTcpServer(false)
                     transferOwnership(receivers[selectedIndex].admin)
                     dialog = false
                     onTransferred()
