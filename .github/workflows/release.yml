@@ -46,7 +46,8 @@ jobs:
 
       - name: Generate SHA-256 checksum
         run: |
-          for file in *; do
+          shopt -s nullglob
+          for file in *.apk; do
             [ -f "$file" ] || continue
             sha256sum "$file" | awk '{print $1}' > "${file%.*}".sha256
           done
