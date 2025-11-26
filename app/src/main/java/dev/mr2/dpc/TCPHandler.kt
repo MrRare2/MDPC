@@ -1,5 +1,6 @@
 package dev.mr2.dpc
 
+import android.app.ActivityOptions
 import android.app.PendingIntent
 import android.app.admin.IDevicePolicyManager
 import android.app.admin.DevicePolicyManager
@@ -9,6 +10,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.RestrictionEntry
+import android.content.RestrictionsManager
 import android.content.pm.IPackageInstaller
 import android.content.pm.IPackageInstallerSession
 import android.content.pm.PackageInstaller
@@ -16,6 +19,7 @@ import android.content.pm.PackageInstaller.Session
 import android.net.wifi.WifiConfiguration
 import android.net.wifi.WifiManager
 import android.os.Build
+import android.os.Bundle
 import android.os.HardwarePropertiesManager
 import android.os.UserManager
 import android.util.Log
@@ -30,6 +34,8 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import org.json.JSONObject
 import org.json.JSONArray
 
+private val unsupportedDhizukuError: Exception = IllegalStateException("This function is unsupported in Dhizuku mode")
+
 fun realHandler(context: Context, req: JSONObject): JSONObject {
     val res = JSONObject()
     var err: Any? = JSONObject.NULL
@@ -39,9 +45,12 @@ fun realHandler(context: Context, req: JSONObject): JSONObject {
     val dpm = Privilege.DPM
     val receiver = Privilege.DAR
     val wm = context.getSystemService(Context.WIFI_SERVICE) as WifiManager?
-    val hwm = context.getSystemService(Context.HARDWARE_PROPERTIES_SERVICE) as HardwarePropertiesManager?
-    val um = context.getSystemService(Context.USER_SERVICE) as UserManager?
+    val hwm = context.getSystemService(Context.HARDWARE_PROPERTIES_SERVICE) as HardwarePropertiesManager
+    val rm = context.getSystemService(Context.RESTRICTIONS_SERVICE) as RestrictionsManager
+    val um = context.getSystemService(Context.USER_SERVICE) as UserManager
+    val pm = context.packageManager
     val repo = (context.applicationContext as MyApplication).myRepo
+    val status = Privilege.status.value
     try {
         ret = when (act) {
             "SYSTEM_DISABLE_CAMERA" -> dpm.setCameraDisabled(receiver, true)
@@ -100,7 +109,7 @@ fun realHandler(context: Context, req: JSONObject): JSONObject {
             "APP_UNSUSPEND" -> dpm.setPackagesSuspended(receiver, arrayOf(getArg<String>("package", req)), false)
             "APP_ADD_UNINSTALL_BLOCK" -> dpm.setUninstallBlocked(receiver, getArg<String>("package", req), true)
             "APP_REMOVE_UNINSTALL_BLOCK" -> dpm.setUninstallBlocked(receiver, getArg<String>("package", req), false)
-            "APP_UNINSTALL" -> runBlocking { uninstallApp(context, getArg<String>("app", req)) }
+            "APP_UNINSTALL" -> runBlocking { uninstallApp(getArg<String>("app", req), context) }
             "SYSTEM_REBOOT" -> dpm.reboot(receiver)
             "USER_SET_LOCK_SCREEN_INFO" -> dpm.setDeviceOwnerLockScreenInfo(receiver, getArg<String>("text", req))
             "USER_SET_SHORT_SUPPORT_MESSAGE" -> dpm.setShortSupportMessage(receiver, getArg<String>("text", req))
@@ -116,11 +125,11 @@ fun realHandler(context: Context, req: JSONObject): JSONObject {
             "SYSTEM_WIFI_DISABLE_NETWORK" -> wm?.disableNetwork(getArg<Int>("wifiNetId", req))
             "SYSTEM_WIFI_ENABLE_NETWORK" -> wm?.enableNetwork(getArg<Int>("wifiNetId", req), getArg<Boolean>("wifiEnabled", req))
             "SYSTEM_REMOVE_WIFI_NETWORK" -> wm?.removeNetwork(getArg<Int>("wifiNetId", req))
-            "SYSTEM_ADD_WIFI_NETWORK" -> addWifiNetwork(wm, getArg<String>("ssid", req), req.optString("sharedKey"), req.optString("bssid"), req.optBoolean("wifiHidden", false), req.optBoolean("wifiEnabled", true))
-            "GET_CPU_TEMPERATURES" -> JSONArray(hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_CPU, req.optInt("flags")))
-            "GET_GPU_TEMPERATURES" -> JSONArray(hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_GPU, req.optInt("flags")))
-            "GET_BATTERY_TEMPERATURES" -> JSONArray(hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_BATTERY, req.optInt("flags")))
-            "GET_SKIN_TEMPERATURES" -> JSONArray(hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_SKIN, req.optInt("flags")))
+            "SYSTEM_ADD_WIFI_NETWORK" -> if (status.dhizuku) throw unsupportedDhizukuError else addWifiNetwork(wm, getArg<String>("ssid", req), req.optString("sharedKey"), req.optString("bssid"), req.optBoolean("wifiHidden", false), req.optBoolean("wifiEnabled", true))
+            "GET_CPU_TEMPERATURES" -> if (status.dhizuku) throw unsupportedDhizukuError else JSONArray(hwm.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_CPU, req.optInt("flags")))
+            "GET_GPU_TEMPERATURES" -> if (status.dhizuku) throw unsupportedDhizukuError else JSONArray(hwm.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_GPU, req.optInt("flags")))
+            "GET_BATTERY_TEMPERATURES" -> if (status.dhizuku) throw unsupportedDhizukuError else JSONArray(hwm.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_BATTERY, req.optInt("flags")))
+            "GET_SKIN_TEMPERATURES" -> if (status.dhizuku) throw unsupportedDhizukuError else JSONArray(hwm.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_SKIN, req.optInt("flags")))
             "GET_ORGANIZATION_NAME" -> {
                 try { dpm.getOrganizationName(receiver) }
                 catch (_: Exception) {
@@ -134,8 +143,16 @@ fun realHandler(context: Context, req: JSONObject): JSONObject {
             "GET_LOCK_SCREEN_INFO_MESSAGE" -> dpm.getDeviceOwnerLockScreenInfo()
             "GET_START_SESSION_MESSAGE" -> dpm.getStartUserSessionMessage(receiver)
             "GET_END_SESSION_MESSAGE" -> dpm.getEndUserSessionMessage(receiver)
-            "GET_DEVICE_OWNER_PACKAGE" -> context.packageName
-            "GET_DEVICE_OWNER_COMPONENT" -> receiver.flattenToString()
+            "GET_DEVICE_OWNER_PACKAGE" -> {
+                val method = DevicePolicyManager::class.java.getDeclaredMethod("getDeviceOwnerComponentOnCallingUser")
+                method.isAccessible = true
+                (method.invoke(dpm) as ComponentName).getPackageName()
+            }
+            "GET_DEVICE_OWNER_COMPONENT" -> {
+                val method = DevicePolicyManager::class.java.getDeclaredMethod("getDeviceOwnerComponentOnCallingUser")
+                method.isAccessible = true
+                (method.invoke(dpm) as ComponentName).flattenToString()
+            }
             "GET_AUTO_TIME_STATE" -> dpm.getAutoTimeEnabled(receiver)
             "GET_AUTO_TIME_POLICY" -> dpm.getAutoTimePolicy()
             "GET_AUTO_TIME_STATE_OLD" -> dpm.getAutoTimeRequired()
@@ -207,11 +224,11 @@ fun realHandler(context: Context, req: JSONObject): JSONObject {
             "IS_UNIQUE_DEVICE_ATTESTATION_SUPPORTED" -> dpm.isUniqueDeviceAttestationSupported()
             "IS_USING_UNIFIED_PASSWORD" -> dpm.isUsingUnifiedPassword(receiver)
             "EMERGENCY_TRANSFER_DHIZUKU" -> dpm.transferOwnership(receiver, ComponentName("com.rosan.dhizuku", "com.rosan.dhizuku.server.DhizukuDAReceiver"), null)
-            "APP_INSTALL" -> runBlocking { installApp(context, getArg<String>("apkPath", req)) }
+            "APP_INSTALL" -> runBlocking { installApp(getArg<String>("apkPath", req), context) }
             "GET_USER_RESTRICTIONS" -> JSONArray(dpm.getUserRestrictions(receiver).keySet().filter { dpm.getUserRestrictions(receiver).getBoolean(it, false) })
-            "GET_FAN_SPEEDS" -> JSONArray(hwm?.getFanSpeeds())
-            "GET_CPU_USAGES" -> JSONArray(
-                hwm?.getCpuUsages()?.map {
+            "GET_FAN_SPEEDS" -> if (status.dhizuku) throw unsupportedDhizukuError else JSONArray(hwm.getFanSpeeds())
+            "GET_CPU_USAGES" -> if (status.dhizuku) throw unsupportedDhizukuError else JSONArray(
+                hwm.getCpuUsages()?.map {
                     JSONObject().apply {
                         put("active", it.getActive())
                         put("total", it.getTotal())
@@ -227,30 +244,30 @@ fun realHandler(context: Context, req: JSONObject): JSONObject {
                 val newDpm = field.get(dpm) as IDevicePolicyManager
                 newDpm.setGlobalPrivateDns(receiver, mode, host)
             }
-            "SYSTEM_START_SECURITY_LOGGING" -> dpm.setSecurityLoggingEnabled(receiver, true)
-            "SYSTEM_STOP_SECURITY_LOGGING" -> dpm.setSecurityLoggingEnabled(receiver, false)
-            "GET_SECURITY_LOG_COUNT" -> repo.getSecurityLogsCount().toInt()
-            "NETWORK_START_LOGGING" -> dpm.setNetworkLoggingEnabled(receiver, true)
-            "NETWORK_STOP_LOGGING" -> dpm.setNetworkLoggingEnabled(receiver, false)
-            "GET_NETWORK_LOG_COUNT" -> repo.getNetworkLogsCount().toInt()
-            "GET_NETWORK_LOGS" -> {
+            "SYSTEM_START_SECURITY_LOGGING" -> if (status.dhizuku) throw unsupportedDhizukuError else dpm.setSecurityLoggingEnabled(receiver, true)
+            "SYSTEM_STOP_SECURITY_LOGGING" -> if (status.dhizuku) throw unsupportedDhizukuError else dpm.setSecurityLoggingEnabled(receiver, false)
+            "GET_SECURITY_LOG_COUNT" -> if (status.dhizuku) throw unsupportedDhizukuError else repo.getSecurityLogsCount().toInt()
+            "NETWORK_START_LOGGING" -> if (status.dhizuku) throw unsupportedDhizukuError else dpm.setNetworkLoggingEnabled(receiver, true)
+            "NETWORK_STOP_LOGGING" -> if (status.dhizuku) throw unsupportedDhizukuError else dpm.setNetworkLoggingEnabled(receiver, false)
+            "GET_NETWORK_LOG_COUNT" -> if (status.dhizuku) throw unsupportedDhizukuError else repo.getNetworkLogsCount().toInt()
+            "GET_NETWORK_LOGS" -> if (status.dhizuku) throw unsupportedDhizukuError else {
                 val out = ByteArrayOutputStream()
                 repo.exportNetworkLogs(out)
                 JSONArray(out.toString())
             }
-            "GET_SECURITY_LOGS" -> {
+            "GET_SECURITY_LOGS" -> if (status.dhizuku) throw unsupportedDhizukuError else {
                 val out = ByteArrayOutputStream()
                 repo.exportSecurityLogs(out)
                 JSONArray(out.toString())
             }
-            "CLEAR_SECURITY_LOGS" -> repo.deleteSecurityLogs()
-            "CLEAR_NETWORK_LOGS" -> repo.deleteNetworkLogs()
+            "CLEAR_SECURITY_LOGS" -> if (status.dhizuku) throw unsupportedDhizukuError else repo.deleteSecurityLogs()
+            "CLEAR_NETWORK_LOGS" -> if (status.dhizuku) throw unsupportedDhizukuError else repo.deleteNetworkLogs()
             "GET_AFFILIATION_IDS" -> JSONArray(dpm.getAffiliationIds(receiver))
             "GET_ALWAYS_ON_VPN_PACKAGE" -> dpm.getAlwaysOnVpnPackage(receiver)
             "GET_ALWAYS_ON_VPN_LOCKDOWN_WHITELIST" -> JSONArray(dpm.getAlwaysOnVpnLockdownWhitelist(receiver))
             "GET_SECONDARY_USERS" -> {
                 JSONArray(
-                    dpm.getSecondaryUsers(receiver).map { um?.getSerialNumberForUser(it) }
+                    dpm.getSecondaryUsers(receiver).map { um.getSerialNumberForUser(it) }
                 )
             }
             "GET_WIFI_SSID_POLICY" -> {
@@ -268,9 +285,49 @@ fun realHandler(context: Context, req: JSONObject): JSONObject {
             "GET_NEARBY_NOTIFICATION_STREAMING_POLICY" -> dpm.getNearbyNotificationStreamingPolicy()
             "SYSTEM_ENABLE_CONFIGURED_NETWORKS_LOCKDOWN" -> dpm.setConfiguredNetworksLockdownState(receiver, true)
             "SYSTEM_DISABLE_CONFIGURED_NETWORKS_LOCKDOWN" -> dpm.setConfiguredNetworksLockdownState(receiver, false)
+            "APP_RESTRICTIONS_GET" -> getAppRestrictions(getArg<String>("package", req), dpm, receiver, rm)
+            "APP_RESTRICTIONS_SET" -> setAppRestrictions(getArg<String>("package", req), getArg<String>("key", req), getArg<Any>("value", req), dpm, receiver)
+            "SET_LOCK_TASK_FEATURES" -> dpm.setLockTaskFeatures(receiver, getArg<Int>("flags", req))
+            "SET_LOCK_TASK_PACKAGES" -> dpm.setLockTaskPackages(receiver, getArgArray<String>("packages", req))
+            "SYSTEM_LOCK_TASK_STOP" -> {
+                val features = dpm.getLockTaskFeatures(receiver)
+                val packages = dpm.getLockTaskPackages(receiver)
+                dpm.setLockTaskPackages(receiver, arrayOf())
+                dpm.setLockTaskPackages(receiver, packages)
+                dpm.setLockTaskFeatures(receiver, features)
+            }
+            "SYSTEM_LOCK_TASK_START" -> if (status.dhizuku) throw unsupportedDhizukuError else { // cant launch ltm here
+                val packageName: String = getArg("package", req)
+                val activity: String? = optArg("activity", req)
+                val showNotification: Boolean = optArg("show_notification", req) ?: true
+                if (!dpm.isLockTaskPermitted(packageName)) dpm.setLockTaskPackages(receiver, (dpm.getLockTaskPackages(receiver) + packageName).distinct().toTypedArray())
+                if (showNotification) dpm.setLockTaskFeatures(receiver, dpm.getLockTaskFeatures(receiver) or
+                    DevicePolicyManager.LOCK_TASK_FEATURE_NOTIFICATIONS or
+                    DevicePolicyManager.LOCK_TASK_FEATURE_HOME
+                )
+                val options = ActivityOptions.makeBasic().setLockTaskEnabled(true)
+                val intent = if (activity?.isNotEmpty() ?: false) Intent().setComponent(ComponentName(packageName, activity!!))
+                else pm.getLaunchIntentForPackage(packageName)
+                if (intent != null) {
+                    intent.addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    )
+                    context.startActivity(intent, options.toBundle())
+                    if (showNotification) context.startForegroundService(Intent(context, LockTaskService::class.java))
+                    true
+                } else false
+            }
+            "IS_LOCK_TASK_PERMITTED" -> dpm.isLockTaskPermitted(getArg<String>("package", req))
             "VERSION" -> JSONObject().apply {
                 put("version_name", BuildConfig.VERSION_NAME)
                 put("version_code", BuildConfig.VERSION_CODE)
+                put("release_type", BuildConfig.BUILD_TYPE)
+                put("package_name", context.packageName)
+                put("dhizuku_mode", status.dhizuku)
+                put("work_profile", status.work)
+                put("device_owner", status.device)
+                put("organization", status.org)
+                put("profile_mode", status.profile)
             }
             else -> throw IllegalArgumentException("invalid action '$act'")
         }
@@ -285,6 +342,18 @@ fun realHandler(context: Context, req: JSONObject): JSONObject {
 
 private inline fun <reified T> getArg(key: String, req: JSONObject): T = req.opt(key) as? T ?: throw IllegalArgumentException("$key is required with ${T::class.simpleName} type")
 
+@Suppress("UNCHECKED_CAST")
+inline fun <reified T> optArg(key: String, req: JSONObject): T? {
+    val v = req.opt(key)
+    if (v == null || v === JSONObject.NULL) return null
+    if (v is T) return v as T
+    throw IllegalArgumentException("Key '$key' expected ${T::class.simpleName} but got ${v::class.simpleName}")
+}
+
+private inline fun <reified T> getArgArray(key: String, req: JSONObject) =
+    (req.optJSONArray(key) ?: throw IllegalArgumentException("$key is required with Array<${T::class.simpleName}> type"))
+        .let { List(it.length()) { i -> it.get(i) as? T ?: throw IllegalArgumentException("Element at $i in $key is not ${T::class.simpleName}") }.toTypedArray() }
+
 private fun addWifiNetwork(wm: WifiManager?, ssid: String, sharedKey: String?, bssid: String?, hidden: Boolean, enabled: Boolean): Int {
     val wc = WifiConfiguration().apply {
         SSID = ssid.replace("\"", "\\\"")
@@ -297,7 +366,7 @@ private fun addWifiNetwork(wm: WifiManager?, ssid: String, sharedKey: String?, b
     return netId
 }
 
-/*:private fun wrapSession(session: Session) {
+private fun wrapSession(session: Session) {
     val field = session.javaClass.getDeclaredField("mSession")
     field.isAccessible = true
     val oldInterface = field.get(session) as IPackageInstallerSession
@@ -305,9 +374,9 @@ private fun addWifiNetwork(wm: WifiManager?, ssid: String, sharedKey: String?, b
     val newBinder = Dhizuku.binderWrapper(oldBinder)
     val newInterface = IPackageInstallerSession.Stub.asInterface(newBinder)
     if (newInterface != null) field.set(session, newInterface)
-} */
+}
 
-private suspend fun installApp(context: Context, apkPath: String): JSONObject =
+private suspend fun installApp(apkPath: String, context: Context): JSONObject =
     suspendCancellableCoroutine { cont ->
         val pm = context.packageManager.packageInstaller
         val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
@@ -363,7 +432,7 @@ private suspend fun installApp(context: Context, apkPath: String): JSONObject =
         }
 
         pm.openSession(sessionId).use { session ->
-            // if (SP.dhizuku) wrapSession(session)
+            if (Privilege.status.value.dhizuku) wrapSession(session)
 
             FileInputStream(File(apkPath)).use { input ->
                 session.openWrite("app", 0, File(apkPath).length()).use { output ->
@@ -382,10 +451,9 @@ private suspend fun installApp(context: Context, apkPath: String): JSONObject =
         }
     }
 
-private suspend fun uninstallApp(context: Context, packageName: String): JSONObject =
+private suspend fun uninstallApp(packageName: String, context: Context): JSONObject =
     suspendCancellableCoroutine { cont ->
         val pm = context.packageManager.packageInstaller
-
         val resumed = AtomicBoolean(false)
 
         val receiver = object : BroadcastReceiver() {
@@ -443,3 +511,43 @@ private suspend fun uninstallApp(context: Context, packageName: String): JSONObj
 
         pm.uninstall(packageName, pi.intentSender)
     }
+
+private fun getAppRestrictions(packageName: String, dpm: DevicePolicyManager, comp: ComponentName, rm: RestrictionsManager): JSONArray {
+    val out = JSONArray()
+    val bundle = dpm.getApplicationRestrictions(comp, packageName)
+    val restrictions = try { rm.getManifestRestrictions(packageName) ?: emptyList() }
+    catch (_: NullPointerException) { emptyList() }
+    for (restriction in restrictions) {
+        val obj = JSONObject()
+        obj.put("title", restriction.getTitle())
+        obj.put("description", restriction.getDescription())
+        obj.put("key", restriction.key)
+        obj.put("value", bundle.get(restriction.key) ?: JSONObject.NULL)
+        obj.put("type", restriction.type)
+        obj.put("choice_entries", restriction?.getChoiceEntries()?.let { JSONArray(it) } ?: JSONObject.NULL)
+        obj.put("choice_values", restriction?.getChoiceValues()?.let { JSONArray(it) } ?: JSONObject.NULL)
+        obj.put("int_value", try {
+            restriction?.getIntValue() ?: JSONObject.NULL
+        } catch (e: NumberFormatException) { JSONObject.NULL })
+        obj.put("selected_state", restriction?.getSelectedState() ?: JSONObject.NULL)
+        obj.put("selected_string", restriction?.getSelectedString() ?: JSONObject.NULL)
+        obj.put("available_strings", restriction?.getAllSelectedStrings()?.let { JSONArray(it) } ?: JSONObject.NULL)
+        out.put(obj)
+    }
+    return out
+}
+
+private fun setAppRestrictions(packageName: String, key: String, value: Any, dpm: DevicePolicyManager, comp: ComponentName) {
+    val bundle = dpm.getApplicationRestrictions(comp, packageName)
+    when (value) {
+        is String -> bundle.putString(key, value)
+        is Int -> bundle.putInt(key, value)
+        is Boolean -> bundle.putBoolean(key, value)
+        is JSONArray -> {
+            val sa: Array<String> = Array(value.length()) { i -> value.getString(i) }
+            bundle.putStringArray(key, sa)
+        }
+        else -> bundle.remove(key)
+    }
+    dpm.setApplicationRestrictions(comp, packageName, bundle)
+}

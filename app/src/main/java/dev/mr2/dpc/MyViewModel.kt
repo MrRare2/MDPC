@@ -25,6 +25,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.RestrictionEntry
+import android.content.RestrictionsManager
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
@@ -38,6 +40,7 @@ import android.net.wifi.WifiConfiguration
 import android.net.wifi.WifiManager
 import android.net.wifi.WifiSsid
 import android.os.Binder
+import android.os.Bundle
 import android.os.Build.VERSION
 import android.os.HardwarePropertiesManager
 import android.os.UserHandle
@@ -63,6 +66,7 @@ import dev.mr2.dpc.dpm.ApnConfig
 import dev.mr2.dpc.dpm.ApnMvnoType
 import dev.mr2.dpc.dpm.ApnProtocol
 import dev.mr2.dpc.dpm.AppGroup
+import dev.mr2.dpc.dpm.AppRestriction
 import dev.mr2.dpc.dpm.AppStatus
 import dev.mr2.dpc.dpm.CaCertInfo
 import dev.mr2.dpc.dpm.CreateUserResult
@@ -151,10 +155,10 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
         return AppLockConfig(passwordHash?.ifEmpty { null }, SP.biometricsUnlock, SP.lockWhenLeaving)
     }
     fun setAppLockConfig(config: AppLockConfig) {
-        SP.lockPasswordHash = if (config.password == null) {
-            ""
-        } else {
-            hashPassword(config.password)
+        if (config.password == null) {
+            SP.lockPasswordHash = ""
+        } else if (!config.password.isEmpty()) {
+            SP.lockPasswordHash = hashPassword(config.password)
         }
         SP.biometricsUnlock = config.biometrics
         SP.lockWhenLeaving = config.whenLeaving
@@ -227,6 +231,11 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
                 }
                 refreshPackagesProgress.value = (index + 1).toFloat() / apps.size
             }
+        }
+    }
+    fun onPackageRemoved(name: String) {
+        installedPackages.update { list ->
+            list.filter { it.name != name }
         }
     }
     fun getAppInfo(info: ApplicationInfo) =
@@ -490,15 +499,21 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
             DPM.isUninstallBlocked(DAR, name),
             if (VERSION.SDK_INT >= 30) name in DPM.getUserControlDisabledPackages(DAR) else false,
             if (VERSION.SDK_INT >= 28) name in DPM.getMeteredDataDisabledPackages(DAR) else false,
-            if (VERSION.SDK_INT >= 28) DPM.getKeepUninstalledPackages(DAR)?.contains(name) == true else false
+            if (VERSION.SDK_INT >= 28 && Privilege.status.value.device)
+                DPM.getKeepUninstalledPackages(DAR)?.contains(name) == true
+            else false
         )
     }
 
     // Application details
     @RequiresApi(24)
     fun adSetPackageSuspended(name: String, status: Boolean) {
-        DPM.setPackagesSuspended(DAR, arrayOf(name), status)
-        appStatus.update { it.copy(suspend = DPM.isPackageSuspended(DAR, name)) }
+        try {
+            DPM.setPackagesSuspended(DAR, arrayOf(name), status)
+            appStatus.update { it.copy(suspend = DPM.isPackageSuspended(DAR, name)) }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
     fun adSetPackageHidden(name: String, status: Boolean) {
         DPM.setApplicationHidden(DAR, name, status)
@@ -542,6 +557,82 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
             e.printStackTrace()
             false
         }
+    }
+
+    val appRestrictions = MutableStateFlow(emptyList<AppRestriction>())
+
+    @RequiresApi(23)
+    fun getAppRestrictions(name: String) {
+        val rm = application.getSystemService(RestrictionsManager::class.java)
+        appRestrictions.value = try {
+            val bundle = DPM.getApplicationRestrictions(DAR, name)
+            rm.getManifestRestrictions(name)?.mapNotNull {
+                transformRestrictionEntry(it)
+            }?.map {
+                if (bundle.containsKey(it.key)) {
+                    when (it) {
+                        is AppRestriction.BooleanItem -> it.value = bundle.getBoolean(it.key)
+                        is AppRestriction.StringItem -> it.value = bundle.getString(it.key)
+                        is AppRestriction.IntItem -> it.value = bundle.getInt(it.key)
+                        is AppRestriction.ChoiceItem -> it.value = bundle.getString(it.key)
+                        is AppRestriction.MultiSelectItem -> it.value = bundle.getStringArray(it.key)
+                    }
+                }
+                it
+            } ?: emptyList()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+
+    @RequiresApi(23)
+    fun setAppRestrictions(name: String, item: AppRestriction) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val bundle = transformAppRestriction(
+                appRestrictions.value.filter { it.key != item.key }.plus(item)
+            )
+            DPM.setApplicationRestrictions(DAR, name, bundle)
+            getAppRestrictions(name)
+        }
+    }
+
+    @RequiresApi(23)
+    fun clearAppRestrictions(name: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            DPM.setApplicationRestrictions(DAR, name, Bundle())
+            getAppRestrictions(name)
+        }
+    }
+
+    fun transformRestrictionEntry(e: RestrictionEntry): AppRestriction? {
+        return when (e.type) {
+            RestrictionEntry.TYPE_INTEGER ->
+                AppRestriction.IntItem(e.key, e.title, e.description, null)
+            RestrictionEntry.TYPE_STRING ->
+                AppRestriction.StringItem(e.key, e.title, e.description, null)
+            RestrictionEntry.TYPE_BOOLEAN ->
+                AppRestriction.BooleanItem(e.key, e.title, e.description, null)
+            RestrictionEntry.TYPE_CHOICE -> AppRestriction.ChoiceItem(e.key, e.title,
+                e.description, e.choiceEntries, e.choiceValues, null)
+            RestrictionEntry.TYPE_MULTI_SELECT -> AppRestriction.MultiSelectItem(e.key, e.title,
+                e.description, e.choiceEntries, e.choiceValues, null)
+            else -> null
+        }
+    }
+
+    fun transformAppRestriction(list: List<AppRestriction>): Bundle {
+        val b = Bundle()
+        for (r in list) {
+            when (r) {
+                is AppRestriction.IntItem -> r.value?.let { b.putInt(r.key, it) }
+                is AppRestriction.StringItem -> r.value?.let { b.putString(r.key, it) }
+                is AppRestriction.BooleanItem -> r.value?.let { b.putBoolean(r.key, it) }
+                is AppRestriction.ChoiceItem -> r.value?.let { b.putString(r.key, it) }
+                is AppRestriction.MultiSelectItem -> r.value?.let { b.putStringArray(r.key, r.value) }
+            }
+        }
+        return b
     }
 
     fun createWorkProfile(options: CreateWorkProfileOptions): Intent {
@@ -700,7 +791,8 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
             backupServiceEnabled = if (VERSION.SDK_INT >= 26) DPM.isBackupServiceEnabled(DAR) else false,
             btContactSharingDisabled = if (VERSION.SDK_INT >= 23 && privilege.work)
                 DPM.getBluetoothContactSharingDisabled(DAR) else false,
-            commonCriteriaMode = if (VERSION.SDK_INT >= 30) DPM.isCommonCriteriaModeEnabled(DAR) else false,
+            commonCriteriaMode = if (VERSION.SDK_INT >= 30 && privilege.run { device || org })
+                DPM.isCommonCriteriaModeEnabled(DAR) else false,
             usbSignalEnabled = if (VERSION.SDK_INT >= 31) DPM.isUsbDataSignalingEnabled else false,
             canDisableUsbSignal = if (VERSION.SDK_INT >= 31) DPM.canUsbDataSignalingBeDisabled() else false
         )
@@ -891,19 +983,32 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
         getLockTaskPackages()
     }
     @RequiresApi(28)
-    fun startLockTaskMode(packageName: String, activity: String): Boolean {
+    fun startLockTaskMode(
+        packageName: String, activity: String, clearTask: Boolean, showNotification: Boolean
+    ): Boolean {
         if (!DPM.isLockTaskPermitted(packageName)) {
             val list = lockTaskPackages.value.map { it.name } + packageName
             DPM.setLockTaskPackages(DAR, list.toTypedArray())
             getLockTaskPackages()
         }
+        if (showNotification) {
+            DPM.setLockTaskFeatures(
+                DAR,
+                DPM.getLockTaskFeatures(DAR) or
+                        DevicePolicyManager.LOCK_TASK_FEATURE_NOTIFICATIONS or
+                        DevicePolicyManager.LOCK_TASK_FEATURE_HOME
+            )
+        }
         val options = ActivityOptions.makeBasic().setLockTaskEnabled(true)
-        val intent = if(activity.isNotEmpty()) {
+        val intent = if (activity.isNotEmpty()) {
             Intent().setComponent(ComponentName(packageName, activity))
         } else PM.getLaunchIntentForPackage(packageName)
         if (intent != null) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            intent.addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or (if (clearTask) Intent.FLAG_ACTIVITY_CLEAR_TASK else 0)
+            )
             application.startActivity(intent, options.toBundle())
+            if (showNotification) application.startForegroundService(Intent(application, LockTaskService::class.java))
             return true
         } else {
             return false
@@ -1006,7 +1111,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
         if (wipeDevice && VERSION.SDK_INT >= 34) {
             DPM.wipeDevice(flags)
         } else {
-            if(VERSION.SDK_INT >= 28 && reason.isNotEmpty()) {
+            if (VERSION.SDK_INT >= 28 && reason.isNotEmpty()) {
                 DPM.wipeData(flags, reason)
             } else {
                 DPM.wipeData(flags)
@@ -1344,6 +1449,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
             UserManager.USER_OPERATION_ERROR_UNKNOWN -> R.string.unknown_error
             UserManager.USER_OPERATION_ERROR_MANAGED_PROFILE-> R.string.fail_managed_profile
             UserManager.USER_OPERATION_ERROR_MAX_RUNNING_USERS -> R.string.limit_reached
+            UserManager.USER_OPERATION_ERROR_MAX_USERS -> R.string.limit_reached
             UserManager.USER_OPERATION_ERROR_CURRENT_USER -> R.string.fail_current_user
             else -> R.string.unknown
         }

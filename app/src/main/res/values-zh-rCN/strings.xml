@@ -732,6 +732,12 @@
     <string name="edit_app_group">编辑组</string>
     <string name="add_to_list">添加到列表</string>
     <string name="remove_from_list">从列表中移除</string>
+    <string name="managed_configuration">托管配置</string>
+    <string name="clear_configurations">清除配置</string>
+    <string name="specify_value">指定值</string>
+    <string name="clear_app_storage_confirmation">你确定要删除应用数据吗？</string>
+    <string name="lock_task_mode_start_clear_task">清除任务（新实例）</string>
+    <string name="lock_task_mode_show_notification">显示通知以退出</string>
     <string name="color_scheme">配色方案</string>
     <string name="color_blue">初音蓝</string>
     <string name="color_red">重音红</string>

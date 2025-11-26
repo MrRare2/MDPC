@@ -107,7 +107,7 @@ class TCPService : Service() {
             }
 
             if (data.size() > 0) {
-                val raw = data.toString(Charsets.UTF_8).trim()
+                val raw = String(data.toByteArray(), Charsets.UTF_8).trim()
                 val json = JSONObject(AesDecrypt(raw))
                 val resp = realHandler(this, json).toString()
                 o.write(AesEncrypt(resp).toByteArray(Charsets.UTF_8))

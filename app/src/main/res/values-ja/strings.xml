@@ -749,6 +749,13 @@
     <string name="edit_app_group">グループを編集</string>
     <string name="add_to_list">リストに追加</string>
 
+    <string name="managed_configuration">管理対象構成</string>
+    <string name="clear_configurations">構成をクリア</string>
+    <string name="specify_value">値を指定</string>
+    <string name="clear_app_storage_confirmation">アプリデータを削除してもよろしいですか?</string>
+    <string name="lock_task_mode_start_clear_task">タスクをクリア（最初からやり直す）</string>
+    <string name="lock_task_mode_show_notification">終了通知を表示</string>
+
     <string name="color_scheme">カラー設定</string>
     <string name="color_blue">ミクブルー</string>
     <string name="color_red">テト赤い</string>

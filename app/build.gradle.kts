@@ -196,7 +196,7 @@ val generateLocales = tasks.register<GenerateLocalesTask>("generateLocales") {
     outputDir.set(outRoot)
 }
 
-val stampFile = project.findProperty("stampFile") as String?
+/* val stampFile = project.findProperty("stampFile") as String?
 val stampAlias = project.findProperty("stampAlias") as String?
 val stampStorePass = project.findProperty("stampStorePass") as String?
 
@@ -230,6 +230,43 @@ afterEvaluate {
             finalizedBy("stampReleaseApk")
         }
     }
+} */
+
+val stampFile = project.findProperty("stampFile") as String?
+val stampAlias = project.findProperty("stampAlias") as String?
+val stampStorePass = project.findProperty("stampStorePass") as String?
+
+if (stampFile != null && stampAlias != null && stampStorePass != null) {
+    val apkPathStr = layout.buildDirectory.file("outputs/apk/release/app-release.apk").get().asFile.absolutePath
+    val storeFile = (project.findProperty("storeFile") ?: "testkey.jks") as String
+    val keyAlias = (project.findProperty("keyAlias") ?: "testkey") as String
+    val storePassword = (project.findProperty("storePassword") ?: "testkey") as String
+    val keyPassword = (project.findProperty("keyPassword") ?: "testkey") as String
+
+    tasks.register<Exec>("stampReleaseApk") {
+        commandLine = listOf(
+            "apksigner", "sign",
+            "--ks", storeFile,
+            "--ks-key-alias", keyAlias,
+            "--ks-pass", "pass:$storePassword",
+            "--key-pass", "pass:$keyPassword",
+            "--force-stamp-overwrite",
+            "--stamp-signer",
+            "--ks", stampFile,
+            "--ks-key-alias", stampAlias,
+            "--ks-pass", "pass:$stampStorePass",
+            "--v1-signing-enabled", "true",
+            "--v2-signing-enabled", "true",
+            "--v3-signing-enabled", "true",
+            "--v4-signing-enabled", "true",
+            "--rotation-min-sdk-version", "33",
+            apkPathStr
+        )
+    }
+
+    tasks.matching { it.name == "assembleRelease" }.configureEach {
+        finalizedBy("stampReleaseApk")
+    }
 }
 
 tasks.named("preBuild") {
@@ -258,5 +295,6 @@ dependencies {
     implementation(libs.androidx.compose.materialicons)
     implementation(libs.androidx.biometric)
     implementation(libs.material.icons.core)
+    implementation(libs.reoderable)
     implementation(kotlin("reflect"))
 }

@@ -12,3 +12,4 @@ app/release
 app/debug
 .androidide
 *.swp
+*.db

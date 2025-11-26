@@ -1,6 +1,6 @@
 [versions]
-agp = "8.13.1"
-kotlin = "2.2.21"
+agp = "8.13.2"
+kotlin = "2.3.0"
 
 navigation-compose = "2.9.5"
 composeBom = "2025.11.00"
@@ -12,10 +12,11 @@ dhizuku = "2.5.4"
 dhizuku-server = "0.0.10"
 hiddenApiBypass = "6.1"
 libsu = "6.0.0"
+reoderable = "3.0.0"
 serialization = "1.9.0"
 jbcrypt = "0.4"
 androidx-appcompat = "1.7.1"
-material3 = "1.5.0-alpha08"
+material3 = "1.5.0-alpha11"
 androidx-biometric = "1.4.0-alpha04"
 
 [libraries]
@@ -48,6 +49,8 @@ androidx-compose-materialicons = { group = "androidx.compose.material", name = "
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "androidx-biometric" }
 
 material-icons-core = { group = "androidx.compose.material", name = "material-icons-core" }
+
+reoderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reoderable" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

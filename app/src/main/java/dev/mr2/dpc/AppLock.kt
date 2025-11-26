@@ -3,6 +3,7 @@ package dev.mr2.dpc
 import android.content.Context
 import android.hardware.biometrics.BiometricPrompt
 import android.hardware.biometrics.BiometricPrompt.AuthenticationCallback
+import android.hardware.fingerprint.FingerprintManager
 import android.os.Build
 import android.os.CancellationSignal
 import androidx.activity.compose.BackHandler
@@ -19,6 +20,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -54,6 +57,7 @@ fun AppLockDialog(onSucceed: () -> Unit, onDismiss: () -> Unit) = Dialog(onDismi
     var input by rememberSaveable { mutableStateOf("") }
     var isError by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+        var showPassword by remember { mutableStateOf(false) }
     fun unlock() {
 	    scope.launch {
 	        val ok = verifyPassword(input, SP.lockPasswordHash)
@@ -79,11 +83,21 @@ fun AppLockDialog(onSucceed: () -> Unit, onDismiss: () -> Unit) = Dialog(onDismi
                 OutlinedTextField(
                     input, { input = it; isError = false }, Modifier.width(200.dp).focusRequester(fr),
                     label = { Text(stringResource(R.string.password)) }, isError = isError,
-                    visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password, imeAction = if (input.length >= 4) ImeAction.Go else ImeAction.Done
                     ),
-                    keyboardActions = KeyboardActions({ fm.clearFocus() }, { unlock() })
+                    keyboardActions = KeyboardActions({ fm.clearFocus() }, { unlock() }), 
+                     visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(), 
+                     trailingIcon = { 
+                         IconButton(onClick = { showPassword = !showPassword }) { 
+                             Icon( 
+                                 painter = painterResource( 
+                                     id = if (showPassword) R.drawable.visibility_off_fill0 else R.drawable.visibility_fill0 
+                                 ), 
+                                 contentDescription = if (showPassword) "Hide password" else "Show password" 
+                             ) 
+                         } 
+                     }
                 )
                 if (Build.VERSION.SDK_INT >= 28 && SP.biometricsUnlock) {
                     FilledTonalIconButton({ startBiometricsUnlock(context, onSucceed) }, Modifier.padding(start = 4.dp)) {
@@ -91,7 +105,7 @@ fun AppLockDialog(onSucceed: () -> Unit, onDismiss: () -> Unit) = Dialog(onDismi
                     }
                 }
             }
-            Button(::unlock, Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp), input.length >= 4) {
+            Button(::unlock, Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp)) {
                 Text(stringResource(R.string.unlock))
             }
         }
@@ -100,6 +114,7 @@ fun AppLockDialog(onSucceed: () -> Unit, onDismiss: () -> Unit) = Dialog(onDismi
 
 @RequiresApi(28)
 fun startBiometricsUnlock(context: Context, onSucceed: () -> Unit) {
+    context.getSystemService(FingerprintManager::class.java) ?: return
     val callback = object : AuthenticationCallback() {
         override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult?) {
             super.onAuthenticationSucceeded(result)

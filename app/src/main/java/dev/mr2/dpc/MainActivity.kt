@@ -141,6 +141,8 @@ import dev.mr2.dpc.dpm.LockTaskMode
 import dev.mr2.dpc.dpm.LockTaskModeScreen
 import dev.mr2.dpc.dpm.ManageAppGroups
 import dev.mr2.dpc.dpm.ManageAppGroupsScreen
+import dev.mr2.dpc.dpm.ManagedConfiguration
+import dev.mr2.dpc.dpm.ManagedConfigurationScreen
 import dev.mr2.dpc.dpm.MtePolicy
 import dev.mr2.dpc.dpm.MtePolicyScreen
 import dev.mr2.dpc.dpm.NearbyStreamingPolicy
@@ -275,6 +277,10 @@ class MainActivity : FragmentActivity() {
             launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
 
+        registerPackageRemovedReceiver(this) {
+            vm.onPackageRemoved(it)
+        }
+
 	    setContent {
 	        var appLockDialog by rememberSaveable { mutableStateOf(false) }
 	        val theme by vm.theme.collectAsStateWithLifecycle()
@@ -322,7 +328,7 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
             }
         }
 
-        if (SP.apiTcpEnabled && !SP.dhizuku) vm.startApiTcpServer(true)
+        if (SP.apiTcpEnabled) vm.startApiTcpServer(true)
         else vm.startApiTcpServer(false)
     }
     @Suppress("NewApi") NavHost(
@@ -624,6 +630,12 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
         }
         composable<SetDefaultDialer> {
             SetDefaultDialerScreen(vm.chosenPackage, ::choosePackage, vm::setDefaultDialer, ::navigateUp)
+        }
+        composable<ManagedConfiguration> {
+            ManagedConfigurationScreen(
+                it.toRoute(), vm.appRestrictions, vm::setAppRestrictions,
+                vm::clearAppRestrictions, ::navigateUp
+            )
         }
         composable<ManageAppGroups> {
             ManageAppGroupsScreen(

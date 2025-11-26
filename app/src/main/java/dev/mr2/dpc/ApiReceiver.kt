@@ -43,9 +43,8 @@ class ApiReceiver: BroadcastReceiver() {
 	        return
         }
         val dpm = Privilege.DPM
-        val pm = Privilege.PIM
         val wm = Privilege.WM
-        val hwm = Privilege.HWM
+        val pm = Privilege.PIM
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val receiver = Privilege.DAR
         val app = intent.getStringExtra("package")
@@ -62,8 +61,6 @@ class ApiReceiver: BroadcastReceiver() {
         val wifiEnabled = intent.getBooleanExtra("wifiEnabled", true)
         val wifiHidden = intent.getBooleanExtra("wifiHidden", false)
         val wifiNetId = intent.getIntExtra("wifiNetId", -1)
-        val quality = intent.getIntExtra("quality", -1)
-        val apkPath = intent.getStringExtra("apkPath")
         // notif channel / notif builder
         val notifChannelId = intent.getStringExtra("notifChannelId")
         val notifId = intent.getStringExtra("notifId")
@@ -186,154 +183,10 @@ class ApiReceiver: BroadcastReceiver() {
                     wm?.enableNetwork(netId!!, wifiEnabled)
                     context.reply("WIFI_NET_ID", netId)
                 }
-                // get data (only retrivable if you listen on the sender)
-                "GET_CPU_TEMPERATURES" -> {
-                    val cpuTemps = hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_CPU, flags)
-                    context.reply("CPU_TEMPERATURES", cpuTemps!!.joinToString("|=|"))
-                }
-                "GET_GPU_TEMPERATURES" -> {
-                    val gpuTemps = hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_GPU, flags)
-                    context.reply("GPU_TEMPERATURES", gpuTemps!!.joinToString("|=|"))
-                }
-                "GET_BATTERY_TEMPERATURES" -> {
-                    val batteryTemps = hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_BATTERY, flags)
-                    context.reply("BATTERY_TEMPERATURES", batteryTemps!!.joinToString("|=|"))
-	            }
-                "GET_SKIN_TEMPERATURES" -> {
-                    val skinTemps = hwm?.getDeviceTemperatures(HardwarePropertiesManager.DEVICE_TEMPERATURE_SKIN, flags)
-                    context.reply("SKIN_TEMPERATURES", skinTemps!!.joinToString("|=|"))
-                }
-                "GET_ORGANIZATION_NAME" -> context.reply("ORGANIZATION_NAME", dpm.getOrganizationName(receiver) ?: "")
-                "GET_SHORT_SUPPORT_MESSAGE" -> context.reply("SHORT_SUPPORT_MESSAGE", dpm.getShortSupportMessage(receiver) ?: "")
-                "GET_LONG_SUPPORT_MESSAGE"  -> context.reply("LONG_SUPPORT_MESSAGE", dpm.getLongSupportMessage(receiver) ?: "")
-                "GET_LOCK_SCREEN_INFO_MESSAGE" -> context.reply("LOCK_SCREEN_MESSAGE", dpm.getDeviceOwnerLockScreenInfo() ?: "")
-                "GET_START_SESSION_MESSAGE" -> context.reply("START_SESSION_MESSAGE", dpm.getStartUserSessionMessage(receiver) ?: "")
-                "GET_END_SESSION_MESSAGE" -> context.reply("END_SESSION_MESSAGE", dpm.getEndUserSessionMessage(receiver) ?: "")
-                "GET_DEVICE_OWNER_PACKAGE" -> context.reply("DEVICE_OWNER", receiver.packageName)
-                "GET_DEVICE_OWNER_COMPONENT" -> context.reply("DEVICE_OWNER_COMPONENT", receiver.flattenToString())
-                "GET_AUTO_TIME_STATE" -> context.reply("AUTO_TIME", dpm.getAutoTimeEnabled(receiver))
-                "GET_AUTO_TIME_POLICY" -> context.reply("AUTO_TIME_POLICY", dpm.getAutoTimePolicy())
-                "GET_AUTO_TIME_ZONE_STATE" -> context.reply("AUTO_TIME_ZONE", dpm.getAutoTimeZoneEnabled(receiver))
-                "GET_AUTO_TIME_ZONE_POLICY" -> context.reply("AUTO_TIME_POLICY", dpm.getAutoTimeZonePolicy())
-                "GET_BLUETOOTH_CONTACT_SHARING_STATE" -> context.reply("BLUETOOTH_CONTACT_SHARING", !dpm.getBluetoothContactSharingDisabled(receiver))
-                "GET_CAMERA_STATE" -> context.reply("CAMERA", !dpm.getCameraDisabled(receiver))
-                "GET_CONTENT_PROTECTION_POLICY" -> context.reply("CONTENT_PROTECTION_POLICY", dpm.getContentProtectionPolicy(receiver))
-                "GET_FAILED_PASSWORD_ATTEMPTS" -> context.reply("FAILED_PASSWORD_ATTEMPT", dpm.getCurrentFailedPasswordAttempts())
-                "GET_DPM_ROLE_HOLDER_PACKAGE" -> context.reply("DPM_ROLE_HOLDER_PACKAGE", dpm.getDevicePolicyManagementRoleHolderPackage() ?: "")
-		        "GET_ENROLLMENT_SPECIFIC_ID" -> context.reply("ENROLLMENT_SPECIFIC_ID", dpm.getEnrollmentSpecificId())
-		        "GET_GLOBAL_PRIVATE_DNS" -> context.reply("GLOBAL_PRIVATE_DNS", dpm.getGlobalPrivateDnsHost(receiver) ?: "")
-		        "GET_GLOBAL_PRIVATE_DNS_MODE" -> context.reply("GLOBAL_PRIVATE_DNS_MODE", dpm.getGlobalPrivateDnsMode(receiver))
-		        "GET_KEEP_UNINSTALL_PACKAGES" -> context.reply("KEEP_UNINSTALL_PACKAGES", dpm.getKeepUninstalledPackages(receiver) ?: mutableListOf<String>())
-		        "GET_KEYGUARD_DISABLED_FEATURES" -> context.reply("KEYGUARD_DISABLED_FEATURES", dpm.getKeyguardDisabledFeatures(receiver))
-		        "GET_LOCK_TASK_FEATURES" -> context.reply("LOCK_TASK_FEATURES", dpm.getLockTaskFeatures(receiver))
-		        "GET_LOCK_TASK_PACKAGES" -> context.reply("LOCK_TASK_PACKAGES", dpm.getLockTaskPackages(receiver))
-		        "GET_MAXIMUM_FAILED_PASSWORD_ATTEMPTS_FOR_WIPE" -> context.reply("MAXIMUM_FAILED_PASSWORD_ATTEMPTS_FOR_WIPE", dpm.getMaximumFailedPasswordsForWipe(receiver))
-		        "GET_MAXIMUM_TIME_TO_LOCK" -> context.reply("MAXIMUM_TIME_TO_LOCK", dpm.getMaximumTimeToLock(receiver))
-		        "GET_METERED_DATA_DISABLED_PACKAGES" -> context.reply("METERED_DATA_DISABLED_PACKAGES", dpm.getMeteredDataDisabledPackages(receiver))
-		        "GET_MINIMUM_WIFI_SECURITY_LEVEL" -> context.reply("MINIMUM_WIFI_SECURITY_LEVEL", dpm.getMinimumRequiredWifiSecurityLevel())
-		        "GET_MTE_POLICY" -> context.reply("MTE_POLICY", dpm.getMtePolicy())
-		        "GET_PASSWORD_COMPLEXITY" -> context.reply("PASSWORD_COMPLEXITY", dpm.getPasswordComplexity())
-		        "HAS_LOCKDOWN_ADMIN_CONFIGURED_NETWORKS" -> context.reply("LOCKDOWN_ADMIN_CONFIGURED_NETWORKS", dpm.hasLockdownAdminConfiguredNetworks(receiver))
-		        "GET_PASSWORD_EXPIRATION" -> context.reply("PASSWORD_EXPIRATION", dpm.getPasswordExpiration(receiver))
-		        "GET_PASSWORD_HISTORY_LENGTH" -> context.reply("PASSWORD_HISTORY_LENGTH", dpm.getPasswordHistoryLength(receiver))
-		        "GET_PASSWORD_MAXIMUM_LENGTH" -> context.reply("PASSWORD_MAXIMUM_LENGTH", dpm.getPasswordMaximumLength(quality))
-		        "GET_PASSWORD_MINIMUM_LEMGTH" -> context.reply("PASSWORD_MINIMUM_LENGTH", dpm.getPasswordMinimumLength(receiver))
-		        "GET_PASSWORD_MINIMUM_LETTERS" -> context.reply("PASSWORD_MINIMUM_LETTERS", dpm.getPasswordMinimumLetters(receiver))
-		        "GET_PASSWORD_MINIMUM_LOWERCASE" -> context.reply("PASSWORD_MINIMUM_LOWERCASE", dpm.getPasswordMinimumLowerCase(receiver))
-		        "GET_PASSWORD_MINIMUM_NON_LETTER" -> context.reply("PASSWORD_MINIMUM_NON_LETTER", dpm.getPasswordMinimumNonLetter(receiver))
-		        "GET_PASSWORD_MINIMUM_NUMERIC" -> context.reply("PASSWORD_MINIMUM_NUMERIC", dpm.getPasswordMinimumNumeric(receiver))
-		        "GET_PASSWORD_MINIMUM_SYMBOLS" -> context.reply("PASSWORD_MINIMUM_SYMBOLS", dpm.getPasswordMinimumSymbols(receiver))
-		        "GET_PASSWORD_MINIMUM_UPPERCASE" -> context.reply("PASSWORD_MINIMUM_UPPERCASE", dpm.getPasswordMinimumUpperCase(receiver))
-		        "GET_PASSWORD_QUALITY" -> context.reply("PASSWORD_QUALITY", dpm.getPasswordQuality(receiver))
-		        "GET_PENDING_SYSTEM_UPDATE" -> context.reply("PENDING_SYSTEM_UPDATE", dpm.getPendingSystemUpdate(receiver).toString())
-		        "GET_PERMISSION_GRANT_STATE" -> context.reply("PERMISSION_GRANT_STATE", dpm.getPermissionGrantState(receiver, app!!, permission!!))
-		        "GET_PERMISSION_POLICY" -> context.reply("PERMISSION_POLICY", dpm.getPermissionPolicy(receiver))
-		        "GET_PERMITTED_ACCESSIBILITY_SERVICES" -> context.reply("PERMITTED_ACCESSIBILITY_SERVICES", dpm.getPermittedAccessibilityServices(receiver) ?: mutableListOf<String>())
-		        "GET_PERMITTED_CROSS_PROFILE_NOTIFICATION_LISTENERS" -> context.reply("PERMITTED_CROSS_PROFILE_NOTIFICATION_LISTENERS", dpm.getPermittedCrossProfileNotificationListeners(receiver) ?: mutableListOf<String>())
-		        "GET_PERMITTED_IME" -> context.reply("PERMITTED_IME", dpm.getPermittedInputMethods(receiver) ?: mutableListOf<String>())
-		        "GET_PERSONAL_APPS_SUSPENDED_REASONS" -> context.reply("PERSONAL_APPS_SUSPENDED_REASONS", dpm.getPersonalAppsSuspendedReasons(receiver))
-		        "GET_REQUIRED_PASSWORD_COMPLEXITY" -> context.reply("REQUIRED_PASSWORD_COMPLEXITY", dpm.getRequiredPasswordComplexity())
-		        "GET_REQUIRED_STRONG_AUTH_TIMEOUT" -> context.reply("REQUIRED_STRONG_AUTH_TIMEOUT", dpm.getRequiredStrongAuthTimeout(receiver))
-		        "GET_SCRCAP_STATE" -> context.reply("SCRCAP_STATE", !dpm.getScreenCaptureDisabled(receiver))
-		        "GET_STORAGE_ENCRYPTION_STATUS" -> context.reply("STORAGE_ENCRYPTION_STATUS", dpm.getStorageEncryptionStatus())
-		        "GET_USER_CONTROL_DISABLED_PACKAGES" -> context.reply("USER_CONTROL_DISABLED_PACKAGES", dpm.getUserControlDisabledPackages(receiver) ?: mutableListOf<String>())
-		        "GET_WIFI_MAC_ADDRESS" -> context.reply("WIFI_MAC", dpm.getWifiMacAddress(receiver) ?: "02:00:00:00:00:00")
-		        "IS_PASSWORD_SUFFICIENT" -> context.reply("PASSWORD_SUFFICIENT", dpm.isActivePasswordSufficient())
-		        "IS_AFFILIATED" -> context.reply("AFFILIATED", dpm.isAffiliatedUser())
-		        "IS_ALWAYS_ON_VPN_LOCKDOWN" -> context.reply("ALWAYS_ON_VPN", dpm.isAlwaysOnVpnLockdownEnabled(receiver))
-		        "IS_APP_HIDDEN" -> context.reply("PACKAGE_${app!!}_HIDDEN_STATE", dpm.isApplicationHidden(receiver, app!!))
-		        "IS_BACKUP_SERVICE_ACTIVE" -> context.reply("BACKUP_SERVICE_STATUS", dpm.isBackupServiceEnabled(receiver))
-		        "IS_COMMON_CRITERIA" -> context.reply("COMMON_CRITERIA_STATE", dpm.isCommonCriteriaModeEnabled(receiver))
-		        "IS_FINANCED" -> context.reply("FINANCED_DEVICE", dpm.isDeviceFinanced())
-		        "IS_DEVICE_ID_ATTESTATION_SUPPORTED" -> context.reply("DEVICE_ID_ATTESTATION_STATE", dpm.isDeviceIdAttestationSupported())
-		        "IS_EPHEMERAL" -> context.reply("EPHEMERAL_STATE", dpm.isEphemeralUser(receiver))
-		        "CAN_LOGOUT" -> context.reply("LOGOUT_STATE", dpm.isLogoutEnabled())
-		        "IS_MANAGED" -> context.reply("MANAGED_STATE", dpm.isManagedProfile(receiver))
-		        "IS_MASTER_VOLUME_MUTED" -> context.reply("MASTER_VOLUME_MUTED_STATE", dpm.isMasterVolumeMuted(receiver))
-		        //"IS_MTE_ENFORCED" -> context.reply("MTE_ENFORCED", dpm.isMtePolicyEnforced())
-		        "IS_NETWORK_LOGGING" -> context.reply("NETWORK_LOGGING_STATE", dpm.isNetworkLoggingEnabled(receiver))
-		        "IS_OVERRIDING_APNS" -> context.reply("OVERRIDE_APN_STATE", dpm.isOverrideApnEnabled(receiver))
-		        "IS_APP_SUSPENDED" -> context.reply("PACKAGE_${app!!}_SUSPENDED_STATE", dpm.isPackageSuspended(receiver, app!!))
-		        "IS_PREFERENTIAL_NETWORK_SERVICE" -> context.reply("PREFERENTIAL_NETWORK_SERVICE_STATE", dpm.isPreferentialNetworkServiceEnabled())
-		        "IS_RESET_PASSWORD_TOKEN_ACTIVE" -> context.reply("RESET_PASSWORD_TOKEN_ACTIVE_STATE", dpm.isResetPasswordTokenActive(receiver))
-		        "IS_SECURITY_LOGGING" -> context.reply("SECURITY_LOGGING_STATE", dpm.isSecurityLoggingEnabled(receiver))
-		        "GET_STATUS_BAR_STATE" -> context.reply("STATUS_BAR_STATE", dpm.isStatusBarDisabled())
-		        "IS_UNINSTALL_BLOCKED" -> context.reply("PACKAGE_${app!!}_UNINSTALL_BLOCK_STATE", dpm.isUninstallBlocked(receiver, app!!))
-		        "IS_UNIQUE_DEVICE_ATTESTATION_SUPPORTED" -> context.reply("UNIQUE_DEVICE_ATTESTATION_STATE", dpm.isUniqueDeviceAttestationSupported())
-		        "IS_USING_UNIFIED_PASSWORD" -> context.reply("UNIFIED_PASSWORD_STATE", dpm.isUsingUnifiedPassword(receiver))
 		        "EMERGENCY_TRANSFER_DHIZUKU" -> {
 		            val newAdmin = ComponentName("com.rosan.dhizuku", "com.rosan.dhizuku.server.DhizukuDAReceiver")
 		            dpm.transferOwnership(receiver, newAdmin, null)
 		        }
-		        "APP_INSTALL" -> {
-		            val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
-		            val sessionId = pm?.createSession(params)!!
-		            val apk = File(apkPath)
-		            pm?.openSession(sessionId).use { session ->
-			        if (SP.dhizuku) wrapSession(session!!)
-			        FileInputStream(apk).use { input ->
-			            session?.openWrite("install", 0, apk.length()).use { output ->
-				            input.copyTo(output!!)
-				            session?.fsync(output!!)
-			            }
-		            }
-			        val callbackIntent = Intent(PACKAGE_STATUS)
-			        val piFlags = if (Build.VERSION.SDK_INT >= 34) PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT else PendingIntent.FLAG_MUTABLE
-			        val pi = PendingIntent.getBroadcast(
-			            context,
-			            sessionId,
-			            callbackIntent,
-			            piFlags
-		                ).intentSender
-			        session?.commit(pi)
-		            }
-		        }
-		        "GET_USER_RESTRICTIONS" -> {
-		            val restrictions = dpm.getUserRestrictions(receiver)
-		            val result = restrictions.keySet().filter { restrictions.getBoolean(it, false) }.joinToString("|=|")
-		            context.reply("USER_RESTRICTIONS", result)
-		        }
-		        "GET_FAN_SPEEDS" -> {
-		            val fanSpeeds = hwm?.getFanSpeeds()
-		            context.reply("FAN_SPEEDS", fanSpeeds!!.joinToString("|=|"))
-		        }
-		        "GET_CPU_USAGES" -> {
-		            val cpuUsages = hwm?.getCpuUsages()
-		            context.reply("CPU_USAGES", cpuUsages!!.joinToString("|=|") { "${it.getActive()}:${it.getTotal()}" })
-		        }
-                "NOTIF_CHANNEL" -> {
-                    val priority = when (notifPriority) {
-                        "high", "max" -> NotificationManager.IMPORTANCE_HIGH
-                        "low" -> NotificationManager.IMPORTANCE_LOW
-                        "min" -> NotificationManager.IMPORTANCE_MIN
-                        else -> NotificationManager.IMPORTANCE_DEFAULT
-                    }
-                    if (delete) nm.deleteNotificationChannel(notifChannelId)
-                    else {
-                        val channel = NotificationChannel(notifChannelId!!, notifChannelName, priority)
-                        nm.createNotificationChannel(channel)
-                    }
-                }
                 "NOTIFY" -> {
                     val priority = when (notifPriority) {
                         "high", "max" -> NotificationManager.IMPORTANCE_HIGH

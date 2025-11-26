@@ -409,7 +409,7 @@ fun ApiSettings(
                 setApiTcpEnabled(it)
                 startApiTcpServer(it)
                 tcpEnabled = it
-            }, padding = false, enabled = alreadyEnabled && !privilege.dhizuku)
+            }, padding = false, enabled = alreadyEnabled)
             if (tcpEnabled) {
                 OutlinedTextField(
                     tcpPort, {
@@ -417,8 +417,7 @@ fun ApiSettings(
                     },
                     Modifier.fillMaxWidth().padding(bottom = 4.dp),
                     label = { Text(stringResource(R.string.port)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                    enabled = !privilege.dhizuku
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next)
                 )
                 Button(
                     onClick = {
@@ -427,7 +426,6 @@ fun ApiSettings(
                         context.showOperationResultToast(true)
                     },
                     modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
-                    enabled = !privilege.dhizuku
                 ) {
                     Text(stringResource(R.string.api_start_tcp))
                 }

@@ -73,7 +73,6 @@ import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePickerDialog
@@ -183,7 +182,7 @@ fun SystemManagerScreen(
         if (VERSION.SDK_INT >= 31) {
             FunctionItem(R.string.nearby_streaming_policy, icon = R.drawable.share_fill0) { onNavigate(NearbyStreamingPolicy) }
         }
-        if (VERSION.SDK_INT >= 28 && privilege.device && !privilege.dhizuku) {
+        if (VERSION.SDK_INT >= 28 && privilege.device) {
             FunctionItem(R.string.lock_task_mode, icon = R.drawable.lock_fill0) { onNavigate(LockTaskMode) }
         }
         FunctionItem(R.string.ca_cert, icon = R.drawable.license_fill0) { onNavigate(CaCert) }
@@ -1171,7 +1170,8 @@ fun NearbyStreamingPolicyScreen(
 fun LockTaskModeScreen(
     chosenPackage: Channel<String>, onChoosePackage: () -> Unit,
     lockTaskPackages: StateFlow<List<AppInfo>>, getLockTaskPackages: () -> Unit,
-    setLockTaskPackage: (String, Boolean) -> Unit, startLockTaskMode: (String, String) -> Boolean,
+    setLockTaskPackage: (String, Boolean) -> Unit,
+    startLockTaskMode: (String, String, Boolean, Boolean) -> Boolean,
     getLockTaskFeatures: () -> Int, setLockTaskFeature: (Int) -> String?, onNavigateUp: () -> Unit
 ) {
     val coroutine = rememberCoroutineScope()
@@ -1196,7 +1196,7 @@ fun LockTaskModeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            TabRow(tabIndex) {
+            PrimaryTabRow(tabIndex) {
                 Tab(
                     tabIndex == 0, onClick = { coroutine.launch { pagerState.animateScrollToPage(0) } },
                     text = { Text(stringResource(R.string.start)) }
@@ -1226,29 +1226,39 @@ fun LockTaskModeScreen(
 @RequiresApi(28)
 @Composable
 private fun StartLockTaskMode(
-    startLockTaskMode: (String, String) -> Boolean,
+    startLockTaskMode: (String, String, Boolean, Boolean) -> Boolean,
     chosenPackage: Channel<String>, onChoosePackage: () -> Unit
 ) {
     val context = LocalContext.current
     val focusMgr = LocalFocusManager.current
+    val privilege by Privilege.status.collectAsStateWithLifecycle()
     var packageName by rememberSaveable { mutableStateOf("") }
     var activity by rememberSaveable { mutableStateOf("") }
     var specifyActivity by rememberSaveable { mutableStateOf(false) }
+    var clearTask by rememberSaveable { mutableStateOf(true) }
+    var showNotification by rememberSaveable() { mutableStateOf(true) }
     LaunchedEffect(Unit) {
         packageName = chosenPackage.receive()
     }
     Column(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = HorizontalPadding)
             .verticalScroll(rememberScrollState())
     ) {
-        Spacer(Modifier.height(5.dp))
-        PackageNameTextField(packageName, onChoosePackage) { packageName = it }
-	Row(
+        PackageNameTextField(
+            packageName, onChoosePackage, Modifier.padding(HorizontalPadding, 8.dp)
+        ) { packageName = it }
+        FullWidthCheckBoxItem(
+            R.string.lock_task_mode_start_clear_task, clearTask
+        ) { clearTask = it }
+        FullWidthCheckBoxItem(
+            R.string.lock_task_mode_show_notification, showNotification
+        ) { showNotification = it }
+        Row(
             Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically
+                .padding(start = 4.dp, top = 4.dp, end = HorizontalPadding, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Checkbox(specifyActivity, {
                 specifyActivity = it
@@ -1267,16 +1277,17 @@ private fun StartLockTaskMode(
         Button(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 5.dp),
+                .padding(horizontal = HorizontalPadding),
             onClick = {
-                val result = startLockTaskMode(packageName, activity)
+                val result = startLockTaskMode(packageName, activity, clearTask, showNotification)
                 if (!result) context.showOperationResultToast(false)
             },
             enabled = packageName.isNotBlank() && (!specifyActivity || activity.isNotBlank())
         ) {
             Text(stringResource(R.string.start))
+            Spacer(Modifier.height(5.dp))
         }
-        Notes(R.string.info_start_lock_task_mode)
+        if (!privilege.dhizuku) Notes(R.string.info_start_lock_task_mode)
     }
 }
 

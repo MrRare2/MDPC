@@ -22,6 +22,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -71,9 +72,6 @@ private fun searchInString(query: String, content: String)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-/*fun AppChooserScreen(params: ApplicationsList, onChoosePackage: (String?) -> Unit, onSwitchView: () -> Unit) {
-    val packages by installedApps.collectAsStateWithLifecycle()
-    val coroutine = rememberCoroutineScope()*/
 fun AppChooserScreen(
     canSwitchView: Boolean, packageList: MutableStateFlow<List<AppInfo>>,
     refreshProgress: MutableStateFlow<Float>, onChoosePackage: (String?) -> Unit,
@@ -91,7 +89,7 @@ fun AppChooserScreen(
     }
     val focusMgr = LocalFocusManager.current
     LaunchedEffect(Unit) {
-        if(packages.size <= 1) onRefresh()
+        if (packages.size <= 1) onRefresh()
     }
     Scaffold(
         topBar = {
@@ -103,7 +101,7 @@ fun AppChooserScreen(
                         }
                         IconButton({
                             system = !system
-                            context.popToast(if(system) R.string.show_system_app else R.string.show_user_app)
+                            context.popToast(if (system) R.string.show_system_app else R.string.show_user_app)
                         }) {
                             Icon(painter = painterResource(R.drawable.filter_alt_fill0), contentDescription = null)
                         }
@@ -116,7 +114,7 @@ fun AppChooserScreen(
                     }
                 },
                 title = {
-                    if(searchMode) {
+                    if (searchMode) {
                         val fr = remember { FocusRequester() }
                         LaunchedEffect(Unit) { fr.requestFocus() }
                         OutlinedTextField(
@@ -126,15 +124,12 @@ fun AppChooserScreen(
                             keyboardActions = KeyboardActions { focusMgr.clearFocus() },
                             placeholder = { Text(stringResource(R.string.search)) },
                             trailingIcon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.close_fill0),
-                                    contentDescription = null,
-                                    modifier = Modifier.clickable {
-                                        focusMgr.clearFocus()
-                                        query = ""
-                                        searchMode = false
-                                    }
-                                )
+                                IconButton({
+                                    query = ""
+                                    searchMode = false
+                                }) {
+                                    Icon(Icons.Outlined.Clear, null)
+                                }
                             },
                             textStyle = typography.bodyLarge,
                             modifier = Modifier.fillMaxWidth().focusRequester(fr)

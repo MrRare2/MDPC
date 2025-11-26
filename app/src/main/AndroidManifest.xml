@@ -18,7 +18,6 @@
     <uses-permission android:name="android.permission.REQUEST_PASSWORD_COMPLEXITY"/>
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
@@ -100,7 +99,7 @@
             android:name=".Receiver"
             android:description="@string/da_info"
             android:permission="android.permission.BIND_DEVICE_ADMIN"
-            android:exported="true">
+            android:exported="false">
             <meta-data
                 android:name="android.app.device_admin"
                 android:resource="@xml/device_admin"/>
@@ -142,7 +141,11 @@
         <service
             android:name="TCPService"
             android:exported="false"
-            android:foregroundServiceType="systemExempted|specialUse"/>
+            android:foregroundServiceType="specialUse"/>
+        <service
+            android:name=".LockTaskService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse" />
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
             android:authorities="${applicationId}.shizuku"
