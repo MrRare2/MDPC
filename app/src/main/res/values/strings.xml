@@ -776,6 +776,10 @@
     <string name="lock_task_mode_start_clear_task">Clear task (start fresh)</string>
     <string name="clear_app_storage_confirmation">Are you sure to delete app data?</string>
     <string name="lock_task_mode_show_notification">Show a notification to exit</string>
+    <string name="unsuspend">Unsuspend</string>
+    <string name="unhide">Unhide</string>
+    <string name="undo">Undo</string>
+    <string name="package_removed">Removed %1$s</string>
 
     <!-- languages -->
     <string name="lang_en">English</string>

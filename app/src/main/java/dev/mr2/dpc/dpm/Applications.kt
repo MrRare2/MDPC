@@ -65,6 +65,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -78,6 +82,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -108,6 +113,7 @@ import dev.mr2.dpc.Privilege
 import dev.mr2.dpc.R
 import dev.mr2.dpc.SP
 import dev.mr2.dpc.adaptiveInsets
+import dev.mr2.dpc.parsePackageNames
 import dev.mr2.dpc.showOperationResultToast
 import dev.mr2.dpc.ui.FullWidthRadioButtonItem
 import dev.mr2.dpc.ui.FunctionItem
@@ -121,6 +127,7 @@ import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -131,13 +138,18 @@ val String.isValidPackageName
 @Composable
 fun LazyItemScope.ApplicationItem(info: AppInfo, onClear: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp).animateItem(),
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 6.dp)
+            .animateItem(),
         Arrangement.SpaceBetween, Alignment.CenterVertically
     ) {
         Row(Modifier.weight(1F), verticalAlignment = Alignment.CenterVertically) {
             Image(
                 painter = rememberDrawablePainter(info.icon), contentDescription = null,
-                modifier = Modifier.padding(start = 12.dp, end = 18.dp).size(30.dp)
+                modifier = Modifier
+                    .padding(start = 12.dp, end = 18.dp)
+                    .size(30.dp)
             )
             Column {
                 Text(info.label)
@@ -157,7 +169,9 @@ fun PackageNameTextField(
 ) {
     val fm = LocalFocusManager.current
     OutlinedTextField(
-        value, onValueChange, Modifier.fillMaxWidth().then(modifier),
+        value, onValueChange, Modifier
+            .fillMaxWidth()
+            .then(modifier),
         label = { Text(stringResource(R.string.package_name)) },
         trailingIcon = {
             IconButton(onChoosePackage) {
@@ -206,9 +220,7 @@ fun ApplicationsFeaturesScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Un
             if (VERSION.SDK_INT >= 30 && (privilege.device || (VERSION.SDK_INT >= 33 && privilege.profile))) {
                 FunctionItem(R.string.disable_user_control, icon = R.drawable.do_not_touch_fill0) { onNavigate(DisableUserControl) }
             }
-            if (VERSION.SDK_INT >= 23) {
-                FunctionItem(R.string.permissions, icon = R.drawable.shield_fill0) { onNavigate(PermissionsManager()) }
-            }
+            FunctionItem(R.string.permissions, icon = R.drawable.shield_fill0) { onNavigate(PermissionsManager()) }
             if (VERSION.SDK_INT >= 28) {
                 FunctionItem(R.string.disable_metered_data, icon = R.drawable.money_off_fill0) { onNavigate(DisableMeteredData) }
             }
@@ -271,17 +283,21 @@ fun ApplicationDetailsScreen(
     val appRestrictions by vm.appRestrictions.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
         vm.getAppStatus(packageName)
-        if (VERSION.SDK_INT >= 23) vm.getAppRestrictions(packageName)
+        vm.getAppRestrictions(packageName)
     }
     MySmallTitleScaffold(R.string.place_holder, onNavigateUp, 0.dp) {
-        Column(Modifier.align(Alignment.CenterHorizontally).padding(top = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier
+            .align(Alignment.CenterHorizontally)
+            .padding(top = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Image(rememberDrawablePainter(info.icon), null, Modifier.size(50.dp))
             Text(info.label, Modifier.padding(top = 4.dp))
-            Text(info.name, Modifier.alpha(0.7F).padding(bottom = 8.dp), style = typography.bodyMedium)
+            Text(info.name, Modifier
+                .alpha(0.7F)
+                .padding(bottom = 8.dp), style = typography.bodyMedium)
         }
         FunctionItem(R.string.permissions, icon = R.drawable.shield_fill0) { onNavigate(PermissionsManager(packageName)) }
         if (VERSION.SDK_INT >= 24) SwitchItem(
-	    R.string.suspend, icon = R.drawable.block_fill0, state = status.suspend,
+            R.string.suspend, icon = R.drawable.block_fill0, state = status.suspend,
             onCheckedChange = { vm.adSetPackageSuspended(packageName, it) }
         )
         SwitchItem(
@@ -292,7 +308,7 @@ fun ApplicationDetailsScreen(
         SwitchItem(
             R.string.block_uninstall, icon = R.drawable.delete_forever_fill0,
             state = status.uninstallBlocked,
-	    onCheckedChange = { vm.adSetPackageUb(packageName, it) }
+            onCheckedChange = { vm.adSetPackageUb(packageName, it) }
         )
         if (VERSION.SDK_INT >= 30) SwitchItem(
             R.string.disable_user_control, icon = R.drawable.do_not_touch_fill0,
@@ -309,14 +325,14 @@ fun ApplicationDetailsScreen(
             state = status.keepUninstalled,
             onCheckedChange = { vm.adSetPackageKu(packageName, it) }
         )
-        if (VERSION.SDK_INT >= 23 && appRestrictions.isNotEmpty()) {
+        if (appRestrictions.isNotEmpty()) {
             FunctionItem(R.string.managed_configuration, icon = R.drawable.description_fill0) {
                 onNavigate(ManagedConfiguration(packageName))
             }
         }
         if (SP.displayDangerousFeatures && VERSION.SDK_INT >= 28) FunctionItem(R.string.clear_app_storage, icon = R.drawable.mop_fill0) { dialog = 1 }
         if (SP.displayDangerousFeatures) FunctionItem(R.string.uninstall, icon = R.drawable.delete_fill0) { dialog = 2 }
-	Spacer(Modifier.height(BottomPadding))
+        Spacer(Modifier.height(BottomPadding))
     }
     if (dialog == 1 && VERSION.SDK_INT >= 28)
         ClearAppStorageDialog(packageName, vm::clearAppData) { dialog = 0 }
@@ -336,7 +352,6 @@ fun ApplicationDetailsScreen(
 
 @Serializable data class PermissionsManager(val packageName: String? = null)
 
-@RequiresApi(23)
 @Composable
 fun PermissionsManagerScreen(
     packagePermissions: MutableStateFlow<Map<String, Int>>, getPackagePermissions: (String) -> Unit,
@@ -446,7 +461,7 @@ fun ClearAppStorageScreen(
         packageName = chosenPackage.receive()
     }
     MyScaffold(R.string.clear_app_storage, onNavigateUp) {
-	PackageNameTextField(packageName, onChoosePackage,
+        PackageNameTextField(packageName, onChoosePackage,
             Modifier.padding(vertical = 8.dp)) { packageName = it }
         Button(
             { dialog = true },
@@ -532,7 +547,6 @@ private fun UninstallAppDialog(
     packageName: String, onUninstall: (String, (String?) -> Unit) -> Unit,
     onClose: (Boolean) -> Unit
 ) {
-    val context = LocalContext.current
     var uninstalling by rememberSaveable { mutableStateOf(false) }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
     AlertDialog(
@@ -550,7 +564,9 @@ private fun UninstallAppDialog(
                             uninstalling = false
                             if (it == null) onClose(true) else errorMessage = it
                         }
-                    } else onClose(false)
+                    } else {
+                        onClose(false)
+                    }
                 },
                 enabled = !uninstalling
             ) {
@@ -609,16 +625,17 @@ fun InstallExistingAppScreen(
 fun CredentialManagerPolicyScreen(
     chosenPackage: Channel<String>, onChoosePackage: () -> Unit,
     cmPackages: MutableStateFlow<List<AppInfo>>, getCmPolicy: () -> Int,
-    setCmPackage: (String, Boolean) -> Unit, setCmPolicy: (Int) -> Unit, onNavigateUp: () -> Unit
+    setCmPackage: (List<String>, Boolean) -> Unit, setCmPolicy: (Int) -> Unit,
+    onNavigateUp: () -> Unit
 ) {
     val context = LocalContext.current
     var policy by rememberSaveable { mutableIntStateOf(getCmPolicy()) }
     val packages by cmPackages.collectAsStateWithLifecycle()
-    var packageName by rememberSaveable { mutableStateOf("") }
+    var input by rememberSaveable { mutableStateOf("") }
+    val inputPackages = parsePackageNames(input)
     LaunchedEffect(Unit) {
-        packageName = chosenPackage.receive()
+        input = chosenPackage.receive()
     }
-
     MyLazyScaffold(R.string.credential_manager_policy, onNavigateUp) {
         item {
             mapOf(
@@ -632,20 +649,20 @@ fun CredentialManagerPolicyScreen(
             Spacer(Modifier.padding(vertical = 4.dp))
         }
         if (policy != -1) items(packages, { it.name }) {
-            ApplicationItem(it) { setCmPackage(it.name, false) }
+            ApplicationItem(it) { setCmPackage(listOf(it.name), false) }
         }
         item {
             Column(Modifier.padding(horizontal = HorizontalPadding)) {
-		if (policy != -1) {
-                    PackageNameTextField(packageName, onChoosePackage,
-                        Modifier.padding(vertical = 8.dp)) { packageName = it }
+                if (policy != -1) {
+                    PackageNameTextField(input, onChoosePackage,
+                        Modifier.padding(vertical = 8.dp)) { input = it }
                     Button(
                         {
-                            setCmPackage(packageName, true)
-                            packageName = ""
+                            setCmPackage(inputPackages, true)
+                            input = ""
                         },
                         Modifier.fillMaxWidth(),
-			enabled = packageName.isValidPackageName
+                        inputPackages.all { it.isValidPackageName }
                     ) {
                         Text(stringResource(R.string.add))
                     }
@@ -673,33 +690,37 @@ fun CredentialManagerPolicyScreen(
 fun PermittedAsAndImPackages(
     title: Int, note: Int, chosenPackage: Channel<String>, onChoosePackage: () -> Unit,
     packagesState: MutableStateFlow<List<AppInfo>>, getPackages: () -> Boolean,
-    setPackage: (String, Boolean) -> Unit, setPolicy: (Boolean) -> Boolean, onNavigateUp: () -> Unit
+    setPackage: (List<String>, Boolean) -> Unit, setPolicy: (Boolean) -> Boolean,
+    onNavigateUp: () -> Unit
 ) {
     val context = LocalContext.current
     val packages by packagesState.collectAsStateWithLifecycle()
-    var packageName by rememberSaveable { mutableStateOf("") }
+    var input by rememberSaveable { mutableStateOf("") }
+    val inputPackages = parsePackageNames(input)
     var allowAll by rememberSaveable { mutableStateOf(getPackages()) }
     LaunchedEffect(Unit) {
-        packageName = chosenPackage.receive()
+        input = chosenPackage.receive()
     }
     MyLazyScaffold(title, onNavigateUp) {
         item {
             SwitchItem(R.string.allow_all, state = allowAll, onCheckedChange = { allowAll = it })
         }
         if (!allowAll) items(packages, { it.name }) {
-            ApplicationItem(it) { setPackage(it.name, false) }
+            ApplicationItem(it) { setPackage(listOf(it.name), false) }
         }
         item {
             if (!allowAll) {
-                PackageNameTextField(packageName, onChoosePackage,
-                    Modifier.padding(HorizontalPadding, 8.dp)) { packageName = it }
+                PackageNameTextField(input, onChoosePackage,
+                    Modifier.padding(HorizontalPadding, 8.dp)) { input = it }
                 Button(
                     {
-                        setPackage(packageName, true)
-                        packageName = ""
+                        setPackage(inputPackages, true)
+                        input = ""
                     },
-                    Modifier.fillMaxWidth().padding(horizontal = HorizontalPadding),
-                    packageName.isValidPackageName
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = HorizontalPadding),
+                    inputPackages.all { it.isValidPackageName }
                 ) {
                     Text(stringResource(R.string.add))
                 }
@@ -708,13 +729,16 @@ fun PermittedAsAndImPackages(
                 {
                     context.showOperationResultToast(setPolicy(allowAll))
                 },
-                Modifier.fillMaxWidth().padding(top = 8.dp).padding(horizontal = HorizontalPadding)
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+                    .padding(horizontal = HorizontalPadding)
             ) {
                 Text(stringResource(R.string.apply))
             }
             Spacer(Modifier.height(10.dp))
             Notes(note, HorizontalPadding)
-	    Spacer(Modifier.height(BottomPadding))
+            Spacer(Modifier.height(BottomPadding))
         }
     }
 }
@@ -735,16 +759,16 @@ fun EnableSystemAppScreen(
         Spacer(Modifier.padding(vertical = 4.dp))
         PackageNameTextField(packageName, onChoosePackage,
             Modifier.padding(bottom = 8.dp)) { packageName = it }
-            Button(
-                {
-                    onEnable(packageName)
-                    packageName = ""
-                    context.showOperationResultToast(true)
-                },
-                Modifier.fillMaxWidth(),
-                packageName.isValidPackageName
-            ) {
-                Text(stringResource(R.string.enable))
+        Button(
+            {
+                onEnable(packageName)
+                packageName = ""
+                context.showOperationResultToast(true)
+            },
+            Modifier.fillMaxWidth(),
+            packageName.isValidPackageName
+        ) {
+            Text(stringResource(R.string.enable))
         }
         Notes(R.string.info_enable_system_app)
     }
@@ -758,7 +782,6 @@ fun SetDefaultDialerScreen(
     chosenPackage: Channel<String>, onChoosePackage: () -> Unit,
     onSet: (String) -> Unit, onNavigateUp: () -> Unit
 ) {
-    val context = LocalContext.current
     var packageName by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(Unit) {
         packageName = chosenPackage.receive()
@@ -767,48 +790,38 @@ fun SetDefaultDialerScreen(
         Spacer(Modifier.padding(vertical = 4.dp))
         PackageNameTextField(packageName, onChoosePackage,
             Modifier.padding(bottom = 8.dp)) { packageName = it }
-            Button(
-                {
-                    onSet(packageName)
-                    context.showOperationResultToast(true)
-                },
-                Modifier.fillMaxWidth(),
-                packageName.isValidPackageName
-            ) {
-                Text(stringResource(R.string.set))
+        Button(
+            {
+                onSet(packageName)
+            },
+            Modifier.fillMaxWidth(),
+            packageName.isValidPackageName
+        ) {
+            Text(stringResource(R.string.set))
         }
     }
-}
-
-@Composable
-fun PackageFunctionScreenWithoutResult(
-    title: Int, packagesState: MutableStateFlow<List<AppInfo>>, onGet: () -> Unit,
-    onSet: (String, Boolean) -> Unit, onNavigateUp: () -> Unit,
-    chosenPackage: Channel<String>, onChoosePackage: () -> Unit,
-    navigateToGroups: () -> Unit, appGroups: StateFlow<List<AppGroup>>, notes: Int? = null
-) {
-    PackageFunctionScreen(
-        title, packagesState, onGet, { name, status -> onSet(name, status); null },
-        onNavigateUp, chosenPackage, onChoosePackage, navigateToGroups, appGroups, notes
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PackageFunctionScreen(
     title: Int, packagesState: MutableStateFlow<List<AppInfo>>, onGet: () -> Unit,
-    onSet: (String, Boolean) -> Boolean?, onNavigateUp: () -> Unit,
+    onSet: (List<String>, Boolean) -> Unit, onNavigateUp: () -> Unit,
     chosenPackage: Channel<String>, onChoosePackage: () -> Unit,
     navigateToGroups: () -> Unit, appGroups: StateFlow<List<AppGroup>>, notes: Int? = null
 ) {
+    val context = LocalContext.current
     val groups by appGroups.collectAsStateWithLifecycle()
     val packages by packagesState.collectAsStateWithLifecycle()
-    var packageName by rememberSaveable { mutableStateOf("") }
+    var input by rememberSaveable { mutableStateOf("") }
+    val inputPackages = parsePackageNames(input)
     var dialog by remember { mutableStateOf(false) }
     var selectedGroup by remember { mutableStateOf<AppGroup?>(null) }
+    val snackbar = remember { SnackbarHostState() }
+    val coroutine = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         onGet()
-        packageName = chosenPackage.receive()
+        input = chosenPackage.receive()
     }
     Scaffold(
         topBar = {
@@ -846,25 +859,41 @@ fun PackageFunctionScreen(
                     }
                 }
             )
+        },
+        snackbarHost = {
+            SnackbarHost(snackbar)
         }
     ) { paddingValues ->
         LazyColumn(Modifier.padding(paddingValues)) {
             items(packages, { it.name }) {
                 ApplicationItem(it) {
-                    onSet(it.name, false)
+                    onSet(listOf(it.name), false)
+                    coroutine.launch {
+                        val result = snackbar.showSnackbar(
+                            context.getString(R.string.package_removed, it.name),
+                            context.getString(R.string.undo),
+                            true, SnackbarDuration.Short
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            onSet(listOf(it.name), true)
+                        }
+                    }
                 }
             }
             item {
-                PackageNameTextField(packageName, onChoosePackage,
-                    Modifier.padding(HorizontalPadding, 8.dp)) { packageName = it }
+                PackageNameTextField(input, onChoosePackage,
+                    Modifier.padding(HorizontalPadding, 8.dp)) { input = it }
                 Button(
                     {
-                        if (onSet(packageName, true) != false) {
-                            packageName = ""
-                        }
+                        onSet(inputPackages, true)
+                        input = ""
                     },
-                    Modifier.fillMaxWidth().padding(horizontal = HorizontalPadding).padding(bottom = 10.dp),
-                    packageName.isValidPackageName && packages.find { it.name == packageName } == null
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = HorizontalPadding)
+                        .padding(bottom = 10.dp),
+                    inputPackages.all { it.isValidPackageName } &&
+                            packages.none { it.name in inputPackages }
                 ) {
                     Text(stringResource(R.string.add))
                 }
@@ -877,17 +906,13 @@ fun PackageFunctionScreen(
         text = {
             Column {
                 Button({
-                    selectedGroup!!.apps.forEach {
-                        onSet(it, true)
-                    }
+                    onSet(selectedGroup!!.apps, true)
                     dialog = false
                 }) {
                     Text(stringResource(R.string.add_to_list))
                 }
                 Button({
-                    selectedGroup!!.apps.forEach {
-                        onSet(it, false)
-                    }
+                    onSet(selectedGroup!!.apps, false)
                     dialog = false
                 }) {
                     Text(stringResource(R.string.remove_from_list))
@@ -932,9 +957,12 @@ fun ManageAppGroupsScreen(
         LazyColumn(Modifier.padding(paddingValues)) {
             items(groups, { it.id }) {
                 Column(
-                    Modifier.fillMaxWidth().clickable {
-                        navigateToEditScreen(it.id, it.name, it.apps)
-                    }.padding(HorizontalPadding, 8.dp)
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            navigateToEditScreen(it.id, it.name, it.apps)
+                        }
+                        .padding(HorizontalPadding, 8.dp)
                 ) {
                     Text(it.name)
                     Text(
@@ -959,9 +987,10 @@ fun EditAppGroupScreen(
     var name by rememberSaveable { mutableStateOf(params.name) }
     val list = rememberSaveable { mutableStateListOf(*params.apps.toTypedArray()) }
     val appInfoList = list.map { getAppInfo(it) }
-    var packageName by rememberSaveable { mutableStateOf("") }
+    var input by rememberSaveable { mutableStateOf("") }
+    val inputPackages = parsePackageNames(input)
     LaunchedEffect(Unit) {
-        packageName = chosenPackage.receive()
+        input = chosenPackage.receive()
     }
     Scaffold(
         topBar = {
@@ -994,7 +1023,9 @@ fun EditAppGroupScreen(
         LazyColumn(Modifier.padding(paddingValues)) {
             item {
                 OutlinedTextField(
-                    name, { name = it }, Modifier.fillMaxWidth().padding(HorizontalPadding, 8.dp),
+                    name, { name = it }, Modifier
+                        .fillMaxWidth()
+                        .padding(HorizontalPadding, 8.dp),
                     label = { Text(stringResource(R.string.name)) }
                 )
             }
@@ -1004,15 +1035,18 @@ fun EditAppGroupScreen(
                 }
             }
             item {
-                PackageNameTextField(packageName, onChoosePackage,
-                    Modifier.padding(HorizontalPadding, 8.dp)) { packageName = it }
+                PackageNameTextField(input, onChoosePackage,
+                    Modifier.padding(HorizontalPadding, 8.dp)) { input = it }
                 Button(
                     {
-                        list += packageName
-                        packageName = ""
+                        list += inputPackages
+                        input = ""
                     },
-                    Modifier.fillMaxWidth().padding(horizontal = HorizontalPadding).padding(bottom = 10.dp),
-                    packageName.isValidPackageName && packageName !in list
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = HorizontalPadding)
+                        .padding(bottom = 10.dp),
+                    inputPackages.all { it.isValidPackageName && it !in list }
                 ) {
                     Text(stringResource(R.string.add))
                 }
@@ -1055,7 +1089,9 @@ fun ManagedConfigurationScreen(
                         }
                         OutlinedTextField(
                             searchKeyword, { searchKeyword = it },
-                            Modifier.fillMaxWidth().focusRequester(fr),
+                            Modifier
+                                .fillMaxWidth()
+                                .focusRequester(fr),
                             textStyle = typography.bodyLarge,
                             placeholder = { Text(stringResource(R.string.search)) },
                             trailingIcon = {
@@ -1094,9 +1130,12 @@ fun ManagedConfigurationScreen(
         LazyColumn(Modifier.padding(paddingValues)) {
             items(displayRestrictions, { it.key }) { entry ->
                 Row(
-                    Modifier.fillMaxWidth().clickable {
-                        dialog = entry
-                    }.padding(HorizontalPadding, 8.dp),
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            dialog = entry
+                        }
+                        .padding(HorizontalPadding, 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     val iconId = when (entry) {
@@ -1123,7 +1162,7 @@ fun ManagedConfigurationScreen(
                         }
                         Text(
                             text ?: "null", Modifier.alpha(0.7F),
-                            fontStyle = if(text == null) FontStyle.Italic else null,
+                            fontStyle = if (text == null) FontStyle.Italic else null,
                             style = typography.bodyMedium
                         )
                     }
@@ -1241,7 +1280,9 @@ fun ManagedConfigurationDialog(
                 }
             }
             Row(
-                Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
                 Arrangement.SpaceBetween, Alignment.CenterVertically
             ) {
                 Text(stringResource(R.string.specify_value))
@@ -1279,9 +1320,12 @@ fun ManagedConfigurationDialog(
             is AppRestriction.ChoiceItem -> itemsIndexed(restriction.entryValues) { index, value ->
                 val label = restriction.entries.getOrNull(index)
                 Row(
-                    Modifier.fillMaxWidth().clickable {
-                        input = value
-                    }.padding(8.dp, 4.dp)
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            input = value
+                        }
+                        .padding(8.dp, 4.dp)
                 ) {
                     RadioButton(input == value, { input = value })
                     Spacer(Modifier.width(8.dp))
@@ -1300,10 +1344,13 @@ fun ManagedConfigurationDialog(
             ) { index, entry ->
                 ReorderableItem(reorderableListState, entry.value) {
                     Row(
-                        Modifier.fillMaxWidth().clickable {
-                            val old = multiSelectList[index]
-                            multiSelectList[index] = old.copy(selected = !old.selected)
-                        }.padding(8.dp, 4.dp),
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val old = multiSelectList[index]
+                                multiSelectList[index] = old.copy(selected = !old.selected)
+                            }
+                            .padding(8.dp, 4.dp),
                         Arrangement.SpaceBetween, Alignment.CenterVertically
                     ) {
                         Row(Modifier.weight(1F), verticalAlignment = Alignment.CenterVertically) {
@@ -1327,7 +1374,9 @@ fun ManagedConfigurationDialog(
             }
         }
         item {
-            Row(Modifier.fillMaxWidth().padding(top = 4.dp), Arrangement.End) {
+            Row(Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp), Arrangement.End) {
                 TextButton({
                     setRestriction(null)
                 }, Modifier.padding(end = 4.dp)) {

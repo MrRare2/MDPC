@@ -1,8 +1,5 @@
 package dev.mr2.dpc
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.admin.DevicePolicyManager
 import android.app.admin.FactoryResetProtectionPolicy
@@ -14,21 +11,12 @@ import android.content.IntentFilter
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageInstaller.Session
 import android.content.pm.IPackageInstallerSession
-import android.graphics.BitmapFactory
-import android.net.wifi.WifiConfiguration
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.HardwarePropertiesManager
 import android.util.Log
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.app.RemoteInput
-import androidx.core.util.Pair
 import com.rosan.dhizuku.api.Dhizuku
 import com.rosan.dhizuku.api.DhizukuBinderWrapper
-import java.io.File
-import java.io.FileInputStream
-import java.util.UUID
 
 class ApiReceiver: BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -45,7 +33,6 @@ class ApiReceiver: BroadcastReceiver() {
         val dpm = Privilege.DPM
         val wm = Privilege.WM
         val pm = Privilege.PIM
-        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val receiver = Privilege.DAR
         val app = intent.getStringExtra("package")
         val permission = intent.getStringExtra("permission")
@@ -55,28 +42,6 @@ class ApiReceiver: BroadcastReceiver() {
         val text = intent.getStringExtra("text")
         val time_ts = intent.getLongExtra("ts", 0L)
         val time_tz = intent.getStringExtra("tz")
-        val ssid = intent.getStringExtra("ssid")
-        val bssid = intent.getStringExtra("bssid")
-        val sharedKey = intent.getStringExtra("sharedKey")
-        val wifiEnabled = intent.getBooleanExtra("wifiEnabled", true)
-        val wifiHidden = intent.getBooleanExtra("wifiHidden", false)
-        val wifiNetId = intent.getIntExtra("wifiNetId", -1)
-        // notif channel / notif builder
-        val notifChannelId = intent.getStringExtra("notifChannelId")
-        val notifId = intent.getStringExtra("notifId")
-        val notifChannelName = intent.getStringExtra("notifChannelName")
-        val delete = intent.getBooleanExtra("delete", false)
-        val notifPriority = intent.getStringExtra("notifPriority")
-        val notifTitle = intent.getStringExtra("title")
-        val notifContent = intent.getStringExtra("content")
-        val notifIcon = intent.getStringExtra("icon")
-        val notifImage = intent.getStringExtra("image")
-        val notifVibratePattern = intent.getLongArrayExtra("vibratePattern")
-        val notifAlertOnce = intent.getBooleanExtra("alertOnce", false)
-        val notifActionOnClick = intent.getStringExtra("actionOnClick")
-        val notifActionOnDelete = intent.getStringExtra("actionOnDelete")
-        val notifGroup = intent.getStringExtra("notifGroup")
-        val notifOngoing = intent.getBooleanExtra("notifOngoing", false)
         try {
             @SuppressWarnings("NewApi")
             val reply = when (action) {
@@ -166,122 +131,10 @@ class ApiReceiver: BroadcastReceiver() {
                 "USER_REMOVE_RESTRICTION" -> dpm.clearUserRestriction(receiver, restriction)
                 "SYSTEM_ENABLE_WIFI" -> wm?.setWifiEnabled(true)
                 "SYSTEM_DISABLE_WIFI" -> wm?.setWifiEnabled(false)
-                "SYSTEM_WIFI_RECONNECT" -> wm?.reconnect()
-                "SYSTEM_WIFI_DISCONNECT" -> wm?.disconnect()
-                "SYSTEM_WIFI_DISABLE_NETWORK" -> wm?.disableNetwork(wifiNetId)
-                "SYSTEM_WIFI_ENABLE_NETWORK" -> wm?.enableNetwork(wifiNetId, wifiEnabled)
-                "SYSTEM_REMOVE_WIFI_NETWORK" -> wm?.removeNetwork(wifiNetId)
-                "SYSTEM_ADD_WIFI_NETWORK" -> {
-                    val wc = WifiConfiguration().apply {
-                        SSID = ssid!!.replace("\"", "\\\"")
-                    }
-
-                    if (!sharedKey.isNullOrEmpty()) wc.preSharedKey = sharedKey.replace("\"", "\\\"")
-                    if (!bssid.isNullOrEmpty()) wc.BSSID = bssid
-                    wc.hiddenSSID = wifiHidden
-                    val netId = wm?.addNetwork(wc) ?: -1
-                    wm?.enableNetwork(netId!!, wifiEnabled)
-                    context.reply("WIFI_NET_ID", netId)
-                }
 		        "EMERGENCY_TRANSFER_DHIZUKU" -> {
 		            val newAdmin = ComponentName("com.rosan.dhizuku", "com.rosan.dhizuku.server.DhizukuDAReceiver")
 		            dpm.transferOwnership(receiver, newAdmin, null)
 		        }
-                "NOTIFY" -> {
-                    val priority = when (notifPriority) {
-                        "high", "max" -> NotificationManager.IMPORTANCE_HIGH
-                        "low" -> NotificationManager.IMPORTANCE_LOW
-                        "min" -> NotificationManager.IMPORTANCE_MIN
-                        else -> NotificationManager.IMPORTANCE_DEFAULT
-                    }
-
-                    var channelId = notifChannelId ?: CHANNEL_ID
-                    val existingChannels = nm.notificationChannels.map { it.id }
-                    if (channelId !in existingChannels) {
-                        if (CHANNEL_ID !in existingChannels) {
-                            val defaultChannel = NotificationChannel(CHANNEL_ID, "API Notification Channel", priority)
-                            nm.createNotificationChannel(defaultChannel)
-                        }
-                        channelId = CHANNEL_ID
-                    }
-
-                    val notification = NotificationCompat.Builder(context, channelId)
-                    notification.setSmallIcon(R.drawable.info_fill0)
-                    notification.color = 0xFF000000.toInt()
-                    notification.setContentTitle(notifTitle)
-                    if (notifContent?.contains("\n") ?: false) {
-                        notification.setStyle(
-                            NotificationCompat.BigTextStyle().bigText(notifContent)
-                        )
-                    } else notification.setContentText(notifContent)
-                    notification.priority = priority
-                    notification.setOngoing(notifOngoing)
-                    notification.setOnlyAlertOnce(notifAlertOnce)
-                    notification.setWhen(System.currentTimeMillis())
-                    notification.setShowWhen(true)
-                    var smallIconResourceId: Int? = null
-                    if (notifIcon != null) {
-                        val smallIconResourceName = String.format("%1s_fill0", notifIcon)
-                        smallIconResourceId = context?.resources?.getIdentifier(
-                            smallIconResourceName,
-                            "drawable",
-                            context.packageName
-                        ).takeIf { it != 0 }
-                    }
-
-                    smallIconResourceId?.let { notification.setSmallIcon(it) }
-
-                    notifGroup?.let { notification.setGroup(it) }
-                    notification.setAutoCancel(true)
-
-                    for (button in 1..3) {
-                        intent.getStringExtra("actionOnButton${button}Text")?.let { buttonText ->
-                            intent.getStringExtra("actionOnButton${button}Click")?.let { buttonAction ->
-                                if (buttonAction.contains("\$REPLY")) {
-                                    val action = createReplyAction(context, intent, button, buttonText, buttonAction, notifId!!)
-                                    notification.addAction(action)
-                                } else {
-                                    val pi = createAction(context, buttonAction)
-                                    notification.addAction(NotificationCompat.Action(android.R.drawable.ic_input_add, buttonText, pi))
-                                }
-                            }
-                        }
-                    }
-
-                    if (!notifImage.isNullOrEmpty()) {
-                        val img = File(notifImage)
-                        if (img.exists()) {
-                            val bmp = BitmapFactory.decodeFile(img.getAbsolutePath())
-                            notification.setLargeIcon(bmp).setStyle(
-                                NotificationCompat.BigPictureStyle().bigPicture(bmp)
-                            )
-                        }
-                    }
-
-                    notifActionOnClick?.let {
-                        val pi = createAction(context, it)
-                        notification.setContentIntent(pi)
-                    }
-
-                    notifActionOnDelete?.let {
-                        val pi = createAction(context, it)
-                        notification.setDeleteIntent(pi)
-                    }
-
-                    nm.notify(notifId ?: UUID.randomUUID().toString(), 6458376, notification.build())
-                }
-                "NOTIF_REMOVE" -> nm.cancel(notifId, 6458376)
-                "SPECIAL_NOTIF_REPLY" -> {
-                    val remoteInput = RemoteInput.getResultsFromIntent(intent)
-                    val reply = remoteInput?.getCharSequence(KEY_TEXT_REPLY)
-                    if (reply.isNullOrEmpty()) return
-                    val replyIntent = Intent("dev.mr2.dpc.notif.ACTION_${intent.getStringExtra("action")?.replace("\$REPLY", "")}").apply {
-                        putExtra("dev.mr2.extra.EXTRA_REPLY", reply)
-                        putExtra("dev.mr2.extra.EXTRA_NOTIFID", notifId)
-                    }
-                    nm.cancel(notifId, 6458376)
-                    context.sendBroadcast(replyIntent)
-                }
                 else -> log += "\nInvalid action -> ${action}"
             }
             context.sendBroadcast(reply as? Intent ?: context.reply("NULL", ""))
@@ -290,7 +143,6 @@ class ApiReceiver: BroadcastReceiver() {
             val message = (e::class.qualifiedName ?: "Exception") + ": " + (e.message ?: "")
             log += "\n$message"
         }
-	    context.sendBroadcast(context.reply("LOG_$TAG", log, true))
         Log.d(TAG, log)
     }
 
@@ -304,50 +156,8 @@ class ApiReceiver: BroadcastReceiver() {
         if (newInterface != null) field.set(session, newInterface)
     }
 
-    private fun createAction(context: Context, action: String): PendingIntent {
-        val broadcastIntent = Intent("dev.mr2.dpc.notif.ACTION_$action").apply { putExtra("dev.mr2.extra.EXTRA_CLICKED", true) }
-
-        return PendingIntent.getBroadcast(
-            context,
-            (System.currentTimeMillis() % Int.MAX_VALUE).toInt(),
-            broadcastIntent,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
-        )
-    }
-
-    fun createReplyAction(context: Context, intent: Intent, buttonNum: Int, buttonText: String, buttonAction: String, notificationId: String): NotificationCompat.Action {
-        val remoteInput = RemoteInput.Builder(KEY_TEXT_REPLY)
-            .setLabel(buttonText)
-            .build()
-
-        val replyPendingIntent = PendingIntent.getBroadcast(
-            context,
-            buttonNum,
-            getMessageReplyIntent(intent, buttonAction, notificationId),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-        )
-
-        return NotificationCompat.Action.Builder(
-            R.drawable.info_fill0,
-            buttonText,
-            replyPendingIntent
-        )
-            .addRemoteInput(remoteInput)
-            .build()
-    }
-
-    private fun getMessageReplyIntent(intent: Intent, buttonAction: String, notificationId: String): Intent {
-        return Intent("dev.mr2.dpc.api.SPECIAL_NOTIF_REPLY").apply {
-            setComponent(ComponentName("dev.mr2.dpc", "dev.mr2.dpc.ApiReceiver"))
-            putExtra("action", buttonAction)
-            putExtra("notifId", notificationId)
-        }
-    }
-
     companion object {
         private const val TAG = "API"
         private const val PACKAGE_STATUS = "dev.mr2.temp.PKG_STATUS"
-        private const val CHANNEL_ID = "api-notification"
-        private const val KEY_TEXT_REPLY = "mdpc-reply"
     }
 }

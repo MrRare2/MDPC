@@ -13,3 +13,4 @@ app/debug
 .androidide
 *.swp
 *.db
+*.old

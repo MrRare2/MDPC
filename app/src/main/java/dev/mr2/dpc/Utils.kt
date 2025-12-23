@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.union
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -48,6 +50,7 @@ import java.security.SecureRandom
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import kotlinx.serialization.KSerializer
 import kotlin.reflect.typeOf
 import android.content.pm.PackageManager
 import dev.mr2.dpc.SP
@@ -214,6 +217,15 @@ var Context.isLauncherVisible: Boolean
         )
     }
 
+class SerializableSaver<T>(val serializer: KSerializer<T>) : Saver<T, String> {
+    override fun restore(value: String): T? {
+        return Json.decodeFromString(serializer, value)
+    }
+    override fun SaverScope.save(value: T): String {
+        return Json.encodeToString(serializer, value)
+    }
+}
+
 fun generateBase64Key(length: Int): String {
     val ba = ByteArray(length)
     SecureRandom().nextBytes(ba)
@@ -248,3 +260,5 @@ fun registerPackageRemovedReceiver(
     filter.addDataScheme("package")
     ctx.registerReceiver(br, filter)
 }
+
+fun parsePackageNames(input: String) = input.split('\n').filter { it.isNotEmpty() }

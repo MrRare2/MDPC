@@ -173,9 +173,7 @@ fun SystemManagerScreen(
             FunctionItem(R.string.key_pairs, icon = R.drawable.key_vertical_fill0) { navCtrl.navigate("KeyPairs") }*/
         if (VERSION.SDK_INT >= 35 && (privilege.device || (privilege.profile && privilege.affiliated)))
             FunctionItem(R.string.content_protection_policy, icon = R.drawable.search_fill0) { onNavigate(ContentProtectionPolicy) }
-        if (VERSION.SDK_INT >= 23) {
-            FunctionItem(R.string.permission_policy, icon = R.drawable.key_fill0) { onNavigate(PermissionPolicy) }
-        }
+        FunctionItem(R.string.permission_policy, icon = R.drawable.key_fill0) { onNavigate(PermissionPolicy) }
         if (VERSION.SDK_INT >= 34 && privilege.device) {
             FunctionItem(R.string.mte_policy, icon = R.drawable.memory_fill0) { onNavigate(MtePolicy) }
         }
@@ -206,7 +204,7 @@ fun SystemManagerScreen(
             FunctionItem(R.string.support_messages, icon = R.drawable.chat_fill0) { onNavigate(SupportMessage) }
         }
         FunctionItem(R.string.disable_account_management, icon = R.drawable.account_circle_fill0) { onNavigate(DisableAccountManagement) }
-        if (VERSION.SDK_INT >= 23 && (privilege.device || privilege.org)) {
+        if (privilege.device || privilege.org) {
             FunctionItem(R.string.system_update_policy, icon = R.drawable.system_update_fill0) { onNavigate(SetSystemUpdatePolicy) }
         }
         if (VERSION.SDK_INT >= 29 && (privilege.device || privilege.org)) {
@@ -337,7 +335,7 @@ fun SystemOptionsScreen(vm: MyViewModel, onNavigateUp: () -> Unit) {
 	if (VERSION.SDK_INT >= 34 && privilege.run { device || (profile && affiliated) }) {
             SwitchItem(R.string.disable_status_bar, status.statusBarDisabled,
                 vm::setStatusBarDisabled, R.drawable.notifications_fill0)
-        } else if (VERSION.SDK_INT >= 23 && (privilege.device || (privilege.profile && privilege.affiliated))) {
+        } else if ((privilege.device || (privilege.profile && privilege.affiliated))) {
             FunctionItem(R.string.enable_status_bar, icon = R.drawable.notifications_fill0) { vm.setStatusBarDisabled(false) }
             FunctionItem(R.string.disable_status_bar, icon = R.drawable.notifications_off_fill0) { vm.setStatusBarDisabled(true) }
         }
@@ -400,7 +398,7 @@ fun KeyguardScreen(
     val context = LocalContext.current
     val privilege by Privilege.status.collectAsStateWithLifecycle()
     MyScaffold(R.string.keyguard, onNavigateUp) {
-        if (VERSION.SDK_INT >= 23 && (privilege.device ||
+        if ((privilege.device ||
                     (VERSION.SDK_INT >= 28 && privilege.profile && privilege.affiliated))) {
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -422,7 +420,7 @@ fun KeyguardScreen(
             Notes(R.string.info_disable_keyguard)
             Spacer(Modifier.padding(vertical = 12.dp))
         }
-        if (VERSION.SDK_INT >= 23) Text(text = stringResource(R.string.lock_now), style = typography.headlineLarge)
+        Text(text = stringResource(R.string.lock_now), style = typography.headlineLarge)
         Spacer(Modifier.padding(vertical = 2.dp))
         var evictKey by rememberSaveable { mutableStateOf(false) }
         Button(
@@ -1027,7 +1025,6 @@ fun ContentProtectionPolicyScreen(
 
 @Serializable object PermissionPolicy
 
-@RequiresApi(23)
 @Composable
 fun PermissionPolicyScreen(
     getPolicy: () -> Int, setPolicy: (Int) -> Unit, onNavigateUp: () -> Unit
@@ -1168,7 +1165,7 @@ fun NearbyStreamingPolicyScreen(
 @RequiresApi(28)
 @Composable
 fun LockTaskModeScreen(
-    chosenPackage: Channel<String>, onChoosePackage: () -> Unit,
+    chosenPackage: Channel<String>, chooseSinglePackage: () -> Unit, choosePackage: () -> Unit,
     lockTaskPackages: StateFlow<List<AppInfo>>, getLockTaskPackages: () -> Unit,
     setLockTaskPackage: (String, Boolean) -> Unit,
     startLockTaskMode: (String, String, Boolean, Boolean) -> Boolean,
@@ -1212,9 +1209,9 @@ fun LockTaskModeScreen(
             }
             HorizontalPager(pagerState, verticalAlignment = Alignment.Top) { page ->
                 if (page == 0) {
-                    StartLockTaskMode(startLockTaskMode, chosenPackage, onChoosePackage)
+                    StartLockTaskMode(startLockTaskMode, chosenPackage, chooseSinglePackage)
                 } else if (page == 1) {
-                    LockTaskPackages(chosenPackage, onChoosePackage, lockTaskPackages, setLockTaskPackage)
+                    LockTaskPackages(chosenPackage, choosePackage, lockTaskPackages, setLockTaskPackage)
                 } else {
                     LockTaskFeatures(getLockTaskFeatures, setLockTaskFeature)
                 }
@@ -1884,7 +1881,7 @@ fun WipeDataScreen(
             text = {
                 Text(
                     text = stringResource(
-                        if (VERSION.SDK_INT >= 23 && userManager.isSystemUser) R.string.wipe_data_warning
+                        if (userManager.isSystemUser) R.string.wipe_data_warning
                         else R.string.info_wipe_data_in_managed_user
                     ),
                     color = colorScheme.error
@@ -1925,7 +1922,6 @@ data class PendingSystemUpdateInfo(val exists: Boolean, val time: Long, val secu
 
 @Serializable object SetSystemUpdatePolicy
 
-@RequiresApi(23)
 @Composable
 fun SystemUpdatePolicyScreen(
     getPolicy: () -> SystemUpdatePolicyInfo, setPolicy: (SystemUpdatePolicyInfo) -> Unit,
