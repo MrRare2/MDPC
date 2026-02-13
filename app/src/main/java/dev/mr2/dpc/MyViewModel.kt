@@ -68,6 +68,7 @@ import dev.mr2.dpc.dpm.ApnProtocol
 import dev.mr2.dpc.dpm.AppGroup
 import dev.mr2.dpc.dpm.AppRestriction
 import dev.mr2.dpc.dpm.AppStatus
+import dev.mr2.dpc.dpm.BasicAppGroup
 import dev.mr2.dpc.dpm.CaCertInfo
 import dev.mr2.dpc.dpm.CreateUserResult
 import dev.mr2.dpc.dpm.CreateWorkProfileOptions
@@ -128,6 +129,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.addJsonObject
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.put
 
 class MyViewModel(application: Application): AndroidViewModel(application) {
     val myRepo = getApplication<MyApplication>().myRepo
@@ -738,6 +743,21 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
         appGroups.update { group ->
             group.filter { it.id != id }
         }
+    }
+
+    fun exportAppGroups(uri: Uri) {
+        application.contentResolver.openOutputStream(uri)!!.use {
+            val list: List<BasicAppGroup> = appGroups.value
+            it.write(Json.encodeToString(list).encodeToByteArray())
+        }
+    }
+    fun importAppGroups(uri: Uri) {
+        application.contentResolver.openInputStream(uri)!!.use {
+            Json.decodeFromString<List<BasicAppGroup>>(it.readBytes().decodeToString())
+        }.forEach {
+            myRepo.setAppGroup(null, it.name, it.apps)
+        }
+        getAppGroups()
     }
 
     // late sync, system parts

@@ -759,6 +759,7 @@
     <string name="unhide">再表示</string>
     <string name="undo">元に戻す</string>
     <string name="package_removed">%1$s を削除しました</string>
+    <string name="import_str">インポート</string>
 
     <string name="color_scheme">カラー設定</string>
     <string name="color_blue">ミクブルー</string>

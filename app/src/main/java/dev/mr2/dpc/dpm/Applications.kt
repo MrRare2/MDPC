@@ -5,8 +5,11 @@ import android.app.admin.DevicePolicyManager.PERMISSION_GRANT_STATE_DENIED
 import android.app.admin.DevicePolicyManager.PERMISSION_GRANT_STATE_GRANTED
 import android.app.admin.PackagePolicy
 import android.content.Intent
+import android.net.Uri
 import android.os.Build.VERSION
 import android.os.Looper
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -178,6 +181,7 @@ fun PackageNameTextField(
                 Icon(Icons.AutoMirrored.Default.List, null)
             }
         },
+        isError = value.isNotEmpty() && !value.isValidPackageName,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions { fm.clearFocus() }
     )
@@ -382,7 +386,7 @@ fun PermissionsManagerScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(packageName.isValidPackageName) {
+                    .clickable {
                         selectedPermission = index
                     }
                     .padding(8.dp)
@@ -465,8 +469,7 @@ fun ClearAppStorageScreen(
             Modifier.padding(vertical = 8.dp)) { packageName = it }
         Button(
             { dialog = true },
-            Modifier.fillMaxWidth(),
-            packageName.isValidPackageName
+            Modifier.fillMaxWidth()
         ) {
             Text(stringResource(R.string.clear))
         }
@@ -530,8 +533,7 @@ fun UninstallAppScreen(
             Modifier.padding(vertical = 8.dp)) { packageName = it }
         Button(
             { dialog = true },
-            Modifier.fillMaxWidth(),
-            packageName.isValidPackageName
+            Modifier.fillMaxWidth()
         ) {
             Text(stringResource(R.string.uninstall))
         }
@@ -605,8 +607,7 @@ fun InstallExistingAppScreen(
             {
                 context.showOperationResultToast(onInstall(packageName))
             },
-            Modifier.fillMaxWidth(),
-            packageName.isValidPackageName
+            Modifier.fillMaxWidth()
         ) {
             Text(stringResource(R.string.install))
         }
@@ -719,8 +720,7 @@ fun PermittedAsAndImPackages(
                     },
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = HorizontalPadding),
-                    inputPackages.all { it.isValidPackageName }
+                        .padding(horizontal = HorizontalPadding)
                 ) {
                     Text(stringResource(R.string.add))
                 }
@@ -765,8 +765,7 @@ fun EnableSystemAppScreen(
                 packageName = ""
                 context.showOperationResultToast(true)
             },
-            Modifier.fillMaxWidth(),
-            packageName.isValidPackageName
+            Modifier.fillMaxWidth()
         ) {
             Text(stringResource(R.string.enable))
         }
@@ -892,7 +891,6 @@ fun PackageFunctionScreen(
                         .fillMaxWidth()
                         .padding(horizontal = HorizontalPadding)
                         .padding(bottom = 10.dp),
-                    inputPackages.all { it.isValidPackageName } &&
                             packages.none { it.name in inputPackages }
                 ) {
                     Text(stringResource(R.string.add))
@@ -905,6 +903,8 @@ fun PackageFunctionScreen(
     if (dialog) AlertDialog(
         text = {
             Column {
+                Text(selectedGroup!!.name, style = typography.titleLarge)
+                Spacer(Modifier.height(6.dp))
                 Button({
                     onSet(selectedGroup!!.apps, true)
                     dialog = false
@@ -928,22 +928,67 @@ fun PackageFunctionScreen(
     )
 }
 
-class AppGroup(val id: Int, val name: String, val apps: List<String>)
+@Serializable
+open class BasicAppGroup(open val name: String, open val apps: List<String>)
+
+class AppGroup(
+    val id: Int, override val name: String, override val apps: List<String>
+) : BasicAppGroup(name, apps)
 
 @Serializable object ManageAppGroups
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManageAppGroupsScreen(
-    appGroups: StateFlow<List<AppGroup>>,
+    appGroups: StateFlow<List<AppGroup>>, exportData: (Uri) -> Unit, importData: (Uri) -> Unit,
     navigateToEditScreen: (Int?, String, List<String>) -> Unit, navigateUp: () -> Unit
 ) {
     val groups by appGroups.collectAsStateWithLifecycle()
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) {
+        if (it != null) exportData(it)
+    }
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {
+        if (it != null) importData(it)
+    }
     Scaffold(
         topBar = {
             TopAppBar(
                 { Text(stringResource(R.string.app_group)) },
-                navigationIcon = { NavIcon(navigateUp) }
+                navigationIcon = { NavIcon(navigateUp) },
+                actions = {
+                    var dropdown by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton({
+                            dropdown = true
+                        }) {
+                            Icon(Icons.Default.MoreVert, null)
+                        }
+                        DropdownMenu(dropdown, { dropdown = false }) {
+                            DropdownMenuItem(
+                                { Text(stringResource(R.string.export)) },
+                                {
+                                    exportLauncher.launch("mdpc_app_groups")
+                                    dropdown = false
+                                },
+                                leadingIcon = {
+                                    Icon(painterResource(R.drawable.file_export_fill0), null)
+                                }
+                            )
+                            DropdownMenuItem(
+                                { Text(stringResource(R.string.import_str)) },
+                                {
+                                    importLauncher.launch(arrayOf("application/json"))
+                                    dropdown = false
+                                },
+                                leadingIcon = {
+                                    Icon(painterResource(R.drawable.file_open_fill0), null)
+                                }
+                            )
+                        }
+                    }
+                }
             )
         },
         floatingActionButton = {
@@ -1046,7 +1091,7 @@ fun EditAppGroupScreen(
                         .fillMaxWidth()
                         .padding(horizontal = HorizontalPadding)
                         .padding(bottom = 10.dp),
-                    inputPackages.all { it.isValidPackageName && it !in list }
+                    inputPackages.all { it !in list }
                 ) {
                     Text(stringResource(R.string.add))
                 }
@@ -1135,7 +1180,8 @@ fun ManagedConfigurationScreen(
                         .clickable {
                             dialog = entry
                         }
-                        .padding(HorizontalPadding, 8.dp),
+                        .padding(HorizontalPadding, 8.dp)
+                        .animateItem(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     val iconId = when (entry) {

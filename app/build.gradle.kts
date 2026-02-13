@@ -37,8 +37,8 @@ android {
         applicationId = "dev.mr2.dpc"
         minSdk = 23
         targetSdk = 36
-        versionCode = 4101
-        versionName = "7.2.1"
+        versionCode = 4200
+        versionName = "7.3.0"
         multiDexEnabled = false
     }
 
