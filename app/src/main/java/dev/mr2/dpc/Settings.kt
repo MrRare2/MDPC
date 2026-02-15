@@ -296,7 +296,7 @@ fun AppearanceScreen(
 
 data class AppLockConfig(
     /** null means no password, empty means password already set */
-    val password: String?, val biometrics: Boolean, val whenLeaving: Boolean
+    val password: String?, val biometrics: Boolean, val whenLeaving: Boolean, val autoUnlock: Boolean
 )
 
 @Serializable object AppLockSettings
@@ -313,6 +313,7 @@ fun AppLockSettingsScreen(
     var hidePasswordConfirm by rememberSaveable { mutableStateOf(true) }
     var allowBiometrics by rememberSaveable { mutableStateOf(config.biometrics) }
     var lockWhenLeaving by rememberSaveable { mutableStateOf(config.whenLeaving) }
+    var autoUnlock by rememberSaveable { mutableStateOf(config.autoUnlock) }
     var alreadySet by rememberSaveable { mutableStateOf(config.password != null) }
     val isInputLegal = password.length !in 1..3 && (alreadySet || password.isNotBlank())
     val biometricsAllowed = BiometricManager.from(context).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS
@@ -353,9 +354,16 @@ fun AppLockSettingsScreen(
         Text(stringResource(R.string.lock_when_leaving))
         Switch(lockWhenLeaving, { lockWhenLeaving = it })
     }
+    Row(
+        Modifier.fillMaxWidth().padding(bottom = 6.dp),
+        Arrangement.SpaceBetween, Alignment.CenterVertically
+    ) {
+        Text(stringResource(R.string.auto_unlock))
+        Switch(autoUnlock, { autoUnlock = it })
+    }
     Button(
         onClick = {
-            setConfig(AppLockConfig(password, allowBiometrics, lockWhenLeaving))
+            setConfig(AppLockConfig(password, allowBiometrics, lockWhenLeaving, autoUnlock))
             onNavigateUp()
         },
         modifier = Modifier.fillMaxWidth(),
@@ -365,7 +373,7 @@ fun AppLockSettingsScreen(
     }
     if (alreadySet) FilledTonalButton(
         onClick = {
-            setConfig(AppLockConfig(null, false, false))
+            setConfig(AppLockConfig(null, false, false, false))
             onNavigateUp()
         },
         modifier = Modifier.fillMaxWidth()

@@ -25,8 +25,10 @@ import android.os.Build
 import android.os.Bundle
 import android.os.HardwarePropertiesManager
 import android.os.UserManager
+import android.provider.Settings
 import android.util.Base64
 import android.util.Log
+import android.view.inputmethod.InputMethodManager
 import com.rosan.dhizuku.api.Dhizuku
 import com.rosan.dhizuku.api.DhizukuBinderWrapper
 import java.io.ByteArrayOutputStream
@@ -366,7 +368,7 @@ fun realHandler(context: Context, req: JSONObject): JSONObject {
             "SYSTEM_ADD_CA_CERT" -> dpm.installCaCert(receiver, Base64.decode(getArg<String>("cert", req), Base64.DEFAULT))
             "SYSTEM_REMOVE_CA_CERT" -> dpm.uninstallCaCert(receiver, Base64.decode(getArg<String>("cert", req), Base64.DEFAULT))
             "NETWORK_MINIMUM_WIFI_SECURITY_LEVEL" -> { requires(33); dpm.minimumRequiredWifiSecurityLevel }
-            "GET_MINIMUM_WIFI_SECURITY_LEVEL" -> { requires(33); dpm.minimumRequiredWifiSecurityLevel = getArg<Int>("level", req) }
+            "SET_MINIMUM_WIFI_SECURITY_LEVEL" -> { requires(33); dpm.minimumRequiredWifiSecurityLevel = getArg<Int>("level", req) }
             "NETWORK_STATS" -> {
                 val target = getArg<Int>("target", req)
                 val type = getArg<Int>("type", req)
@@ -381,6 +383,12 @@ fun realHandler(context: Context, req: JSONObject): JSONObject {
                     else -> throw IllegalArgumentException("invalid target (0 -> device, 1 -> user, 2 -> uid, 3 -> uid tag, 4 -> uid tag state)")
                 }
             }
+            "GET_ACTIVE_INPUT_METHODS" -> {
+                val imm = context.getSystemService(InputMethodManager::class.java)
+                imm.inputMethodList.map { JSONArray(arrayOf(it.packageName, it.id)) }
+            }
+            "GET_CURRENT_INPUT_METHOD" -> Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
+            "SYSTEM_SET_DEFAULT_INPUT_METHOD" -> dpm.setSecureSetting(receiver, Settings.Secure.DEFAULT_INPUT_METHOD, getArg<String>("id", req))
             "DEBUG" -> {
                 if (!BuildConfig.DEBUG) throw UnsupportedOperationException("debug mode only")
                 JSONObject().apply {

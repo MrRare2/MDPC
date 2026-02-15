@@ -5,6 +5,7 @@ import android.app.admin.DevicePolicyManager.PERMISSION_GRANT_STATE_DENIED
 import android.app.admin.DevicePolicyManager.PERMISSION_GRANT_STATE_GRANTED
 import android.app.admin.PackagePolicy
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.net.Uri
 import android.os.Build.VERSION
 import android.os.Looper
@@ -83,6 +84,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -224,7 +226,7 @@ fun ApplicationsFeaturesScreen(onNavigateUp: () -> Unit, onNavigate: (Any) -> Un
             if (VERSION.SDK_INT >= 30 && (privilege.device || (VERSION.SDK_INT >= 33 && privilege.profile))) {
                 FunctionItem(R.string.disable_user_control, icon = R.drawable.do_not_touch_fill0) { onNavigate(DisableUserControl) }
             }
-            FunctionItem(R.string.permissions, icon = R.drawable.shield_fill0) { onNavigate(PermissionsManager()) }
+            FunctionItem(R.string.permissions, icon = R.drawable.shield_fill0) { onNavigate(PermissionManager) }
             if (VERSION.SDK_INT >= 28) {
                 FunctionItem(R.string.disable_metered_data, icon = R.drawable.money_off_fill0) { onNavigate(DisableMeteredData) }
             }
@@ -299,7 +301,7 @@ fun ApplicationDetailsScreen(
                 .alpha(0.7F)
                 .padding(bottom = 8.dp), style = typography.bodyMedium)
         }
-        FunctionItem(R.string.permissions, icon = R.drawable.shield_fill0) { onNavigate(PermissionsManager(packageName)) }
+        FunctionItem(R.string.permissions, icon = R.drawable.shield_fill0) { onNavigate(AppPermissionsManager(packageName)) }
         if (VERSION.SDK_INT >= 24) SwitchItem(
             R.string.suspend, icon = R.drawable.block_fill0, state = status.suspend,
             onCheckedChange = { vm.adSetPackageSuspended(packageName, it) }
@@ -354,46 +356,35 @@ fun ApplicationDetailsScreen(
 
 @Serializable object DisableUserControl
 
-@Serializable data class PermissionsManager(val packageName: String? = null)
+@Serializable data class AppPermissionsManager(val packageName: String)
 
 @Composable
-fun PermissionsManagerScreen(
-    packagePermissions: MutableStateFlow<Map<String, Int>>, getPackagePermissions: (String) -> Unit,
+fun AppPermissionsManagerScreen(
+    getPackagePermissions: (String) -> Map<String, Int>,
     setPackagePermission: (String, String, Int) -> Boolean, onNavigateUp: () -> Unit,
-    param: PermissionsManager, chosenPackage: Channel<String>, onChoosePackage: () -> Unit
+    param: AppPermissionsManager
 ) {
-    val packageNameParam = param.packageName
+    val context = LocalContext.current
     val privilege by Privilege.status.collectAsStateWithLifecycle()
-    var packageName by rememberSaveable { mutableStateOf(packageNameParam ?: "") }
-    var selectedPermission by rememberSaveable { mutableIntStateOf(-1) }
-    val permissions by packagePermissions.collectAsStateWithLifecycle()
+    var selectedPermission by remember { mutableStateOf<PermissionItem?>(null) }
+    val permissions = remember { mutableStateMapOf<String, Int>() }
     LaunchedEffect(Unit) {
-        packageName = chosenPackage.receive()
-    }
-    LaunchedEffect(packageName) {
-        getPackagePermissions(packageName)
+        permissions.putAll(getPackagePermissions(param.packageName))
     }
     MyLazyScaffold(R.string.permissions, onNavigateUp) {
-        item {
-            if (packageNameParam == null) {
-                PackageNameTextField(packageName, onChoosePackage,
-                    Modifier.padding(HorizontalPadding, 8.dp)) { packageName = it }
-                Spacer(Modifier.padding(vertical = 4.dp))
-            }
-        }
-        itemsIndexed(runtimePermissions, { _, it -> it.id }) { index, it ->
+        items(runtimePermissions) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        selectedPermission = index
+                        selectedPermission = it
                     }
                     .padding(8.dp)
             ) {
                 Icon(painterResource(it.icon), null, Modifier.padding(horizontal = 12.dp))
                 Column {
-                    val state = when (permissions[it.id]) {
+                    val state = when(permissions[it.id]) {
                         PERMISSION_GRANT_STATE_DEFAULT -> R.string.default_stringres
                         PERMISSION_GRANT_STATE_GRANTED -> R.string.granted
                         PERMISSION_GRANT_STATE_DENIED -> R.string.denied
@@ -408,45 +399,190 @@ fun PermissionsManagerScreen(
             Spacer(Modifier.height(BottomPadding))
         }
     }
-    if (selectedPermission != -1) {
-        val permission = runtimePermissions[selectedPermission]
-        fun changeState(state: Int) {
-            val result = setPackagePermission(packageName, permission.id, state)
-            if (result) selectedPermission = -1
+    if(selectedPermission != null) PackagePermissionDialog(
+        selectedPermission!!, permissions[selectedPermission!!.id]!!, privilege.profile,
+        {
+            val result = setPackagePermission(param.packageName, selectedPermission!!.id, it)
+            if (!result) context.showOperationResultToast(false)
+            selectedPermission = null
+            permissions.putAll(getPackagePermissions(param.packageName))
         }
-        @Composable
-        fun GrantPermissionItem(label: Int, status: Int) {
-            val selected = permissions[permission.id] == status
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(if (selected) colorScheme.primaryContainer else Color.Transparent)
-                    .clickable { changeState(status) }
-                    .padding(vertical = 16.dp, horizontal = 12.dp),
-                Arrangement.SpaceBetween, Alignment.CenterVertically,
-            ) {
-                Text(stringResource(label), color = if (selected) colorScheme.primary else Color.Unspecified)
-                if (selected) Icon(Icons.Outlined.CheckCircle, null, tint = colorScheme.primary)
+    ) { selectedPermission = null }
+}
+
+@Composable
+fun PackagePermissionDialog(
+    permission: PermissionItem, currentState: Int, isProfileOwner: Boolean, onSet: (Int) -> Unit,
+    onClose: () -> Unit
+) {
+    @Composable
+    fun GrantPermissionItem(label: Int, stateId: Int) {
+        val selected = currentState == stateId
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(if (selected) colorScheme.primaryContainer else Color.Transparent)
+                .clickable { onSet(stateId) }
+                .padding(vertical = 16.dp, horizontal = 12.dp),
+            Arrangement.SpaceBetween, Alignment.CenterVertically,
+        ) {
+            Text(
+                stringResource(label),
+                color = if(selected) colorScheme.primary else Color.Unspecified
+            )
+            if (selected) Icon(Icons.Outlined.CheckCircle, null, tint = colorScheme.primary)
+        }
+    }
+    AlertDialog(
+        onDismissRequest = onClose,
+        confirmButton = { TextButton(onClose) { Text(stringResource(R.string.cancel)) } },
+        title = { Text(stringResource(permission.label)) },
+        text = {
+            Column {
+                Text(permission.id)
+                Spacer(Modifier.padding(vertical = 4.dp))
+                if(!(VERSION.SDK_INT >= 31 && permission.profileOwnerRestricted && isProfileOwner)) {
+                    GrantPermissionItem(R.string.granted, PERMISSION_GRANT_STATE_GRANTED)
+                }
+                GrantPermissionItem(R.string.denied, PERMISSION_GRANT_STATE_DENIED)
+                GrantPermissionItem(R.string.default_stringres, PERMISSION_GRANT_STATE_DEFAULT)
             }
         }
-        AlertDialog(
-            onDismissRequest = { selectedPermission = -1 },
-            confirmButton = { TextButton({ selectedPermission = -1 }) { Text(stringResource(R.string.cancel)) } },
-            title = { Text(stringResource(permission.label)) },
-            text = {
-                Column {
-                    Text(permission.id)
-                    Spacer(Modifier.padding(vertical = 4.dp))
-                    if (!(VERSION.SDK_INT >= 31 && permission.profileOwnerRestricted && privilege.profile)) {
-                        GrantPermissionItem(R.string.granted, PERMISSION_GRANT_STATE_GRANTED)
+    )
+}
+
+@Serializable object PermissionManager
+
+@Composable
+fun PermissionManagerScreen(onNavigate: (PermissionDetail) -> Unit, onNavigateUp: () -> Unit) {
+    MyLazyScaffold(R.string.permissions, onNavigateUp) {
+        items(runtimePermissions) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        onNavigate(PermissionDetail(it.id))
                     }
-                    GrantPermissionItem(R.string.denied, PERMISSION_GRANT_STATE_DENIED)
-                    GrantPermissionItem(R.string.default_stringres, PERMISSION_GRANT_STATE_DEFAULT)
+                    .padding(8.dp, 12.dp)
+            ) {
+                Icon(painterResource(it.icon), null, Modifier.padding(horizontal = 12.dp))
+                Text(stringResource(it.label))
+            }
+        }
+        item {
+            Spacer(Modifier.height(BottomPadding))
+        }
+    }
+}
+
+@Serializable class PermissionDetail(val permission: String)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PermissionDetailScreen(
+    param: PermissionDetail, getPermissionPackages: (String) -> List<Pair<AppInfo, Int>>,
+    setPackagePermission: (String, String, Int) -> Boolean, onNavigateUp: () -> Unit
+) {
+    val context = LocalContext.current
+    val privilege by Privilege.status.collectAsStateWithLifecycle()
+    val permissionItem = runtimePermissions.find { it.id == param.permission }!!
+    val packagesList = remember { mutableStateListOf<Pair<AppInfo, Int>>() }
+    var selectedPackage by remember { mutableStateOf<Pair<String, Int>?>(null) }
+    var showUserApps by remember { mutableStateOf(true) }
+    var showSystemApps by remember { mutableStateOf(false) }
+    val displayedPackagesList = packagesList.filter {
+        (showUserApps && it.first.flags and ApplicationInfo.FLAG_SYSTEM == 0) ||
+                (showSystemApps && it.first.flags and ApplicationInfo.FLAG_SYSTEM != 0)
+    }
+    LaunchedEffect(Unit) {
+        packagesList.addAll(getPermissionPackages(param.permission))
+    }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                { Text(stringResource(permissionItem.label)) },
+                navigationIcon = { NavIcon(onNavigateUp) },
+                actions = {
+                    var menu by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton({ menu = true }) {
+                            Icon(painterResource(R.drawable.filter_alt_fill0), null)
+                        }
+                        DropdownMenu(menu, { menu = false }) {
+                            DropdownMenuItem(
+                                {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Checkbox(showUserApps, { showUserApps = it })
+                                        Text(stringResource(R.string.user_apps))
+                                    }
+                                },
+                                { showUserApps = !showUserApps }
+                            )
+                            DropdownMenuItem(
+                                {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Checkbox(showSystemApps, { showSystemApps = it })
+                                        Text(stringResource(R.string.system_apps))
+                                    }
+                                },
+                                { showSystemApps = !showSystemApps }
+                            )
+                        }
+                    }
+                }
+            )
+        },
+        contentWindowInsets = adaptiveInsets()
+    ) { paddingValues ->
+        LazyColumn(Modifier.padding(paddingValues)) {
+            items(displayedPackagesList) { (info, grantState) ->
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { selectedPackage = info.name to grantState }
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                    Arrangement.SpaceBetween, Alignment.CenterVertically
+                ) {
+                    Row(Modifier.weight(1F), verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            rememberDrawablePainter(info.icon), null,
+                            Modifier
+                                .padding(start = 12.dp, end = 18.dp)
+                                .size(30.dp)
+                        )
+                        Column {
+                            Text(info.label)
+                            Text(info.name, Modifier.alpha(0.8F), style = typography.bodyMedium)
+                        }
+                    }
+                    if (grantState != 0) {
+                        Icon(
+                            painterResource(
+                                if (grantState == 1) R.drawable.check_circle_fill0
+                                else R.drawable.cancel_fill0
+                            ),
+                            null
+                        )
+                    }
                 }
             }
-        )
+            item {
+                Spacer(Modifier.height(BottomPadding))
+            }
+        }
     }
+    if (selectedPackage != null) PackagePermissionDialog(
+        permissionItem, selectedPackage!!.second, privilege.profile,
+        {
+            val result = setPackagePermission(selectedPackage!!.first, param.permission, it)
+            if (!result) context.showOperationResultToast(false)
+            selectedPackage = null
+            packagesList.clear()
+            packagesList.addAll(getPermissionPackages(param.permission))
+        }
+    ) { selectedPackage = null }
 }
 
 @Serializable object DisableMeteredData
@@ -474,7 +610,7 @@ fun ClearAppStorageScreen(
             Text(stringResource(R.string.clear))
         }
     }
-    if (dialog) ClearAppStorageDialog(packageName, onClear) { dialog = false }
+    if(dialog) ClearAppStorageDialog(packageName, onClear) { dialog = false }
 }
 
 @RequiresApi(28)
@@ -538,7 +674,7 @@ fun UninstallAppScreen(
             Text(stringResource(R.string.uninstall))
         }
     }
-    if (dialog) UninstallAppDialog(packageName, onUninstall) {
+    if(dialog) UninstallAppDialog(packageName, onUninstall) {
         packageName = ""
         dialog = false
     }
@@ -554,8 +690,8 @@ private fun UninstallAppDialog(
     AlertDialog(
         title = { Text(stringResource(R.string.uninstall)) },
         text = {
-            if (errorMessage != null) Text(errorMessage!!)
-            if (uninstalling) LinearProgressIndicator(Modifier.fillMaxWidth())
+            if(errorMessage != null) Text(errorMessage!!)
+            if(uninstalling) LinearProgressIndicator(Modifier.fillMaxWidth())
         },
         confirmButton = {
             TextButton(
@@ -662,8 +798,7 @@ fun CredentialManagerPolicyScreen(
                             setCmPackage(inputPackages, true)
                             input = ""
                         },
-                        Modifier.fillMaxWidth(),
-                        inputPackages.all { it.isValidPackageName }
+                        Modifier.fillMaxWidth()
                     ) {
                         Text(stringResource(R.string.add))
                     }
@@ -765,7 +900,8 @@ fun EnableSystemAppScreen(
                 packageName = ""
                 context.showOperationResultToast(true)
             },
-            Modifier.fillMaxWidth()
+            Modifier.fillMaxWidth(),
+            packageName.isValidPackageName
         ) {
             Text(stringResource(R.string.enable))
         }
@@ -891,7 +1027,7 @@ fun PackageFunctionScreen(
                         .fillMaxWidth()
                         .padding(horizontal = HorizontalPadding)
                         .padding(bottom = 10.dp),
-                            packages.none { it.name in inputPackages }
+                    packages.none { it.name in inputPackages }
                 ) {
                     Text(stringResource(R.string.add))
                 }
@@ -969,7 +1105,7 @@ fun ManageAppGroupsScreen(
                             DropdownMenuItem(
                                 { Text(stringResource(R.string.export)) },
                                 {
-                                    exportLauncher.launch("mdpc_app_groups")
+                                    exportLauncher.launch("owndroid_app_groups")
                                     dropdown = false
                                 },
                                 leadingIcon = {
@@ -988,6 +1124,7 @@ fun ManageAppGroupsScreen(
                             )
                         }
                     }
+
                 }
             )
         },
@@ -1208,7 +1345,7 @@ fun ManagedConfigurationScreen(
                         }
                         Text(
                             text ?: "null", Modifier.alpha(0.7F),
-                            fontStyle = if (text == null) FontStyle.Italic else null,
+                            fontStyle = if(text == null) FontStyle.Italic else null,
                             style = typography.bodyMedium
                         )
                     }

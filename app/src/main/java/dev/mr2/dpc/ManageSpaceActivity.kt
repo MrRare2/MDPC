@@ -56,7 +56,8 @@ class ManageSpaceActivity: FragmentActivity() {
         filesDir.deleteRecursively()
         cacheDir.deleteRecursively()
         codeCacheDir.deleteRecursively()
-        if(Build.VERSION.SDK_INT >= 24) {
+        if (Build.VERSION.SDK_INT >= 24) {
+            dataDir.resolve("databases").deleteRecursively()
             dataDir.resolve("shared_prefs").deleteRecursively()
         } else {
             val sharedPref = applicationContext.getSharedPreferences("data", MODE_PRIVATE)

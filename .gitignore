@@ -14,3 +14,4 @@ app/debug
 *.swp
 *.db
 *.old
+.kotlin

@@ -760,6 +760,14 @@
     <string name="undo">元に戻す</string>
     <string name="package_removed">%1$s を削除しました</string>
     <string name="import_str">インポート</string>
+    <string name="presets">プリセット</string>
+    <string name="allow_file_sharing">ファイル共有を許可する</string>
+    <string name="stay_on_while_plugged_in">接続中は電源をオンにする</string>
+    <string name="enable_adb">ADBを有効にする</string>
+    <string name="enable_usb_mass_storage">USBマスストレージを有効にする</string>
+    <string name="default_input_method">デフォルトの入力方法</string>
+    <string name="user_apps">ユーザーアプリ</string>
+    <string name="system_apps">システムアプリ</string>
 
     <string name="color_scheme">カラー設定</string>
     <string name="color_blue">ミクブルー</string>

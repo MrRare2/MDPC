@@ -8,13 +8,12 @@ import java.io.File
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose)
     alias(libs.plugins.serialization)
 }
 
 android {
-    sourceSets["main"].java.srcDir(file("$buildDir/generated/source/locales"))
+    sourceSets["main"].kotlin.srcDir(file("$buildDir/generated/source/locales"))
     signingConfigs {
         create("defaultSignature") {
             storeFile = file(project.findProperty("storeFile") ?: "testkey.jks")
@@ -76,10 +75,11 @@ android {
     dependenciesInfo {
         includeInApk = false
     }
-    composeCompiler {
-        includeSourceInformation = false
-        includeTraceMarkers = false
-    }
+}
+
+composeCompiler {
+    includeSourceInformation = false
+    includeTraceMarkers = false
 }
 
 kotlin {
@@ -100,7 +100,7 @@ gradle.taskGraph.whenReady {
 }
 
 val outRoot = layout.buildDirectory.dir("generated/source/locales")
-val targetPackageDir = "dev/mr2/dpc"
+// val targetPackageDir = "dev/mr2/dpc"
 
 abstract class GenerateLocalesTask : DefaultTask() {
     @get:InputDirectory

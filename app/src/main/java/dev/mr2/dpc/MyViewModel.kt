@@ -45,7 +45,9 @@ import android.os.Build.VERSION
 import android.os.HardwarePropertiesManager
 import android.os.UserHandle
 import android.os.UserManager
+import android.provider.Settings
 import android.telephony.data.ApnSetting
+import android.view.inputmethod.InputMethodManager
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -76,7 +78,6 @@ import dev.mr2.dpc.dpm.DelegatedAdmin
 import dev.mr2.dpc.dpm.DeviceAdmin
 import dev.mr2.dpc.dpm.FrpPolicyInfo
 import dev.mr2.dpc.dpm.HardwareProperties
-import dev.mr2.dpc.dpm.IntentFilterDirection
 import dev.mr2.dpc.dpm.IntentFilterOptions
 import dev.mr2.dpc.dpm.IpMode
 import dev.mr2.dpc.dpm.KeyguardDisableConfig
@@ -107,10 +108,11 @@ import dev.mr2.dpc.dpm.activateOrgProfileCommand
 import dev.mr2.dpc.dpm.delegatedScopesList
 import dev.mr2.dpc.dpm.doUserOperationWithContext
 import dev.mr2.dpc.dpm.getPackageInstaller
+import dev.mr2.dpc.dpm.globalSettings
 import dev.mr2.dpc.dpm.handlePrivilegeChange
-import dev.mr2.dpc.dpm.isValidPackageName
 import dev.mr2.dpc.dpm.parsePackageInstallerMessage
 import dev.mr2.dpc.dpm.runtimePermissions
+import dev.mr2.dpc.dpm.secureSettings
 import dev.mr2.dpc.dpm.temperatureTypes
 import java.net.InetAddress
 import java.security.MessageDigest
@@ -130,9 +132,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.addJsonObject
-import kotlinx.serialization.json.buildJsonArray
-import kotlinx.serialization.json.put
 
 class MyViewModel(application: Application): AndroidViewModel(application) {
     val myRepo = getApplication<MyApplication>().myRepo
@@ -157,7 +156,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     }
     fun getAppLockConfig(): AppLockConfig {
         val passwordHash = SP.lockPasswordHash
-        return AppLockConfig(passwordHash?.ifEmpty { null }, SP.biometricsUnlock, SP.lockWhenLeaving)
+        return AppLockConfig(passwordHash?.ifEmpty { null }, SP.biometricsUnlock, SP.lockWhenLeaving, SP.autoUnlock)
     }
     fun setAppLockConfig(config: AppLockConfig) {
         if (config.password == null) {
@@ -167,6 +166,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
         }
         SP.biometricsUnlock = config.biometrics
         SP.lockWhenLeaving = config.whenLeaving
+        SP.autoUnlock = config.autoUnlock
     }
     fun getApiEnabled(): Boolean {
         return SP.apiKeyHash?.isNotEmpty() ?: false
@@ -313,20 +313,23 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
         getUcdPackages()
     }
 
-    val packagePermissions = MutableStateFlow(emptyMap<String, Int>())
-    fun getPackagePermissions(name: String) {
-        if (name.isValidPackageName) {
-            packagePermissions.value = runtimePermissions.associate {
-                it.id to DPM.getPermissionGrantState(DAR, name, it.id)
-            }
-        } else {
-            packagePermissions.value = emptyMap()
+    fun getPackagePermissions(name: String): Map<String, Int> {
+        return runtimePermissions.associate {
+            it.id to DPM.getPermissionGrantState(DAR, name, it.id)
         }
     }
     fun setPackagePermission(name: String, permission: String, status: Int): Boolean {
-        val result = DPM.setPermissionGrantState(DAR, name, permission, status)
-        getPackagePermissions(name)
-        return result
+        return DPM.setPermissionGrantState(DAR, name, permission, status)
+    }
+    fun getPermissionPackages(permission: String): List<Pair<AppInfo, Int>> {
+        return PM.getInstalledPackages(
+            getInstalledAppsFlags or PackageManager.GET_PERMISSIONS
+        ).filter {
+            it.requestedPermissions?.contains(permission) ?: false
+        }.map {
+            getAppInfo(it.packageName) to
+                    DPM.getPermissionGrantState(DAR, it.packageName, permission)
+        }
     }
 
     // Metered data disabled packages
@@ -717,14 +720,29 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     fun addCrossProfileIntentFilter(options: IntentFilterOptions) {
         val filter = IntentFilter(options.action)
         if (options.category.isNotEmpty()) filter.addCategory(options.category)
-	if (options.mimeType.isNotEmpty()) filter.addDataType(options.mimeType)
-        val flags = when (options.direction) {
-            IntentFilterDirection.ToManaged -> DevicePolicyManager.FLAG_PARENT_CAN_ACCESS_MANAGED
-            IntentFilterDirection.ToParent -> DevicePolicyManager.FLAG_MANAGED_CAN_ACCESS_PARENT
-            IntentFilterDirection.Both -> DevicePolicyManager.FLAG_PARENT_CAN_ACCESS_MANAGED or
-	    DevicePolicyManager.FLAG_MANAGED_CAN_ACCESS_PARENT
+	    if (options.mimeType.isNotEmpty()) filter.addDataType(options.mimeType)
+        DPM.addCrossProfileIntentFilter(DAR, filter, options.direction)
+        myRepo.setCrossProfileIntentFilter(options)
+    }
+    fun clearCrossProfileIntentFilters() {
+        DPM.clearCrossProfileIntentFilters(DAR)
+        myRepo.deleteAllCrossProfileIntentFilters()
+    }
+    fun importCrossProfileIntentFilters(uri: Uri) {
+        val bytes = application.contentResolver.openInputStream(uri)!!.use {
+            it.readBytes().decodeToString()
         }
-        DPM.addCrossProfileIntentFilter(DAR, filter, flags)
+        val data = Json.decodeFromString<List<IntentFilterOptions>>(bytes)
+        data.forEach {
+            addCrossProfileIntentFilter(it)
+        }
+    }
+    fun exportCrossProfileIntentFilters(uri: Uri) {
+        val data = myRepo.getAllCrossProfileIntentFilters()
+        val bytes = Json.encodeToString(data).encodeToByteArray()
+        application.contentResolver.openOutputStream(uri)!!.use {
+            it.write(bytes)
+        }
     }
 
     val appGroups = MutableStateFlow(emptyList<AppGroup>())
@@ -825,7 +843,9 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
             commonCriteriaMode = if (VERSION.SDK_INT >= 30 && (privilege.device || privilege.org))
                 DPM.isCommonCriteriaModeEnabled(DAR) else false,
             usbSignalEnabled = if (VERSION.SDK_INT >= 31) DPM.isUsbDataSignalingEnabled else false,
-            canDisableUsbSignal = if (VERSION.SDK_INT >= 31) DPM.canUsbDataSignalingBeDisabled() else false
+            canDisableUsbSignal = if (VERSION.SDK_INT >= 31) DPM.canUsbDataSignalingBeDisabled() else false,
+            stayOnWhilePluggedIn = Settings.Global.getInt(
+                application.contentResolver, Settings.Global.STAY_ON_WHILE_PLUGGED_IN) != 0
         )
     }
     fun setCameraDisabled(disabled: Boolean) {
@@ -890,6 +910,28 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
         DPM.isUsbDataSignalingEnabled = enabled
         systemOptionsStatus.update { it.copy(usbSignalEnabled = DPM.isUsbDataSignalingEnabled) }
     }
+    fun setStayOnWhilePluggedIn(status: Boolean) {
+        DPM.setGlobalSetting(
+            DAR, Settings.Global.STAY_ON_WHILE_PLUGGED_IN, if (status) "15" else "0"
+        )
+        systemOptionsStatus.update { it.copy(stayOnWhilePluggedIn = status) }
+    }
+    fun getGlobalSettings(): Map<String, Boolean> {
+        return globalSettings.associate {
+            it.setting to (Settings.Global.getInt(application.contentResolver, it.setting, 0) == 1)
+        }
+    }
+    fun setGlobalSetting(name: String, status: Boolean) {
+        DPM.setGlobalSetting(DAR, name, if (status) "1" else "0")
+    }
+    fun getSecureSettings(): Map<String, Boolean> {
+        return secureSettings.associate {
+            it.setting to (Settings.Secure.getInt(application.contentResolver, it.setting, 0) == 1)
+        }
+    }
+    fun setSecureSetting(name: String, status: Boolean) {
+        DPM.setSecureSetting(DAR, name, if (status) "1" else "0")
+    }
     fun setKeyguardDisabled(disabled: Boolean): Boolean {
         return DPM.setKeyguardDisabled(DAR, disabled)
     }
@@ -923,6 +965,21 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
             hardwareProperties.value = properties
             delay(hpRefreshInterval)
         }
+    }
+    fun getCurrentInputMethod(): String {
+        return Settings.Secure.getString(
+            application.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
+    }
+    val inputMethodList = MutableStateFlow(listOf<Pair<String, AppInfo>>())
+    fun getInputMethods() {
+        val imm = application.getSystemService(InputMethodManager::class.java)
+        inputMethodList.value = imm.inputMethodList.map {
+            it.id to getAppInfo(it.packageName)
+        }
+    }
+    fun setDefaultInputMethod(id: String) {
+        DPM.setSecureSetting(DAR, Settings.Secure.DEFAULT_INPUT_METHOD, id)
+        getCurrentInputMethod()
     }
     @RequiresApi(28)
     fun setTime(time: Long, useCurrentTz: Boolean): Boolean {
@@ -1395,7 +1452,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     val userRestrictions = MutableStateFlow(emptyMap<String, Boolean>())
     @RequiresApi(24)
     fun getUserRestrictions() {
-        val bundle = DPM.getUserRestrictions(DAR)
+        val bundle = UM.userRestrictions
         userRestrictions.value = bundle.keySet().associateWith { bundle.getBoolean(it) }
     }
     fun setUserRestriction(name: String, state: Boolean): Boolean {
@@ -1406,6 +1463,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
                 DPM.clearUserRestriction(DAR, name)
             }
             userRestrictions.update { it.plus(name to state) }
+            getUserRestrictions()
             ShortcutUtils.updateUserRestrictionShortcut(application, name, !state, true)
             true
         } catch (e: Exception) {

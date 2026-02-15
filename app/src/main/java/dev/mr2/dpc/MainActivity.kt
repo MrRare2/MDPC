@@ -105,6 +105,8 @@ import dev.mr2.dpc.dpm.CrossProfileIntentFilter
 import dev.mr2.dpc.dpm.CrossProfileIntentFilterScreen
 import dev.mr2.dpc.dpm.CrossProfilePackages
 import dev.mr2.dpc.dpm.CrossProfileWidgetProviders
+import dev.mr2.dpc.dpm.DefaultInputMethod
+import dev.mr2.dpc.dpm.DefaultInputMethodScreen
 import dev.mr2.dpc.dpm.DelegatedAdmins
 import dev.mr2.dpc.dpm.DelegatedAdminsScreen
 import dev.mr2.dpc.dpm.DeleteWorkProfile
@@ -167,8 +169,12 @@ import dev.mr2.dpc.dpm.PasswordInfoScreen
 import dev.mr2.dpc.dpm.PasswordScreen
 import dev.mr2.dpc.dpm.PermissionPolicy
 import dev.mr2.dpc.dpm.PermissionPolicyScreen
-import dev.mr2.dpc.dpm.PermissionsManager
-import dev.mr2.dpc.dpm.PermissionsManagerScreen
+import dev.mr2.dpc.dpm.AppPermissionsManager
+import dev.mr2.dpc.dpm.AppPermissionsManagerScreen
+import dev.mr2.dpc.dpm.PermissionDetail
+import dev.mr2.dpc.dpm.PermissionDetailScreen
+import dev.mr2.dpc.dpm.PermissionManager
+import dev.mr2.dpc.dpm.PermissionManagerScreen
 import dev.mr2.dpc.dpm.PermittedAccessibilityServices
 import dev.mr2.dpc.dpm.PermittedAsAndImPackages
 import dev.mr2.dpc.dpm.PermittedInputMethods
@@ -395,6 +401,10 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
             HardwareMonitorScreen(vm.hardwareProperties, vm::getHardwareProperties,
                 vm::setHpRefreshInterval, ::navigateUp)
         }
+        composable<DefaultInputMethod> {
+            DefaultInputMethodScreen(vm::getCurrentInputMethod, vm.inputMethodList,
+                vm::getInputMethods, vm::setDefaultInputMethod, ::navigateUp)
+        }
         composable<ChangeTime> { ChangeTimeScreen(vm::setTime, ::navigateUp) }
         composable<ChangeTimeZone> { ChangeTimeZoneScreen(vm::setTimeZone, ::navigateUp) }
         composable<AutoTimePolicy> {
@@ -528,7 +538,11 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
             )
         }
         composable<CrossProfileIntentFilter> {
-            CrossProfileIntentFilterScreen(vm::addCrossProfileIntentFilter, ::navigateUp)
+             CrossProfileIntentFilterScreen(
+                vm::addCrossProfileIntentFilter, vm::clearCrossProfileIntentFilters,
+                vm::importCrossProfileIntentFilters, vm::exportCrossProfileIntentFilters,
+                ::navigateUp
+            )
         }
         composable<DeleteWorkProfile> { DeleteWorkProfileScreen(vm::wipeData, ::navigateUp) }
 
@@ -584,10 +598,17 @@ fun Home(vm: MyViewModel, onLock: () -> Unit) {
                 ::navigateToAppGroups, vm.appGroups, R.string.info_disable_user_control
             )
         }
-        composable<PermissionsManager> {
-            PermissionsManagerScreen(
-                vm.packagePermissions, vm::getPackagePermissions, vm::setPackagePermission,
-                ::navigateUp, it.toRoute(), vm.chosenPackage, ::chooseSinglePackage
+        composable<AppPermissionsManager> {
+            AppPermissionsManagerScreen(
+                vm::getPackagePermissions, vm::setPackagePermission, ::navigateUp, it.toRoute()
+            )
+        }
+        composable<PermissionManager> {
+            PermissionManagerScreen(::navigate, ::navigateUp)
+        }
+        composable<PermissionDetail> {
+            PermissionDetailScreen(
+                it.toRoute(), vm::getPermissionPackages, vm::setPackagePermission, ::navigateUp
             )
         }
 	    composable<DisableMeteredData> {

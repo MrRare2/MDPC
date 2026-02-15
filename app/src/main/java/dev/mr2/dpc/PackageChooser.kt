@@ -1,7 +1,6 @@
 package dev.mr2.dpc
 
 import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.os.Build
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -75,9 +74,6 @@ data class AppInfo(
     val icon: Drawable,
     val flags: Int
 )
-
-private fun searchInString(query: String, content: String)
-    = query.split(' ').all { content.contains(it, true) }
 
 @Serializable data class ApplicationsList(val canSwitchView: Boolean, val multiSelect: Boolean)
 
@@ -277,6 +273,3 @@ fun AppChooserScreen(
         }
     }
 }
-
-val getInstalledAppsFlags =
-    if (Build.VERSION.SDK_INT >= 24) PackageManager.MATCH_DISABLED_COMPONENTS or PackageManager.MATCH_UNINSTALLED_PACKAGES else 0

@@ -149,7 +149,7 @@
     <string name="cpu_usages">CPU使用情况</string>
     <string name="active">活动</string>
     <string name="total">总计</string>
-    <string name="fan_speeds">Fan speeds</string>
+    <string name="fan_speeds">风扇速度</string>
     <string name="bug_report">错误报告</string>
     <string name="confirm_bug_report">请求错误报告？</string>
     <string name="reboot">重启</string>
@@ -743,6 +743,15 @@
     <string name="undo">撤销</string>
     <string name="package_removed">移除了 %1$s</string>
     <string name="import_str">导入</string>
+    <string name="presets">预设</string>
+    <string name="allow_file_sharing">允许分享文件</string>
+    <string name="stay_on_while_plugged_in">充电时保持亮屏</string>
+    <string name="enable_adb">启用ADB</string>
+    <string name="enable_usb_mass_storage">启用USB大容量存储</string>
+    <string name="skip_first_use_hints">跳过首次使用提示</string>
+    <string name="default_input_method">默认输入法</string>
+    <string name="user_apps">用户应用</string>
+    <string name="system_apps">系统应用</string>
     <string name="color_scheme">配色方案</string>
     <string name="color_blue">初音蓝</string>
     <string name="color_red">重音红</string>

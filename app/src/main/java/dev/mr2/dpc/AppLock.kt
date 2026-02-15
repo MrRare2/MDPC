@@ -58,14 +58,14 @@ fun AppLockDialog(onSucceed: () -> Unit, onDismiss: () -> Unit) = Dialog(onDismi
     var isError by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
         var showPassword by remember { mutableStateOf(false) }
-    fun unlock() {
+    fun unlock(auto: Boolean) {
 	    scope.launch {
 	        val ok = verifyPassword(input, SP.lockPasswordHash)
 	        if (ok) {
 		        fm.clearFocus()
 		        onSucceed()
 	        } else {
-		        isError = true
+		        if (!auto) isError = true
 	        }
         }
     }
@@ -81,12 +81,16 @@ fun AppLockDialog(onSucceed: () -> Unit, onDismiss: () -> Unit) = Dialog(onDismi
         Column(Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
-                    input, { input = it; isError = false }, Modifier.width(200.dp).focusRequester(fr),
+                    input, {
+                        input = it
+                        isError = false
+                        if (SP.autoUnlock) unlock(auto = true)
+                    }, Modifier.width(200.dp).focusRequester(fr),
                     label = { Text(stringResource(R.string.password)) }, isError = isError,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password, imeAction = if (input.length >= 4) ImeAction.Go else ImeAction.Done
                     ),
-                    keyboardActions = KeyboardActions({ fm.clearFocus() }, { unlock() }), 
+                    keyboardActions = KeyboardActions({ fm.clearFocus() }, { unlock(auto = false) }), 
                      visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(), 
                      trailingIcon = { 
                          IconButton(onClick = { showPassword = !showPassword }) { 
@@ -105,7 +109,7 @@ fun AppLockDialog(onSucceed: () -> Unit, onDismiss: () -> Unit) = Dialog(onDismi
                     }
                 }
             }
-            Button(::unlock, Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp)) {
+            Button({ unlock(auto = false) }, Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp)) {
                 Text(stringResource(R.string.unlock))
             }
         }

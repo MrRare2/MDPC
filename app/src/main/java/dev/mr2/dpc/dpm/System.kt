@@ -24,11 +24,13 @@ import android.net.Uri
 import android.os.Build.VERSION
 import android.os.HardwarePropertiesManager
 import android.os.UserManager
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +41,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
@@ -70,6 +73,7 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Tab
@@ -87,6 +91,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -94,6 +99,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -102,6 +108,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import dev.mr2.dpc.AppInfo
 import dev.mr2.dpc.BottomPadding
 import dev.mr2.dpc.HorizontalPadding
@@ -122,6 +129,7 @@ import dev.mr2.dpc.ui.FullWidthCheckBoxItem
 import dev.mr2.dpc.ui.FullWidthRadioButtonItem
 import dev.mr2.dpc.ui.FunctionItem
 import dev.mr2.dpc.ui.ListItem
+import dev.mr2.dpc.ui.MyLazyScaffold
 import dev.mr2.dpc.ui.MyScaffold
 import dev.mr2.dpc.ui.MySmallTitleScaffold
 import dev.mr2.dpc.ui.NavIcon
@@ -155,6 +163,9 @@ fun SystemManagerScreen(
         FunctionItem(R.string.keyguard, icon = R.drawable.screen_lock_portrait_fill0) { onNavigate(Keyguard) }
         if (VERSION.SDK_INT >= 24 && privilege.device && !privilege.dhizuku)
             FunctionItem(R.string.hardware_monitor, icon = R.drawable.memory_fill0) { onNavigate(HardwareMonitor) }
+        FunctionItem(R.string.default_input_method, icon = R.drawable.keyboard_fill0) {
+            onNavigate(DefaultInputMethod)
+        }
         if (VERSION.SDK_INT >= 24 && privilege.device) {
             FunctionItem(R.string.reboot, icon = R.drawable.restart_alt_fill0) { dialog = 1 }
         }
@@ -316,17 +327,43 @@ data class SystemOptionsStatus(
     val btContactSharingDisabled: Boolean = false,
     val commonCriteriaMode: Boolean = false,
     val usbSignalEnabled: Boolean = true,
-    val canDisableUsbSignal: Boolean = true
+    val canDisableUsbSignal: Boolean = true,
+    val stayOnWhilePluggedIn: Boolean = false
 )
 
 @Serializable object SystemOptions
+// FIXME: wait for upstream fix
+class GlobalSetting(val icon: Int, val name: Int, val setting: String) // also for secure settings
+
+// STAY_ON_WHILE_PLUGGED_IN is set separately
+val globalSettings = listOf(
+    //GlobalSetting(R.drawable.cell_tower_fill0, R.string.data_roaming, Settings.Global.DATA_ROAMING),
+    GlobalSetting(R.drawable.adb_fill0, R.string.enable_adb, Settings.Global.ADB_ENABLED),
+    GlobalSetting(R.drawable.usb_fill0, R.string.enable_usb_mass_storage,
+        Settings.Global.USB_MASS_STORAGE_ENABLED),
+    GlobalSetting(R.drawable.wifi_password_fill0, R.string.lockdown_admin_configured_network,
+        Settings.Global.WIFI_DEVICE_OWNER_CONFIGS_LOCKDOWN)
+)
+
+val secureSettings = listOf(
+    GlobalSetting(R.drawable.light_off_fill0, R.string.skip_first_use_hints,
+        Settings.Secure.SKIP_FIRST_USE_HINTS)
+)
 
 @Composable
 fun SystemOptionsScreen(vm: MyViewModel, onNavigateUp: () -> Unit) {
     val privilege by Privilege.status.collectAsStateWithLifecycle()
     var dialog by rememberSaveable { mutableIntStateOf(0) }
     val status by vm.systemOptionsStatus.collectAsStateWithLifecycle()
-    LaunchedEffect(Unit) { vm.getSystemOptionsStatus() }
+    val globalSettingsStatus = remember { mutableStateMapOf<String, Boolean>() }
+    val secureSettingsStatus = remember { mutableStateMapOf<String, Boolean>() }
+    LaunchedEffect(Unit) {
+        vm.getSystemOptionsStatus()
+        if (privilege.device) {
+            globalSettingsStatus.putAll(vm.getGlobalSettings())
+            secureSettingsStatus.putAll(vm.getSecureSettings())
+        }
+    }
     MyScaffold(R.string.options, onNavigateUp, 0.dp) {
 	SwitchItem(R.string.disable_cam, status.cameraDisabled, vm::setCameraDisabled,
             R.drawable.no_photography_fill0)
@@ -370,6 +407,22 @@ fun SystemOptionsScreen(vm: MyViewModel, onNavigateUp: () -> Unit) {
         if (VERSION.SDK_INT >= 31 && (privilege.device || privilege.org) && status.canDisableUsbSignal) {
             SwitchItem(R.string.enable_usb_signal, status.usbSignalEnabled,
                 vm::setUsbSignalEnabled, R.drawable.usb_fill0)
+        }
+        SwitchItem(R.string.stay_on_while_plugged_in, status.stayOnWhilePluggedIn,
+            vm::setStayOnWhilePluggedIn, R.drawable.mobile_phone_fill0)
+        if (privilege.device) {
+            globalSettings.forEach {
+                SwitchItem(it.name, globalSettingsStatus[it.setting] ?: false, { state ->
+                    vm.setGlobalSetting(it.setting, state)
+                    globalSettingsStatus[it.setting] = state
+                }, it.icon)
+            }
+            secureSettings.forEach {
+                SwitchItem(it.name, secureSettingsStatus[it.setting] ?: false, { state ->
+                    vm.setSecureSetting(it.setting, state)
+                    secureSettingsStatus[it.setting] = state
+                }, it.icon)
+            }
         }
     }
     if (dialog != 0) AlertDialog(
@@ -520,6 +573,48 @@ fun HardwareMonitorScreen(
         }
     }
 }
+
+@Serializable object DefaultInputMethod
+
+@Composable
+fun DefaultInputMethodScreen(
+    getCurrentIm: () -> String, imListState: StateFlow<List<Pair<String, AppInfo>>>,
+    getImList: () -> Unit, setIm: (String) -> Unit, navigateUp: () -> Unit
+) {
+    val context = LocalContext.current
+    val imList by imListState.collectAsStateWithLifecycle()
+    var selectedIm by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        selectedIm = getCurrentIm()
+        getImList()
+    }
+    MyLazyScaffold(R.string.default_input_method, navigateUp) {
+        items(imList) { (id, info) ->
+            Row(
+                Modifier.fillMaxWidth().clickable { selectedIm = id }.padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(selectedIm == id, { selectedIm = id })
+                Image(rememberDrawablePainter(info.icon), null, Modifier.size(40.dp))
+                Column(Modifier.padding(start = 8.dp)) {
+                    Text(info.label)
+                    Text(id, Modifier.alpha(0.7F), style = typography.bodyMedium)
+                }
+            }
+        }
+        item {
+            Spacer(Modifier.height(8.dp))
+            Button({
+                setIm(selectedIm)
+                context.showOperationResultToast(true)
+            }, Modifier.fillMaxWidth().padding(horizontal = HorizontalPadding)) {
+                Text(stringResource(R.string.apply))
+            }
+            Spacer(Modifier.height(BottomPadding))
+        }
+    }
+}
+
 
 @Serializable object ChangeTime
 

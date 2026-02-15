@@ -781,6 +781,16 @@
     <string name="undo">Undo</string>
     <string name="package_removed">Removed %1$s</string>
     <string name="import_str">Import</string>
+    <string name="presets">Presets</string>
+    <string name="allow_file_sharing">Allow file sharing</string>
+    <string name="stay_on_while_plugged_in">Stay on while plugged in</string>
+    <string name="enable_adb">Enable ADB</string>
+    <string name="enable_usb_mass_storage">Enable USB mass storage</string>
+    <string name="skip_first_use_hints">Skip first use hints</string>
+    <string name="default_input_method">Default input method</string>
+    <string name="auto_unlock">Auto unlock</string>
+    <string name="user_apps">User apps</string>
+    <string name="system_apps">System apps</string>
 
     <!-- languages -->
     <string name="lang_en">English</string>

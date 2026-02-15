@@ -29,6 +29,7 @@ class SharedPrefs(context: Context) {
     var sharedApiReply by BooleanSharedPref("api.sharedreply", false)
     var apiPort by IntSharedPref("api.tcp.port", 6737)
     var apiTcpEnabled by BooleanSharedPref("api.tcp.enabled", false)
+    var autoUnlock by BooleanSharedPref("lock.auto")
     var notifications by StringSharedPref("notifications")
     var shortcutKey by StringSharedPref("shortcut_key")
 }
